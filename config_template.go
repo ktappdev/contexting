@@ -1,0 +1,37 @@
+package main
+
+const starterConfigTemplate = `[common]
+output = "context.json"
+synonym_cache = ".contexting_synonyms_cache.json"
+llm_model = "openrouter/free"
+batch_size = 8
+synonyms = 4
+ignore = [".git", "node_modules", "vendor", "dist"]
+verbose = true
+
+[init]
+root = "."
+
+[watch]
+root = "."
+debounce = "750ms"
+llm = false
+
+[search]
+index = "context.json"
+limit = 5
+min_score = 1
+type = "all"
+explain = false
+json = false
+show_tokens = false
+
+[eval]
+index = "context.json"
+cases = "eval_cases.json"
+limit = 5
+min_score = 1
+type = "all"
+explain = false
+json = false
+`

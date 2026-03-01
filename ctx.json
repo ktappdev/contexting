@@ -1,0 +1,37 @@
+{
+  "root_path": "/var/folders/3j/6ws_m0051bl8dj7qx00jp_xr0000gn/T/tmp.lswOx6QYWr/proj",
+  "generated_at": "2026-03-01T15:42:34.75101Z",
+  "model": "openrouter/free",
+  "tree": {
+    "full_path": "/var/folders/3j/6ws_m0051bl8dj7qx00jp_xr0000gn/T/tmp.lswOx6QYWr/proj",
+    "type": "directory",
+    "children": {
+      "config": {
+        "full_path": "/var/folders/3j/6ws_m0051bl8dj7qx00jp_xr0000gn/T/tmp.lswOx6QYWr/proj/config",
+        "type": "directory",
+        "synonyms": [
+          "config"
+        ],
+        "children": {
+          "local_store.go": {
+            "full_path": "/var/folders/3j/6ws_m0051bl8dj7qx00jp_xr0000gn/T/tmp.lswOx6QYWr/proj/config/local_store.go",
+            "type": "file",
+            "synonyms": [
+              "local",
+              "store",
+              "go"
+            ]
+          }
+        }
+      },
+      "context.toml": {
+        "full_path": "/var/folders/3j/6ws_m0051bl8dj7qx00jp_xr0000gn/T/tmp.lswOx6QYWr/proj/context.toml",
+        "type": "file",
+        "synonyms": [
+          "context",
+          "toml"
+        ]
+      }
+    }
+  }
+}
