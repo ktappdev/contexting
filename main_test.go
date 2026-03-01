@@ -4,6 +4,9 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
+
+	"github.com/fsnotify/fsnotify"
 )
 
 func TestNodeStructure(t *testing.T) {
@@ -127,5 +130,108 @@ func TestIgnorePatterns(t *testing.T) {
 				t.Errorf("Expected %s to be ignored=%v, got %v", tt.name, tt.expected, got)
 			}
 		})
+	}
+}
+
+func TestFileWatcher(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		t.Fatalf("Failed to create watcher: %v", err)
+	}
+	defer watcher.Close()
+
+	err = watcher.Add(tmpDir)
+	if err != nil {
+		t.Fatalf("Failed to add directory to watcher: %v", err)
+	}
+
+	testFile := filepath.Join(tmpDir, "test.txt")
+	err = os.WriteFile(testFile, []byte("test content"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	select {
+	case event := <-watcher.Events:
+		if event.Op&fsnotify.Create != fsnotify.Create {
+			t.Errorf("Expected create event, got %v", event.Op)
+		}
+		if event.Name != testFile {
+			t.Errorf("Expected event for %s, got %s", testFile, event.Name)
+		}
+	case <-time.After(2 * time.Second):
+		t.Error("Timeout waiting for file creation event")
+	}
+}
+
+func TestFileWatcherModify(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	testFile := filepath.Join(tmpDir, "test.txt")
+	os.WriteFile(testFile, []byte("initial"), 0644)
+
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		t.Fatalf("Failed to create watcher: %v", err)
+	}
+	defer watcher.Close()
+
+	err = watcher.Add(tmpDir)
+	if err != nil {
+		t.Fatalf("Failed to add directory to watcher: %v", err)
+	}
+
+	err = os.WriteFile(testFile, []byte("modified"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to modify test file: %v", err)
+	}
+
+	select {
+	case event := <-watcher.Events:
+		if event.Op&fsnotify.Write != fsnotify.Write && event.Op&fsnotify.Chmod != fsnotify.Chmod {
+			t.Errorf("Expected write or chmod event, got %v", event.Op)
+		}
+		if event.Name != testFile {
+			t.Errorf("Expected event for %s, got %s", testFile, event.Name)
+		}
+	case <-time.After(2 * time.Second):
+		t.Error("Timeout waiting for file modification event")
+	}
+}
+
+func TestFileWatcherRemove(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	testFile := filepath.Join(tmpDir, "test.txt")
+	os.WriteFile(testFile, []byte("test"), 0644)
+
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		t.Fatalf("Failed to create watcher: %v", err)
+	}
+	defer watcher.Close()
+
+	err = watcher.Add(tmpDir)
+	if err != nil {
+		t.Fatalf("Failed to add directory to watcher: %v", err)
+	}
+
+	err = os.Remove(testFile)
+	if err != nil {
+		t.Fatalf("Failed to remove test file: %v", err)
+	}
+
+	select {
+	case event := <-watcher.Events:
+		if event.Op&fsnotify.Remove != fsnotify.Remove {
+			t.Errorf("Expected remove event, got %v", event.Op)
+		}
+		if event.Name != testFile {
+			t.Errorf("Expected event for %s, got %s", testFile, event.Name)
+		}
+	case <-time.After(2 * time.Second):
+		t.Error("Timeout waiting for file removal event")
 	}
 }
