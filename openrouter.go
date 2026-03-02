@@ -65,10 +65,11 @@ func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKe
 	}
 
 	systemPrompt := fmt.Sprintf(
-		"You are a helpful assistant. For each folder or file name in the list, generate exactly %d plausible alternative words or short phrases a developer might use in a codebase. Return ONLY a valid JSON object shaped like {\\\"name\\\": [\\\"syn1\\\", ...]}. No markdown, no prose.",
+		"You are a helpful assistant. For each folder or file name in the list, generate exactly %d plausible alternative words or short phrases a developer might use when searching for that file in a codebase. Return ONLY a valid JSON object where each key is an exact filename from the input list and each value is an array of %d synonym strings. Example: {\"auth.go\": [\"login\", \"authentication\", \"session\"], \"config\": [\"settings\", \"configuration\", \"options\"]}. No markdown, no prose, no extra text.",
+		synonymsPerName,
 		synonymsPerName,
 	)
-	userContent := fmt.Sprintf("Names:\n%s", strings.Join(names, "\n"))
+	userContent := fmt.Sprintf("File and folder names:\n%s", strings.Join(names, "\n"))
 
 	reqBody := OpenRouterRequest{
 		Model: model,
@@ -136,8 +137,19 @@ func GenerateSynonymsForNames(names []string, apiKey string, batchSize int, mode
 }
 
 func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, apiKey string, batchSize int, model string, synonymsPerName int) (SynonymResponse, error) {
-	if batchSize <= 0 {
-		batchSize = 8
+	if len(names) == 0 {
+		return make(SynonymResponse), nil
+	}
+	if model == "" {
+		model = defaultModel
+	}
+	if synonymsPerName <= 0 {
+		synonymsPerName = 4
+	}
+
+	// batchSize <= 0 means send all names in a single request
+	if batchSize <= 0 || batchSize >= len(names) {
+		return GenerateSynonymsBatchWithContext(ctx, names, apiKey, model, synonymsPerName)
 	}
 
 	result := make(SynonymResponse)

@@ -19,6 +19,7 @@ func newWatchCommand() *cobra.Command {
 	var persistInterval time.Duration
 	var searchLog bool
 	var searchLogQueryMax int
+	var maxBatchSize int
 
 	cmd := &cobra.Command{
 		Use:   "watch [path]",
@@ -50,6 +51,7 @@ func newWatchCommand() *cobra.Command {
 				applyBoolFlag(cmd, "search-log", &searchLog, *cfg.Watch.SearchLog)
 			}
 			applyIntFlag(cmd, "search-log-query-max", &searchLogQueryMax, cfg.Watch.SearchLogQueryMax)
+			applyIntFlag(cmd, "max-batch-size", &maxBatchSize, cfg.Watch.MaxBatchSize)
 
 			flags.normalize()
 			persistMode, err := parsePersistMode(persist)
@@ -106,6 +108,7 @@ func newWatchCommand() *cobra.Command {
 				SynonymsPerName: flags.SynonymsPerName,
 				APIKey:          apiKey,
 				UseLLM:          llmOnWatch,
+				MaxBatchSize:    maxBatchSize,
 			})
 
 			bootstrapStats, err := manager.Bootstrap(ctx)
@@ -322,7 +325,8 @@ func newWatchCommand() *cobra.Command {
 	cmd.Flags().StringVarP(&flags.OutputPath, "output", "o", "context.json", "Output JSON path")
 	cmd.Flags().StringVar(&flags.Model, "llm-model", defaultModel, "LLM model used for synonym generation")
 	cmd.Flags().StringVar(&flags.APIKey, "api-key", "", "OpenRouter API key (falls back to OPENROUTER_API_KEY)")
-	cmd.Flags().IntVar(&flags.BatchSize, "batch-size", 8, "Names per LLM request")
+	cmd.Flags().IntVar(&flags.BatchSize, "batch-size", 0, "Names per LLM request (0 = send all, legacy option)")
+	cmd.Flags().IntVar(&maxBatchSize, "max-batch-size", 0, "Maximum names per LLM request (0 = send all at once, default)")
 	cmd.Flags().IntVar(&flags.SynonymsPerName, "synonyms", 4, "Desired synonyms per name")
 	cmd.Flags().StringVar(&flags.SynonymCache, "synonym-cache", ".contexting_synonyms_cache.json", "Path to persistent synonym cache JSON")
 	cmd.Flags().StringSliceVar(&flags.ExtraIgnores, "ignore", nil, "Additional ignore entries (name or relative path)")

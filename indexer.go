@@ -16,6 +16,7 @@ type BuildOptions struct {
 	BatchSize       int
 	SynonymsPerName int
 	SynonymCache    SynonymResponse
+	MaxBatchSize    int
 }
 
 type BuildResult struct {
@@ -36,7 +37,7 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 		opts.Model = defaultModel
 	}
 	if opts.BatchSize <= 0 {
-		opts.BatchSize = 8
+		opts.BatchSize = 0 // default: send all
 	}
 	if opts.SynonymsPerName <= 0 {
 		opts.SynonymsPerName = 4
@@ -62,9 +63,13 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 	combined := cloneSynonymMap(opts.SynonymCache)
 	missing := missingNames(names, combined)
 
+	batchSize := opts.MaxBatchSize
+	if batchSize <= 0 {
+		batchSize = opts.BatchSize
+	}
 	var synonymErr error
 	if opts.APIKey != "" && len(missing) > 0 {
-		generated, err := GenerateSynonymsForNamesWithContext(opts.Ctx, missing, opts.APIKey, opts.BatchSize, opts.Model, opts.SynonymsPerName)
+		generated, err := GenerateSynonymsForNamesWithContext(opts.Ctx, missing, opts.APIKey, batchSize, opts.Model, opts.SynonymsPerName)
 		if err != nil {
 			synonymErr = err
 		} else {

@@ -31,6 +31,7 @@ type IndexManagerOptions struct {
 	SynonymsPerName int
 	APIKey          string
 	UseLLM          bool
+	MaxBatchSize    int
 }
 
 type ApplyResult struct {
@@ -51,6 +52,7 @@ type IndexManager struct {
 	synonymsPerName int
 	apiKey          string
 	useLLM          bool
+	maxBatchSize    int
 
 	index  *ContextIndex
 	cache  SynonymResponse
@@ -64,7 +66,7 @@ func NewIndexManager(opts IndexManagerOptions) *IndexManager {
 		opts.Model = defaultModel
 	}
 	if opts.BatchSize <= 0 {
-		opts.BatchSize = 8
+		opts.BatchSize = 0 // default: send all
 	}
 	if opts.SynonymsPerName <= 0 {
 		opts.SynonymsPerName = 4
@@ -83,6 +85,7 @@ func NewIndexManager(opts IndexManagerOptions) *IndexManager {
 		synonymsPerName: opts.SynonymsPerName,
 		apiKey:          opts.APIKey,
 		useLLM:          opts.UseLLM,
+		maxBatchSize:    opts.MaxBatchSize,
 		cache:           cache,
 	}
 }
@@ -121,6 +124,7 @@ func (m *IndexManager) Bootstrap(ctx context.Context) (IndexStats, error) {
 		BatchSize:       m.batchSize,
 		SynonymsPerName: m.synonymsPerName,
 		SynonymCache:    m.cache,
+		MaxBatchSize:    m.maxBatchSize,
 	})
 	if buildErr != nil {
 		return IndexStats{}, buildErr
@@ -208,7 +212,7 @@ func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsno
 		}
 		sort.Strings(names)
 
-		synonyms, err := GenerateSynonymsForNamesWithContext(ctx, names, m.activeAPIKey(), m.batchSize, m.model, m.synonymsPerName)
+		synonyms, err := GenerateSynonymsForNamesWithContext(ctx, names, m.activeAPIKey(), m.maxBatchSize, m.model, m.synonymsPerName)
 		if err != nil {
 			result.SynonymError = err
 		} else {

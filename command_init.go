@@ -58,6 +58,7 @@ func newInitCommand() *cobra.Command {
 				BatchSize:       flags.BatchSize,
 				SynonymsPerName: flags.SynonymsPerName,
 				SynonymCache:    cache,
+				MaxBatchSize:    cfg.Watch.MaxBatchSize,
 			})
 			if err != nil {
 				return err

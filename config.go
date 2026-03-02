@@ -39,6 +39,7 @@ type WatchConfig struct {
 	PersistInterval   string `toml:"persist_interval"`
 	SearchLog         *bool  `toml:"search_log"`
 	SearchLogQueryMax int    `toml:"search_log_query_max"`
+	MaxBatchSize      int    `toml:"max_batch_size"`
 }
 
 type SearchConfig struct {
