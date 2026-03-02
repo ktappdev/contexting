@@ -3,7 +3,7 @@ package main
 const starterConfigTemplate = `[common]
 output = "context.json"
 synonym_cache = ".contexting_synonyms_cache.json"
-llm_model = "openrouter/free"
+llm_model = "openai/gpt-oss-safeguard-20b"
 batch_size = 0
 synonyms = 4
 ignore = [".git", ".venv", "site-packages", "__pycache__", "node_modules", "vendor", "dist"]

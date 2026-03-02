@@ -1,7 +1,7 @@
 {
   "root_path": "/var/folders/3j/6ws_m0051bl8dj7qx00jp_xr0000gn/T/tmp.lswOx6QYWr/proj",
   "generated_at": "2026-03-01T15:42:34.75101Z",
-  "model": "openrouter/free",
+  "model": "openai/gpt-oss-safeguard-20b",
   "tree": {
     "full_path": "/var/folders/3j/6ws_m0051bl8dj7qx00jp_xr0000gn/T/tmp.lswOx6QYWr/proj",
     "type": "directory",

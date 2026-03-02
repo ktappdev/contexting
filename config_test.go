@@ -14,7 +14,7 @@ func TestLoadContextingConfig(t *testing.T) {
 	content := `
 [common]
 output = "out/context.json"
-llm_model = "openrouter/free"
+llm_model = "openai/gpt-oss-safeguard-20b"
 batch_size = 12
 ignore = ["dist", "build"]
 verbose = true

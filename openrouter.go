@@ -14,7 +14,7 @@ import (
 
 const (
 	openRouterURL = "https://openrouter.ai/api/v1/chat/completions"
-	defaultModel  = "openrouter/free"
+	defaultModel  = "openai/gpt-oss-safeguard-20b"
 )
 
 type OpenRouterRequest struct {

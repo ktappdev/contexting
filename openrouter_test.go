@@ -60,7 +60,7 @@ func TestOpenRouterConstants(t *testing.T) {
 	if openRouterURL != "https://openrouter.ai/api/v1/chat/completions" {
 		t.Fatalf("unexpected openRouterURL: %s", openRouterURL)
 	}
-	if defaultModel != "openrouter/free" {
+	if defaultModel != "openai/gpt-oss-safeguard-20b" {
 		t.Fatalf("unexpected defaultModel: %s", defaultModel)
 	}
 }
