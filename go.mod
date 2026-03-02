@@ -1,4 +1,4 @@
-module contexting
+module github.com/ktappdev/contexting
 
 go 1.25.0
 

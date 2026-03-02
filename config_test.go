@@ -102,3 +102,14 @@ func TestWatchDebounceDuration(t *testing.T) {
 		t.Fatalf("unexpected duration: %v", d)
 	}
 }
+
+func TestWatchPersistIntervalDuration(t *testing.T) {
+	cfg := WatchConfig{PersistInterval: "45s"}
+	d, err := cfg.PersistIntervalDuration()
+	if err != nil {
+		t.Fatalf("persist interval parse failed: %v", err)
+	}
+	if d.Seconds() != 45 {
+		t.Fatalf("unexpected persist interval: %v", d)
+	}
+}

@@ -2,15 +2,19 @@ package main
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 )
 
 func newSearchCommand() *cobra.Command {
 	var indexPath string
+	var runtimeFile string
 	var opts SearchOptions
 	var jsonOut bool
 	var showTokens bool
+	var useMemory bool
+	var memoryOnly bool
 
 	cmd := &cobra.Command{
 		Use:   "search-hints [query]",
@@ -34,17 +38,40 @@ func newSearchCommand() *cobra.Command {
 			if cfg.Search.ShowTokens != nil {
 				applyBoolFlag(cmd, "show-tokens", &showTokens, *cfg.Search.ShowTokens)
 			}
+			if cfg.Search.UseMemory != nil {
+				applyBoolFlag(cmd, "memory", &useMemory, *cfg.Search.UseMemory)
+			}
+			applyStringFlag(cmd, "runtime-file", &runtimeFile, cfg.Search.RuntimeFile)
 			if !cmd.Flags().Changed("index") {
 				indexPath = resolveConfigPath(configPath, indexPath)
 			}
-
-			index, err := LoadContextIndex(indexPath)
-			if err != nil {
-				return err
+			if runtimeFile == "" {
+				runtimeFile = resolveProjectPath(filepath.Dir(indexPath), ".contexting_runtime.json")
+			} else if !cmd.Flags().Changed("runtime-file") {
+				runtimeFile = resolveConfigPath(configPath, runtimeFile)
 			}
 
 			query := args[0]
-			results := SearchHintsWithOptions(index, query, opts)
+			results := make([]SearchResult, 0)
+			usedMemory := false
+			if useMemory {
+				memoryResults, memErr := QueryMemorySearch(runtimeFile, query, opts)
+				if memErr == nil {
+					results = memoryResults
+					usedMemory = true
+				} else if memoryOnly {
+					return memErr
+				} else {
+					logWarnf("Memory search unavailable, falling back to snapshot index: %v", memErr)
+				}
+			}
+			if !usedMemory {
+				index, err := LoadContextIndex(indexPath)
+				if err != nil {
+					return err
+				}
+				results = SearchHintsWithOptions(index, query, opts)
+			}
 			if showTokens {
 				fmt.Printf("Tokens: %v\n", tokenize(query))
 			}
@@ -68,6 +95,9 @@ func newSearchCommand() *cobra.Command {
 	cmd.Flags().IntVar(&opts.MinScore, "min-score", 1, "Minimum score required to return a match")
 	cmd.Flags().StringVar(&opts.TypeFilter, "type", "all", "Filter result type: all|files|dirs")
 	cmd.Flags().BoolVar(&opts.IncludeDebug, "explain", false, "Include score breakdown in output")
+	cmd.Flags().BoolVar(&useMemory, "memory", true, "Query live in-memory watch index when available")
+	cmd.Flags().BoolVar(&memoryOnly, "memory-only", false, "Require live memory search and fail instead of falling back to snapshot")
+	cmd.Flags().StringVar(&runtimeFile, "runtime-file", "", "Path to runtime memory-search state file (defaults near index path)")
 	cmd.Flags().BoolVar(&jsonOut, "json", false, "Print search results as JSON")
 	cmd.Flags().BoolVar(&showTokens, "show-tokens", false, "Print normalized query tokens before results")
 

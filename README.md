@@ -1,141 +1,108 @@
 # Contexting
 
-Contexting builds a project index (`context.json`) and optional synonym layer so agents can map natural-language requests to the right files quickly.
+Contexting keeps a live map of your codebase so agents can reason about paths without hunting through the filesystem manually. It builds a tree of every folder and file, attaches synonyms, and exposes ranked hints plus health tooling.
 
-## Why this is useful
+## Key features
+- `init`: create a fresh `context.json` snapshot with optional OpenRouter synonyms
+- `watch`: keep an in-memory index updated while the process runs and only write snapshots when you stop (or on a configurable interval)
+- `search-hints`: query the index for ranked paths with explainable scores
+- `eval`: benchmark hit@k/MRR for agent queries
+- `doctor`: inspect config/index/cache health and get fixes
 
-- `init`: fast project snapshot with path + synonym hints
-- `watch`: keeps index continuously fresh while coding
-- `search-hints`: deterministic ranked path retrieval for agent prompts/tools
-- `eval`: quality metrics (`Hit@k`, `MRR`) so ranking improvements are measurable
-- `doctor`: one-shot health checks with fixes for config/index/cache/env setup
-
-## Requirements
-
-- Go 1.22+
-- OpenRouter API key (optional, only needed for LLM synonym generation)
-
-## Setup
-
+## Quick start
 ```bash
-go mod tidy
-export OPENROUTER_API_KEY="sk-or-v1-..."
+go install github.com/ktappdev/contexting@latest
+cd your-repo
 cp context.toml.example context.toml
-```
+export OPENROUTER_API_KEY="sk-or-v1-..."  # optional if you want live synonyms
+contexting init .                  # one-time bootstrap
+contexting watch .                 # keep the index in-memory + flush on shutdown
+``` 
 
-All commands accept `--config context.toml` (default: `context.toml`).
-Precedence is: CLI flags > `context.toml` > built-in defaults.
-Relative paths in `init/watch` outputs are resolved from the target project root.
-Relative `search/eval` paths from config are resolved from the config file directory.
-
-On first run, if the config file is missing, Contexting prompts to create a starter config.
-Useful global flags:
-
-- `--create-config` auto-create starter config when missing (good for scripts/CI)
-- `--no-config-prompt` disable the interactive prompt
-
-You can also create config explicitly:
-
-```bash
-go run . config init
-```
+### Notes
+- CLI flags override `context.toml`, which in turn falls back to hard-coded defaults.
+- Relative paths in `context.toml` resolve from the config file location.
+- `watch` respects `.gitignore`, and if that file is missing it creates a starter list that ignores `node_modules`, `.env*`, build/users artifacts, etc.
 
 ## Commands
-
-### Build index
-
-```bash
-go run . init . --output context.json
+### `contexting init`
+Create a full snapshot in `context.json` and a synonym cache.
 ```
-
+contexting init . --output context.json --synonym-cache .contexting_synonyms_cache.json
+```
 Useful flags:
+- `--no-config-prompt` and `--create-config` keep it non-interactive in automation
+- `--llm-model`, `--batch-size`, `--synonyms`, `--api-key`, `--ignore`
+- It always rebuilds the entire tree; use it when you need a clean snapshot.
 
-- `--llm-model openrouter/free`
-- `--batch-size 8`
-- `--synonyms 4`
-- `--synonym-cache .contexting_synonyms_cache.json`
-- `--api-key ...`
-- `--ignore dist --ignore build`
-
-If LLM calls fail, indexing still succeeds and adds lexical synonyms from identifiers (camelCase/snake_case/kebab-case splits).
-Contexting also reads ignore rules from the project `.gitignore`; if `.gitignore` is missing, it creates a starter one with common defaults.
-
-### Watch mode
-
-```bash
-go run . watch . --output context.json --debounce 750ms
+### `contexting watch`
+Keeps the same index in memory and writes the snapshot only when you stop (default) or periodically.
 ```
-
-Runs initial index, watches recursively, debounces event bursts, and rewrites both context index and synonym cache.
-By default, watch mode does not call the LLM (fast startup/responsive events). Enable with `--llm-on-watch` or `watch.llm = true` in config.
-
-### Search hints
-
-```bash
-go run . search-hints "check local storage" --index context.json -n 5 --explain
+contexting watch . --persist shutdown --debounce 750ms --verbose
 ```
+Highlights:
+- `--persist shutdown`: in-memory index is flushed to disk only on graceful shutdown (default)
+- `--persist interval --persist-interval 45s`: sprinkle in periodic saves
+- `--llm-on-watch`: enable live synonym enrichment (off by default for responsiveness)
+- `--create-config`/`--no-config-prompt`: control config creation
+- Events are applied via a single worker, and logs show the changed files per cycle
+- Starts a local memory-search endpoint and writes `.contexting_runtime.json` for discovery
 
-Useful flags:
-
-- `--type all|files|dirs`
-- `--min-score 1`
-- `--json`
-- `--show-tokens`
-- `--explain` (score breakdown per result)
-
-### Evaluate quality
-
-```bash
-go run . eval --index context.json --cases eval_cases.json -n 5
+### `contexting search-hints`
+Ask for the best matching paths without scanning the repo.
 ```
+contexting search-hints "update storage" --json
+```
+Flags:
+- `--limit`, `--min-score`, `--type files|dirs|all`
+- `--explain`, `--show-tokens`, `--json`
+- `--memory` (default true) queries the live in-memory watch index first
+- `--memory-only` fails if live memory is unavailable
+- `--runtime-file` points to runtime discovery file (default `.contexting_runtime.json` near index path)
+- Falls back to `context.json` snapshot when memory endpoint is not running (unless `--memory-only` is set)
 
-`eval_cases.json` format:
-
+### `contexting eval`
+Measure Hit@1/3/5 + MRR from manual query cases.
+```
+contexting eval --cases eval_cases.json --json
+```
+Input format:
 ```json
 [
-  {"query": "check local storage", "expect_any": ["config/local_store.go", "config/store.go"]},
   {"query": "auth middleware", "expect_any": ["internal/auth/middleware.go"]}
 ]
 ```
 
-Outputs `Hit@1`, `Hit@3`, `Hit@5`, and `MRR`, plus misses.
+### `contexting doctor`
+Health-check your config/root/index/cache/API key.
+```
+contexting doctor --json
+```
+It reports pass/warn/fail reasons plus suggestions.
 
-### Health checks
-
-```bash
-go run . doctor
+### `contexting config init`
+Create or overwrite `context.toml`:
+```
+contexting config init --output context.toml
 ```
 
-Useful flags:
+## Data flow
+1. `init` or load `context.json` → builds a tree with synonyms
+2. `watch` keeps that tree in RAM; events mutate only memory
+3. Snapshot is flushed on shutdown (persist=shutdown) or per interval (persist=interval)
+4. `search-hints` and `eval` load the latest JSON or call the CLI for agent flows
 
-- `--json` machine-readable report
-- `--root` project root override
-- `--index` index path override
-- `--synonym-cache` cache path override
-- `--write-check=false` skip temp write-permission check
+## File formats
+- `context.json`: root path, timestamp, tree with `full_path`, `type`, `synonyms`, and `children`
+- `.contexting_synonyms_cache.json`: basename → synonyms cache for reuse
+- `context.toml`: config-driven defaults (see `context.toml.example`)
 
-## JSON shape
-
-`context.json` contains:
-
-- `root_path`
-- `generated_at`
-- `model`
-- `tree` recursively with:
-  - `full_path`
-  - `type` (`file`/`directory`)
-  - `synonyms`
-  - `children`
-
-## Notes
-
-- Writes are atomic (`context.json` and cache), so readers should not see partial files.
-- Synonyms are filtered and capped to reduce noise.
-- Ranking is lexical/heuristic (deterministic), not embedding-based.
-
-## Test
-
+## Testing
 ```bash
 go test ./...
 ```
-# contexting
+
+## Troubleshooting
+- Run `contexting doctor --json` for diagnostics
+- If `context.json` is stale, restart watch or run `contexting init`
+- To disable live LLM work use `--llm-on-watch=false` or remove `watch.llm` from config

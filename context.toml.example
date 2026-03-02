@@ -14,12 +14,16 @@ root = "."
 root = "."
 debounce = "750ms"
 llm = false
+persist = "shutdown"
+persist_interval = "45s"
 
 [search]
 index = "context.json"
 limit = 5
 min_score = 1
 type = "all"
+memory = true
+runtime_file = ".contexting_runtime.json"
 explain = false
 json = false
 show_tokens = false

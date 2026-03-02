@@ -32,19 +32,23 @@ type InitConfig struct {
 }
 
 type WatchConfig struct {
-	RootPath string `toml:"root"`
-	Debounce string `toml:"debounce"`
-	UseLLM   *bool  `toml:"llm"`
+	RootPath        string `toml:"root"`
+	Debounce        string `toml:"debounce"`
+	UseLLM          *bool  `toml:"llm"`
+	Persist         string `toml:"persist"`
+	PersistInterval string `toml:"persist_interval"`
 }
 
 type SearchConfig struct {
-	IndexPath  string `toml:"index"`
-	Limit      int    `toml:"limit"`
-	MinScore   int    `toml:"min_score"`
-	TypeFilter string `toml:"type"`
-	Explain    *bool  `toml:"explain"`
-	JSON       *bool  `toml:"json"`
-	ShowTokens *bool  `toml:"show_tokens"`
+	IndexPath   string `toml:"index"`
+	Limit       int    `toml:"limit"`
+	MinScore    int    `toml:"min_score"`
+	TypeFilter  string `toml:"type"`
+	UseMemory   *bool  `toml:"memory"`
+	RuntimeFile string `toml:"runtime_file"`
+	Explain     *bool  `toml:"explain"`
+	JSON        *bool  `toml:"json"`
+	ShowTokens  *bool  `toml:"show_tokens"`
 }
 
 type EvalConfig struct {
@@ -83,6 +87,17 @@ func (w WatchConfig) DebounceDuration() (time.Duration, error) {
 	d, err := time.ParseDuration(w.Debounce)
 	if err != nil {
 		return 0, fmt.Errorf("invalid watch.debounce %q: %w", w.Debounce, err)
+	}
+	return d, nil
+}
+
+func (w WatchConfig) PersistIntervalDuration() (time.Duration, error) {
+	if w.PersistInterval == "" {
+		return 0, nil
+	}
+	d, err := time.ParseDuration(w.PersistInterval)
+	if err != nil {
+		return 0, fmt.Errorf("invalid watch.persist_interval %q: %w", w.PersistInterval, err)
 	}
 	return d, nil
 }

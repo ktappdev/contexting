@@ -19,3 +19,19 @@ func TestShouldSkipInternalOutput(t *testing.T) {
 		t.Fatalf("did not expect normal file path to be skipped")
 	}
 }
+
+func TestParsePersistMode(t *testing.T) {
+	mode, err := parsePersistMode("shutdown")
+	if err != nil || mode != PersistShutdown {
+		t.Fatalf("expected shutdown mode, got mode=%q err=%v", mode, err)
+	}
+
+	mode, err = parsePersistMode("interval")
+	if err != nil || mode != PersistInterval {
+		t.Fatalf("expected interval mode, got mode=%q err=%v", mode, err)
+	}
+
+	if _, err := parsePersistMode("bad-mode"); err == nil {
+		t.Fatalf("expected error for invalid mode")
+	}
+}

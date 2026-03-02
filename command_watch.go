@@ -1,11 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"os"
 	"path/filepath"
-	"sort"
-	"strings"
+	"sync"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -16,10 +15,12 @@ func newWatchCommand() *cobra.Command {
 	flags := CommonFlags{}
 	var debounce time.Duration
 	var llmOnWatch bool
+	var persist string
+	var persistInterval time.Duration
 
 	cmd := &cobra.Command{
 		Use:   "watch [path]",
-		Short: "Watch a directory and keep context JSON updated",
+		Short: "Watch a directory, keep index in memory, and flush snapshot on shutdown",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := LoadContextingConfig(configPath)
@@ -35,7 +36,24 @@ func newWatchCommand() *cobra.Command {
 			} else if d > 0 && !cmd.Flags().Changed("debounce") {
 				debounce = d
 			}
+			if cfg.Watch.Persist != "" && !cmd.Flags().Changed("persist") {
+				persist = cfg.Watch.Persist
+			}
+			if d, err := cfg.Watch.PersistIntervalDuration(); err != nil {
+				return err
+			} else if d > 0 && !cmd.Flags().Changed("persist-interval") {
+				persistInterval = d
+			}
+
 			flags.normalize()
+			persistMode, err := parsePersistMode(persist)
+			if err != nil {
+				return err
+			}
+			if persistInterval <= 0 {
+				persistInterval = 45 * time.Second
+			}
+
 			rootPath := "."
 			if len(args) == 1 {
 				rootPath = args[0]
@@ -49,23 +67,46 @@ func newWatchCommand() *cobra.Command {
 			}
 			outputPath := resolveProjectPath(absRoot, flags.OutputPath)
 			cachePath := resolveProjectPath(absRoot, flags.SynonymCache)
+			runtimeFile := resolveProjectPath(absRoot, ".contexting_runtime.json")
 
 			ignored, err := BuildIgnoreMapForRoot(absRoot, flags.ExtraIgnores)
 			if err != nil {
 				return err
 			}
+
 			apiKey := resolveAPIKey(flags.APIKey)
 			if !llmOnWatch {
 				apiKey = ""
 				logInfof("Watch LLM mode is off (default). Using cache + lexical synonyms only.")
 			}
-			cache, err := LoadSynonymCache(cachePath)
-			if err != nil {
-				return err
-			}
 			if llmOnWatch && apiKey == "" {
 				logWarnf("OPENROUTER_API_KEY not set and --api-key not provided; continuing without synonyms")
 			}
+
+			ctx, stop := signalAwareContext()
+			defer stop()
+
+			manager := NewIndexManager(IndexManagerOptions{
+				RootPath:        absRoot,
+				OutputPath:      outputPath,
+				CachePath:       cachePath,
+				IgnoredPaths:    ignored,
+				Model:           flags.Model,
+				BatchSize:       flags.BatchSize,
+				SynonymsPerName: flags.SynonymsPerName,
+				APIKey:          apiKey,
+				UseLLM:          llmOnWatch,
+			})
+
+			bootstrapStats, err := manager.Bootstrap(ctx)
+			if err != nil {
+				if isCanceledError(err) {
+					logInfof("Startup indexing canceled.")
+					return nil
+				}
+				return err
+			}
+			logInfof("In-memory index ready: %d nodes (%d files, %d directories).", bootstrapStats.TotalNodes, bootstrapStats.TotalFiles, bootstrapStats.TotalDirs)
 
 			watcher, err := fsnotify.NewWatcher()
 			if err != nil {
@@ -78,73 +119,86 @@ func newWatchCommand() *cobra.Command {
 				return err
 			}
 
-			ctx, stop := signalAwareContext()
-			defer stop()
+			logInfof("Watching %s for changes...", absRoot)
+			logInfof("Watch settings: debounce=%s verbose=%t persist=%s output=%s cache=%s", debounce.String(), flags.Verbose, persistMode, outputPath, cachePath)
 
-			runIndex := func(reason string) {
-				if ctx.Err() != nil {
-					return
-				}
-				if flags.Verbose {
-					logInfof("Reindexing (%s)...", reason)
-				}
-				result, indexErr := BuildIndex(BuildOptions{
-					Ctx:             ctx,
-					RootPath:        absRoot,
-					IgnoredPaths:    ignored,
-					APIKey:          apiKey,
-					Model:           flags.Model,
-					BatchSize:       flags.BatchSize,
-					SynonymsPerName: flags.SynonymsPerName,
-					SynonymCache:    cache,
-				})
-				if indexErr != nil {
-					if ctx.Err() != nil {
-						logInfof("Reindex canceled.")
-						return
-					}
-					logErrorf("Indexing failed: %v", indexErr)
-					return
-				}
-				if ctx.Err() != nil {
-					logInfof("Reindex canceled.")
-					return
-				}
-				if isCanceledError(result.SynonymError) {
-					logInfof("Reindex canceled.")
-					return
-				}
-				cache = result.SynonymCache
-				emitSynonymWarning(result.SynonymError)
-				if err := SaveSynonymCache(cachePath, cache); err != nil {
-					logErrorf("Failed to write synonym cache %s: %v", cachePath, err)
-					return
-				}
-				if err := SaveContextIndex(outputPath, result.Index); err != nil {
-					logErrorf("Failed to write %s: %v", outputPath, err)
-					return
-				}
-				logInfof("Updated %s: %d nodes (%d files, %d directories).", outputPath, result.Stats.TotalNodes, result.Stats.TotalFiles, result.Stats.TotalDirs)
+			memoryServer, err := startMemorySearchServer(ctx, manager, runtimeFile)
+			if err != nil {
+				return err
+			}
+			defer func() {
+				_ = memoryServer.Close()
+			}()
+			logInfof("Memory search endpoint ready at %s", memoryServer.Address())
+
+			var persistTicker *time.Ticker
+			if persistMode == PersistInterval {
+				persistTicker = time.NewTicker(persistInterval)
+				defer persistTicker.Stop()
+				logInfof("Periodic flush enabled: interval=%s", persistInterval.String())
 			}
 
-			reindexCh := make(chan string, 1)
+			pendingChanges := make(map[string]fsnotify.Op)
+			var pendingMu sync.Mutex
+			applyTrigger := make(chan struct{}, 1)
+
+			drainPending := func() map[string]fsnotify.Op {
+				pendingMu.Lock()
+				defer pendingMu.Unlock()
+				if len(pendingChanges) == 0 {
+					return nil
+				}
+				copyMap := make(map[string]fsnotify.Op, len(pendingChanges))
+				for path, op := range pendingChanges {
+					copyMap[path] = op
+				}
+				pendingChanges = make(map[string]fsnotify.Op)
+				return copyMap
+			}
+
+			addPending := func(path string, op fsnotify.Op) {
+				pendingMu.Lock()
+				pendingChanges[path] = pendingChanges[path] | op
+				pendingMu.Unlock()
+			}
+
+			enqueueApply := func() {
+				select {
+				case applyTrigger <- struct{}{}:
+				default:
+				}
+			}
+
 			go func() {
 				for {
 					select {
 					case <-ctx.Done():
 						return
-					case reason := <-reindexCh:
-						runIndex(reason)
+					case <-applyTrigger:
+						changes := drainPending()
+						if len(changes) == 0 {
+							continue
+						}
+						logChangeSummary(changes)
+						result, applyErr := manager.ApplyChanges(ctx, changes)
+						if applyErr != nil {
+							if !isCanceledError(applyErr) {
+								logErrorf("Apply changes failed: %v", applyErr)
+							}
+							continue
+						}
+						emitSynonymWarning(result.SynonymError)
+						if result.Changed {
+							logInfof("In-memory index updated: %d nodes (%d files, %d directories).", result.Stats.TotalNodes, result.Stats.TotalFiles, result.Stats.TotalDirs)
+						}
 					}
 				}
 			}()
-			enqueueReindex(reindexCh, "initial")
 
-			logInfof("Watching %s for changes...", absRoot)
-			logInfof("Watch settings: debounce=%s verbose=%t output=%s cache=%s", debounce.String(), flags.Verbose, outputPath, cachePath)
+			// Run one startup apply trigger to process any pending setup events quickly.
+			enqueueApply()
 
 			dirty := false
-			pendingChanges := make(map[string]fsnotify.Op)
 			timer := time.NewTimer(debounce)
 			if !timer.Stop() {
 				<-timer.C
@@ -153,6 +207,30 @@ func newWatchCommand() *cobra.Command {
 			for {
 				select {
 				case <-ctx.Done():
+					remaining := drainPending()
+					if len(remaining) > 0 {
+						logChangeSummary(remaining)
+						result, applyErr := manager.ApplyChanges(context.Background(), remaining)
+						if applyErr != nil {
+							logErrorf("Final apply failed: %v", applyErr)
+						} else {
+							emitSynonymWarning(result.SynonymError)
+							if result.Changed {
+								logInfof("In-memory index updated: %d nodes (%d files, %d directories).", result.Stats.TotalNodes, result.Stats.TotalFiles, result.Stats.TotalDirs)
+							}
+						}
+					}
+					flushed, flushErr := manager.FlushIfDirty()
+					if flushErr != nil {
+						logErrorf("Failed to flush snapshot on shutdown: %v", flushErr)
+						logInfof("Stopping watcher.")
+						return flushErr
+					}
+					if flushed {
+						logInfof("Flushed snapshot to %s and %s", outputPath, cachePath)
+					} else {
+						logInfof("No snapshot flush needed.")
+					}
 					logInfof("Stopping watcher.")
 					return nil
 				case err := <-watcher.Errors:
@@ -161,7 +239,7 @@ func newWatchCommand() *cobra.Command {
 					}
 				case event, ok := <-watcher.Events:
 					if !ok {
-						return nil
+						continue
 					}
 					if shouldSkipEvent(absRoot, event, ignored, outputPath, cachePath) {
 						continue
@@ -170,7 +248,7 @@ func newWatchCommand() *cobra.Command {
 					if rel, relErr := filepath.Rel(absRoot, event.Name); relErr == nil {
 						relName = rel
 					}
-					pendingChanges[relName] = pendingChanges[relName] | event.Op
+					addPending(relName, event.Op)
 					if flags.Verbose {
 						logInfof("Event: %s %s", event.Op, event.Name)
 					}
@@ -189,17 +267,21 @@ func newWatchCommand() *cobra.Command {
 						}
 					}
 					timer.Reset(debounce)
+				case <-tickerChan(persistTicker):
+					flushed, flushErr := manager.FlushIfDirty()
+					if flushErr != nil {
+						logErrorf("Periodic flush failed: %v", flushErr)
+						continue
+					}
+					if flushed {
+						logInfof("Periodic flush wrote snapshot to %s", outputPath)
+					}
 				case <-timer.C:
 					if !dirty {
 						continue
 					}
 					dirty = false
-					logChangeSummary(pendingChanges)
-					pendingChanges = make(map[string]fsnotify.Op)
-					enqueueReindex(reindexCh, "file change")
-					if err := syncWatchDirectories(watcher, absRoot, ignored, watchedDirs); err != nil {
-						logErrorf("Sync watch dirs failed: %v", err)
-					}
+					enqueueApply()
 				}
 			}
 		},
@@ -213,150 +295,10 @@ func newWatchCommand() *cobra.Command {
 	cmd.Flags().StringVar(&flags.SynonymCache, "synonym-cache", ".contexting_synonyms_cache.json", "Path to persistent synonym cache JSON")
 	cmd.Flags().StringSliceVar(&flags.ExtraIgnores, "ignore", nil, "Additional ignore entries (name or relative path)")
 	cmd.Flags().BoolVarP(&flags.Verbose, "verbose", "v", true, "Enable verbose logging")
-	cmd.Flags().DurationVar(&debounce, "debounce", 750*time.Millisecond, "Debounce interval for reindexing")
-	cmd.Flags().BoolVar(&llmOnWatch, "llm-on-watch", false, "Enable live LLM synonym generation during watch (off by default for responsiveness)")
+	cmd.Flags().DurationVar(&debounce, "debounce", 750*time.Millisecond, "Debounce interval for coalescing fs events")
+	cmd.Flags().BoolVar(&llmOnWatch, "llm-on-watch", false, "Enable live LLM synonym generation during watch (off by default)")
+	cmd.Flags().StringVar(&persist, "persist", string(PersistShutdown), "Persistence mode: shutdown|interval")
+	cmd.Flags().DurationVar(&persistInterval, "persist-interval", 45*time.Second, "Snapshot flush interval when --persist=interval")
 
 	return cmd
-}
-
-func syncWatchDirectories(watcher *fsnotify.Watcher, root string, ignored map[string]bool, watched map[string]struct{}) error {
-	seen := make(map[string]struct{})
-
-	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if !d.IsDir() {
-			return nil
-		}
-
-		rel, err := filepath.Rel(root, path)
-		if err != nil {
-			return err
-		}
-		if rel != "." && shouldIgnorePath(rel, d.Name(), ignored) {
-			return filepath.SkipDir
-		}
-
-		seen[path] = struct{}{}
-		if _, exists := watched[path]; !exists {
-			if err := watcher.Add(path); err != nil {
-				return fmt.Errorf("add watch %s: %w", path, err)
-			}
-			watched[path] = struct{}{}
-		}
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-
-	for dir := range watched {
-		if _, exists := seen[dir]; exists {
-			continue
-		}
-		_ = watcher.Remove(dir)
-		delete(watched, dir)
-	}
-
-	return nil
-}
-
-func shouldSkipEvent(root string, event fsnotify.Event, ignored map[string]bool, outputPath string, cachePath string) bool {
-	if shouldSkipInternalOutput(event.Name, outputPath, cachePath) {
-		return true
-	}
-	rel, err := filepath.Rel(root, event.Name)
-	if err != nil {
-		return false
-	}
-	if rel == "." {
-		return false
-	}
-	return shouldIgnorePath(rel, filepath.Base(event.Name), ignored)
-}
-
-func shouldSkipInternalOutput(eventPath string, outputPath string, cachePath string) bool {
-	if eventPath == outputPath || eventPath == cachePath {
-		return true
-	}
-	base := filepath.Base(eventPath)
-	if matched, _ := filepath.Match(".tmp-*.json", base); matched {
-		return true
-	}
-	return false
-}
-
-func enqueueReindex(ch chan string, reason string) {
-	select {
-	case ch <- reason:
-	default:
-		// A reindex is already queued/running; coalesce bursts into existing work.
-	}
-}
-
-func logChangeSummary(changes map[string]fsnotify.Op) {
-	if len(changes) == 0 {
-		return
-	}
-
-	created := 0
-	modified := 0
-	removed := 0
-	renamed := 0
-	details := make([]string, 0, len(changes))
-
-	paths := make([]string, 0, len(changes))
-	for path := range changes {
-		paths = append(paths, path)
-	}
-	sort.Strings(paths)
-
-	for _, path := range paths {
-		op := changes[path]
-		if op&fsnotify.Create != 0 {
-			created++
-		}
-		if op&fsnotify.Write != 0 || op&fsnotify.Chmod != 0 {
-			modified++
-		}
-		if op&fsnotify.Remove != 0 {
-			removed++
-		}
-		if op&fsnotify.Rename != 0 {
-			renamed++
-		}
-		details = append(details, fmt.Sprintf("%s (%s)", path, summarizeOp(op)))
-	}
-
-	logInfof("Detected changes: created=%d modified=%d removed=%d renamed=%d", created, modified, removed, renamed)
-	const maxDetails = 10
-	if len(details) <= maxDetails {
-		logInfof("Changed paths: %s", strings.Join(details, ", "))
-		return
-	}
-	logInfof("Changed paths: %s, ... and %d more", strings.Join(details[:maxDetails], ", "), len(details)-maxDetails)
-}
-
-func summarizeOp(op fsnotify.Op) string {
-	parts := make([]string, 0, 4)
-	if op&fsnotify.Create != 0 {
-		parts = append(parts, "create")
-	}
-	if op&fsnotify.Write != 0 {
-		parts = append(parts, "write")
-	}
-	if op&fsnotify.Remove != 0 {
-		parts = append(parts, "remove")
-	}
-	if op&fsnotify.Rename != 0 {
-		parts = append(parts, "rename")
-	}
-	if op&fsnotify.Chmod != 0 {
-		parts = append(parts, "chmod")
-	}
-	if len(parts) == 0 {
-		return "unknown"
-	}
-	return strings.Join(parts, "|")
 }
