@@ -9,6 +9,9 @@ import (
 )
 
 var starterGitignoreEntries = []string{
+	".venv/",
+	"site-packages/",
+	"__pycache__/",
 	"node_modules/",
 	"vendor/",
 	".env",

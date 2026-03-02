@@ -11,9 +11,13 @@ func TestBuildTreeNestedAndIgnore(t *testing.T) {
 
 	mustMkdir(t, filepath.Join(tmpDir, "src", "handlers"))
 	mustMkdir(t, filepath.Join(tmpDir, "node_modules", "leftpad"))
+	mustMkdir(t, filepath.Join(tmpDir, ".venv", "bin"))
+	mustMkdir(t, filepath.Join(tmpDir, ".venv", "lib", "python3.11", "site-packages", "fastapi"))
 	mustWriteFile(t, filepath.Join(tmpDir, "src", "main.go"), "package main")
 	mustWriteFile(t, filepath.Join(tmpDir, "src", "handlers", "router.go"), "package handlers")
 	mustWriteFile(t, filepath.Join(tmpDir, "node_modules", "leftpad", "index.js"), "module.exports={}")
+	mustWriteFile(t, filepath.Join(tmpDir, ".venv", "bin", "activate"), "#!/bin/sh")
+	mustWriteFile(t, filepath.Join(tmpDir, ".venv", "lib", "python3.11", "site-packages", "fastapi", "__init__.py"), "")
 
 	tree, err := BuildTree(tmpDir, BuildIgnoreMap(nil))
 	if err != nil {
@@ -25,6 +29,9 @@ func TestBuildTreeNestedAndIgnore(t *testing.T) {
 	}
 	if _, ok := tree.Children["node_modules"]; ok {
 		t.Fatalf("expected node_modules to be ignored")
+	}
+	if _, ok := tree.Children[".venv"]; ok {
+		t.Fatalf("expected .venv to be ignored")
 	}
 
 	src := tree.Children["src"]

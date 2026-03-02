@@ -11,6 +11,9 @@ func newSearchCommand() *cobra.Command {
 	var indexPath string
 	var runtimeFile string
 	var opts SearchOptions
+	var dirSummary bool
+	var dirLimit int
+	var drillLimit int
 	var jsonOut bool
 	var showTokens bool
 	var useMemory bool
@@ -29,6 +32,11 @@ func newSearchCommand() *cobra.Command {
 			applyIntFlag(cmd, "limit", &opts.Limit, cfg.Search.Limit)
 			applyIntFlag(cmd, "min-score", &opts.MinScore, cfg.Search.MinScore)
 			applyStringFlag(cmd, "type", &opts.TypeFilter, cfg.Search.TypeFilter)
+			if cfg.Search.DirSummary != nil {
+				applyBoolFlag(cmd, "dir-summary", &dirSummary, *cfg.Search.DirSummary)
+			}
+			applyIntFlag(cmd, "dir-limit", &dirLimit, cfg.Search.DirLimit)
+			applyIntFlag(cmd, "drill-limit", &drillLimit, cfg.Search.DrillLimit)
 			if cfg.Search.Explain != nil {
 				applyBoolFlag(cmd, "explain", &opts.IncludeDebug, *cfg.Search.Explain)
 			}
@@ -76,6 +84,20 @@ func newSearchCommand() *cobra.Command {
 				fmt.Printf("Tokens: %v\n", tokenize(query))
 			}
 
+			if dirSummary {
+				summaries := SummarizeDirectories(results, dirLimit, drillLimit)
+				if jsonOut {
+					jsonStr, err := directorySummariesToJSON(summaries)
+					if err != nil {
+						return err
+					}
+					fmt.Println(jsonStr)
+					return nil
+				}
+				printDirectorySummaries(summaries)
+				return nil
+			}
+
 			if jsonOut {
 				jsonStr, err := resultsToJSON(results)
 				if err != nil {
@@ -94,6 +116,9 @@ func newSearchCommand() *cobra.Command {
 	cmd.Flags().IntVarP(&opts.Limit, "limit", "n", 5, "Maximum number of matches")
 	cmd.Flags().IntVar(&opts.MinScore, "min-score", 1, "Minimum score required to return a match")
 	cmd.Flags().StringVar(&opts.TypeFilter, "type", "all", "Filter result type: all|files|dirs")
+	cmd.Flags().BoolVar(&dirSummary, "dir-summary", false, "Summarize top matching directories with rationale and drill-down hits")
+	cmd.Flags().IntVar(&dirLimit, "dir-limit", 5, "Maximum number of directories returned in --dir-summary mode")
+	cmd.Flags().IntVar(&drillLimit, "drill-limit", 3, "Maximum top hits shown per directory in --dir-summary mode")
 	cmd.Flags().BoolVar(&opts.IncludeDebug, "explain", false, "Include score breakdown in output")
 	cmd.Flags().BoolVar(&useMemory, "memory", true, "Query live in-memory watch index when available")
 	cmd.Flags().BoolVar(&memoryOnly, "memory-only", false, "Require live memory search and fail instead of falling back to snapshot")

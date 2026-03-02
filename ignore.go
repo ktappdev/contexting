@@ -7,6 +7,9 @@ import (
 
 var defaultIgnores = []string{
 	".git",
+	".venv",
+	"site-packages",
+	"__pycache__",
 	"node_modules",
 	"vendor",
 	".DS_Store",

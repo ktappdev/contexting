@@ -93,3 +93,15 @@ func TestSearchHintsTypeFilter(t *testing.T) {
 		}
 	}
 }
+
+func TestTokenizeFiltersLowSignalWords(t *testing.T) {
+	tokens := tokenize("how to do auth in the app")
+	if len(tokens) == 0 {
+		t.Fatalf("expected non-empty tokens")
+	}
+	for _, token := range tokens {
+		if token == "to" || token == "do" || token == "in" || token == "the" {
+			t.Fatalf("expected low-signal token to be filtered, got %v", tokens)
+		}
+	}
+}

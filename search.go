@@ -101,6 +101,9 @@ func SearchHintsWithOptions(index *ContextIndex, query string, opts SearchOption
 					breakdown = append(breakdown, "syn exact +8: "+syn)
 					continue
 				}
+				if len(token) < 3 || len(synLower) < 3 {
+					continue
+				}
 				if strings.Contains(synLower, token) || strings.Contains(token, synLower) {
 					score += 5
 					matches = append(matches, "syn:"+syn)
@@ -195,14 +198,30 @@ func tokenize(input string) []string {
 	}
 
 	base := dedupeStrings(parts)
-	expanded := make([]string, 0, len(base)*2)
+	filteredBase := make([]string, 0, len(base))
 	for _, token := range base {
+		if isLowSignalToken(token) {
+			continue
+		}
+		filteredBase = append(filteredBase, token)
+	}
+	if len(filteredBase) == 0 {
+		return nil
+	}
+	expanded := make([]string, 0, len(filteredBase)*2)
+	for _, token := range filteredBase {
 		expanded = append(expanded, token)
 		if strings.HasSuffix(token, "s") && len(token) > 3 {
-			expanded = append(expanded, strings.TrimSuffix(token, "s"))
+			stem := strings.TrimSuffix(token, "s")
+			if !isLowSignalToken(stem) {
+				expanded = append(expanded, stem)
+			}
 		}
 		if strings.HasSuffix(token, "ing") && len(token) > 5 {
-			expanded = append(expanded, strings.TrimSuffix(token, "ing"))
+			stem := strings.TrimSuffix(token, "ing")
+			if !isLowSignalToken(stem) {
+				expanded = append(expanded, stem)
+			}
 		}
 	}
 	return dedupeStrings(expanded)

@@ -29,6 +29,12 @@ var genericSynonymStopwords = map[string]struct{}{
 	"information": {},
 }
 
+var lowSignalTokens = map[string]struct{}{
+	"a": {}, "an": {}, "and": {}, "are": {}, "as": {}, "at": {}, "be": {}, "by": {},
+	"do": {}, "for": {}, "from": {}, "in": {}, "is": {}, "it": {}, "no": {}, "of": {},
+	"on": {}, "or": {}, "the": {}, "to": {}, "with": {}, "without": {},
+}
+
 func sanitizeSynonyms(values []string, max int) []string {
 	if max <= 0 {
 		max = 4
@@ -36,11 +42,25 @@ func sanitizeSynonyms(values []string, max int) []string {
 	seen := make(map[string]struct{}, len(values))
 	out := make([]string, 0, max)
 	for _, value := range values {
-		normalized := strings.TrimSpace(strings.ToLower(value))
-		if normalized == "" || len(normalized) <= 1 {
+		normalized := strings.Join(strings.Fields(strings.ToLower(value)), " ")
+		if normalized == "" {
 			continue
 		}
 		if _, bad := genericSynonymStopwords[normalized]; bad {
+			continue
+		}
+		words := strings.Fields(normalized)
+		if len(words) == 1 && isLowSignalToken(words[0]) {
+			continue
+		}
+		allLowSignal := true
+		for _, word := range words {
+			if !isLowSignalToken(word) {
+				allLowSignal = false
+				break
+			}
+		}
+		if allLowSignal {
 			continue
 		}
 		if _, ok := seen[normalized]; ok {
@@ -85,4 +105,16 @@ func splitIdentifierTokens(input string) []string {
 		return nil
 	}
 	return dedupeStrings(parts)
+}
+
+func isLowSignalToken(token string) bool {
+	token = strings.TrimSpace(strings.ToLower(token))
+	if token == "" {
+		return true
+	}
+	if len(token) <= 1 {
+		return true
+	}
+	_, bad := lowSignalTokens[token]
+	return bad
 }

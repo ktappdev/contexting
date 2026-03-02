@@ -32,11 +32,13 @@ type InitConfig struct {
 }
 
 type WatchConfig struct {
-	RootPath        string `toml:"root"`
-	Debounce        string `toml:"debounce"`
-	UseLLM          *bool  `toml:"llm"`
-	Persist         string `toml:"persist"`
-	PersistInterval string `toml:"persist_interval"`
+	RootPath          string `toml:"root"`
+	Debounce          string `toml:"debounce"`
+	UseLLM            *bool  `toml:"llm"`
+	Persist           string `toml:"persist"`
+	PersistInterval   string `toml:"persist_interval"`
+	SearchLog         *bool  `toml:"search_log"`
+	SearchLogQueryMax int    `toml:"search_log_query_max"`
 }
 
 type SearchConfig struct {
@@ -44,6 +46,9 @@ type SearchConfig struct {
 	Limit       int    `toml:"limit"`
 	MinScore    int    `toml:"min_score"`
 	TypeFilter  string `toml:"type"`
+	DirSummary  *bool  `toml:"dir_summary"`
+	DirLimit    int    `toml:"dir_limit"`
+	DrillLimit  int    `toml:"drill_limit"`
 	UseMemory   *bool  `toml:"memory"`
 	RuntimeFile string `toml:"runtime_file"`
 	Explain     *bool  `toml:"explain"`

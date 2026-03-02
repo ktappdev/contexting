@@ -21,10 +21,15 @@ verbose = true
 
 [watch]
 debounce = "2s"
+search_log = false
+search_log_query_max = 77
 
 [search]
 index = "ctx.json"
 limit = 7
+dir_summary = true
+dir_limit = 6
+drill_limit = 2
 show_tokens = true
 `
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
@@ -45,8 +50,23 @@ show_tokens = true
 	if cfg.Watch.Debounce != "2s" {
 		t.Fatalf("unexpected debounce: %s", cfg.Watch.Debounce)
 	}
+	if cfg.Watch.SearchLog == nil || *cfg.Watch.SearchLog {
+		t.Fatalf("expected watch.search_log=false")
+	}
+	if cfg.Watch.SearchLogQueryMax != 77 {
+		t.Fatalf("expected watch.search_log_query_max=77, got %d", cfg.Watch.SearchLogQueryMax)
+	}
 	if cfg.Search.Limit != 7 {
 		t.Fatalf("unexpected search limit: %d", cfg.Search.Limit)
+	}
+	if cfg.Search.DirSummary == nil || !*cfg.Search.DirSummary {
+		t.Fatalf("expected dir_summary=true")
+	}
+	if cfg.Search.DirLimit != 6 {
+		t.Fatalf("expected dir_limit=6, got %d", cfg.Search.DirLimit)
+	}
+	if cfg.Search.DrillLimit != 2 {
+		t.Fatalf("expected drill_limit=2, got %d", cfg.Search.DrillLimit)
 	}
 	if cfg.Search.ShowTokens == nil || !*cfg.Search.ShowTokens {
 		t.Fatalf("expected show_tokens=true")

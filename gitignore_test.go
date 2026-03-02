@@ -15,6 +15,22 @@ func TestEnsureAndLoadGitignoreCreatesStarter(t *testing.T) {
 	if len(patterns) == 0 {
 		t.Fatalf("expected starter patterns")
 	}
+	foundVenv := false
+	foundSitePackages := false
+	for _, pattern := range patterns {
+		if pattern == ".venv" {
+			foundVenv = true
+		}
+		if pattern == "site-packages" {
+			foundSitePackages = true
+		}
+	}
+	if !foundVenv {
+		t.Fatalf("expected starter patterns to include .venv, got %v", patterns)
+	}
+	if !foundSitePackages {
+		t.Fatalf("expected starter patterns to include site-packages, got %v", patterns)
+	}
 	if _, err := os.Stat(filepath.Join(tmpDir, ".gitignore")); err != nil {
 		t.Fatalf("expected .gitignore created: %v", err)
 	}

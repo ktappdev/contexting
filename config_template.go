@@ -6,7 +6,7 @@ synonym_cache = ".contexting_synonyms_cache.json"
 llm_model = "openrouter/free"
 batch_size = 8
 synonyms = 4
-ignore = [".git", "node_modules", "vendor", "dist"]
+ignore = [".git", ".venv", "site-packages", "__pycache__", "node_modules", "vendor", "dist"]
 verbose = true
 
 [init]
@@ -18,12 +18,17 @@ debounce = "750ms"
 llm = false
 persist = "shutdown"
 persist_interval = "45s"
+search_log = true
+search_log_query_max = 120
 
 [search]
 index = "context.json"
 limit = 5
 min_score = 1
 type = "all"
+dir_summary = false
+dir_limit = 5
+drill_limit = 3
 memory = true
 runtime_file = ".contexting_runtime.json"
 explain = false

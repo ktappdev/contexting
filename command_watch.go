@@ -17,6 +17,8 @@ func newWatchCommand() *cobra.Command {
 	var llmOnWatch bool
 	var persist string
 	var persistInterval time.Duration
+	var searchLog bool
+	var searchLogQueryMax int
 
 	cmd := &cobra.Command{
 		Use:   "watch [path]",
@@ -44,6 +46,10 @@ func newWatchCommand() *cobra.Command {
 			} else if d > 0 && !cmd.Flags().Changed("persist-interval") {
 				persistInterval = d
 			}
+			if cfg.Watch.SearchLog != nil {
+				applyBoolFlag(cmd, "search-log", &searchLog, *cfg.Watch.SearchLog)
+			}
+			applyIntFlag(cmd, "search-log-query-max", &searchLogQueryMax, cfg.Watch.SearchLogQueryMax)
 
 			flags.normalize()
 			persistMode, err := parsePersistMode(persist)
@@ -122,7 +128,13 @@ func newWatchCommand() *cobra.Command {
 			logInfof("Watching %s for changes...", absRoot)
 			logInfof("Watch settings: debounce=%s verbose=%t persist=%s output=%s cache=%s", debounce.String(), flags.Verbose, persistMode, outputPath, cachePath)
 
-			memoryServer, err := startMemorySearchServer(ctx, manager, runtimeFile)
+			if searchLogQueryMax <= 0 {
+				searchLogQueryMax = defaultSearchLogQueryMax
+			}
+			memoryServer, err := startMemorySearchServer(ctx, manager, runtimeFile, MemorySearchLogOptions{
+				Enabled:  searchLog,
+				QueryMax: searchLogQueryMax,
+			})
 			if err != nil {
 				return err
 			}
@@ -299,6 +311,8 @@ func newWatchCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&llmOnWatch, "llm-on-watch", false, "Enable live LLM synonym generation during watch (off by default)")
 	cmd.Flags().StringVar(&persist, "persist", string(PersistShutdown), "Persistence mode: shutdown|interval")
 	cmd.Flags().DurationVar(&persistInterval, "persist-interval", 45*time.Second, "Snapshot flush interval when --persist=interval")
+	cmd.Flags().BoolVar(&searchLog, "search-log", true, "Log incoming memory search queries in watch output")
+	cmd.Flags().IntVar(&searchLogQueryMax, "search-log-query-max", defaultSearchLogQueryMax, "Maximum query characters shown in search logs")
 
 	return cmd
 }
