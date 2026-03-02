@@ -105,3 +105,128 @@ func TestTokenizeFiltersLowSignalWords(t *testing.T) {
 		}
 	}
 }
+
+func TestSearchCommandValidatesIndexRootPath(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	wrongRoot := "/some/other/project"
+	index := &ContextIndex{
+		RootPath:    wrongRoot,
+		GeneratedAt: time.Now(),
+		Tree: &Node{
+			FullPath: wrongRoot,
+			Type:     "directory",
+			Children: make(map[string]*Node),
+		},
+	}
+
+	indexPath := filepath.Join(tmpDir, "context.json")
+	if err := SaveContextIndex(indexPath, index); err != nil {
+		t.Fatalf("failed to save index: %v", err)
+	}
+
+	loaded, err := LoadContextIndex(indexPath)
+	if err != nil {
+		t.Fatalf("failed to load index: %v", err)
+	}
+
+	if loaded.RootPath != wrongRoot {
+		t.Errorf("expected root path %s, got %s", wrongRoot, loaded.RootPath)
+	}
+}
+
+func TestSearchCommandValidatesRuntimeRootPath(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	wrongRoot := "/some/other/project"
+	state := RuntimeState{
+		RootPath:  wrongRoot,
+		Address:   "127.0.0.1:12345",
+		PID:       12345,
+		StartedAt: time.Now(),
+	}
+
+	runtimePath := filepath.Join(tmpDir, ".contexting_runtime.json")
+	if err := SaveRuntimeState(runtimePath, state); err != nil {
+		t.Fatalf("failed to save runtime state: %v", err)
+	}
+
+	loaded, err := LoadRuntimeState(runtimePath)
+	if err != nil {
+		t.Fatalf("failed to load runtime state: %v", err)
+	}
+
+	if loaded.RootPath != wrongRoot {
+		t.Errorf("expected root path %s, got %s", wrongRoot, loaded.RootPath)
+	}
+}
+
+func TestQueryMemorySearchRejectsMismatchedRoot(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	wrongRoot := filepath.Join(tmpDir, "wrong", "project")
+	expectedRoot := filepath.Join(tmpDir, "expected", "project")
+
+	state := RuntimeState{
+		RootPath:  wrongRoot,
+		Address:   "127.0.0.1:12345",
+		PID:       12345,
+		StartedAt: time.Now(),
+	}
+
+	runtimePath := filepath.Join(tmpDir, ".contexting_runtime.json")
+	if err := SaveRuntimeState(runtimePath, state); err != nil {
+		t.Fatalf("failed to save runtime state: %v", err)
+	}
+
+	_, err := QueryMemorySearch(runtimePath, "test query", SearchOptions{}, expectedRoot)
+	if err == nil {
+		t.Fatalf("expected error for mismatched root path, got nil")
+	}
+
+	if !contains(err.Error(), "root path mismatch") {
+		t.Errorf("expected 'root path mismatch' error, got: %v", err)
+	}
+}
+
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && findSubstring(s, substr)
+}
+
+func findSubstring(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
+}
+
+func TestContextIndexMarshalsWithRootPath(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	rootPath := filepath.Join(tmpDir, "test", "project")
+	index := &ContextIndex{
+		RootPath:    rootPath,
+		GeneratedAt: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+		Tree: &Node{
+			FullPath: rootPath,
+			Type:     "directory",
+			Children: make(map[string]*Node),
+		},
+	}
+
+	indexPath := filepath.Join(tmpDir, "context.json")
+	if err := SaveContextIndex(indexPath, index); err != nil {
+		t.Fatalf("failed to save index: %v", err)
+	}
+
+	loaded, err := LoadContextIndex(indexPath)
+	if err != nil {
+		t.Fatalf("failed to load index: %v", err)
+	}
+
+	if loaded.RootPath != rootPath {
+		t.Errorf("expected root_path %s, got %s", rootPath, loaded.RootPath)
+	}
+}

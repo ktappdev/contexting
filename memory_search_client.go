@@ -8,10 +8,14 @@ import (
 	"time"
 )
 
-func QueryMemorySearch(runtimeFile string, query string, opts SearchOptions) ([]SearchResult, error) {
+func QueryMemorySearch(runtimeFile string, query string, opts SearchOptions, expectedRoot string) ([]SearchResult, error) {
 	state, err := LoadRuntimeState(runtimeFile)
 	if err != nil {
 		return nil, err
+	}
+
+	if state.RootPath != "" && state.RootPath != expectedRoot {
+		return nil, fmt.Errorf("runtime state root path mismatch: expected %s, got %s. Use --root to specify the project directory or run from the project root", expectedRoot, state.RootPath)
 	}
 
 	reqBody, err := json.Marshal(memorySearchRequest{Query: query, Opts: opts})

@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
 )
 
 func newSearchCommand() *cobra.Command {
+	var rootPath string
 	var indexPath string
 	var runtimeFile string
 	var opts SearchOptions
@@ -27,6 +29,16 @@ func newSearchCommand() *cobra.Command {
 			cfg, err := LoadContextingConfig(configPath)
 			if err != nil {
 				return err
+			}
+			if rootPath == "" {
+				rootPath, err = os.Getwd()
+				if err != nil {
+					return fmt.Errorf("get working directory: %w", err)
+				}
+			}
+			absRoot, err := filepath.Abs(rootPath)
+			if err != nil {
+				return fmt.Errorf("resolve root path: %w", err)
 			}
 			applyStringFlag(cmd, "index", &indexPath, cfg.Search.IndexPath)
 			applyIntFlag(cmd, "limit", &opts.Limit, cfg.Search.Limit)
@@ -63,7 +75,7 @@ func newSearchCommand() *cobra.Command {
 			results := make([]SearchResult, 0)
 			usedMemory := false
 			if useMemory {
-				memoryResults, memErr := QueryMemorySearch(runtimeFile, query, opts)
+				memoryResults, memErr := QueryMemorySearch(runtimeFile, query, opts, absRoot)
 				if memErr == nil {
 					results = memoryResults
 					usedMemory = true
@@ -77,6 +89,9 @@ func newSearchCommand() *cobra.Command {
 				index, err := LoadContextIndex(indexPath)
 				if err != nil {
 					return err
+				}
+				if index.RootPath != "" && index.RootPath != absRoot {
+					return fmt.Errorf("index root path mismatch: expected %s, got %s. Use --root to specify the project directory or run from the project root", absRoot, index.RootPath)
 				}
 				results = SearchHintsWithOptions(index, query, opts)
 			}
@@ -112,6 +127,7 @@ func newSearchCommand() *cobra.Command {
 		},
 	}
 
+	cmd.Flags().StringVar(&rootPath, "root", "", "Project root path (defaults to current working directory)")
 	cmd.Flags().StringVarP(&indexPath, "index", "i", "context.json", "Path to context JSON")
 	cmd.Flags().IntVarP(&opts.Limit, "limit", "n", 5, "Maximum number of matches")
 	cmd.Flags().IntVar(&opts.MinScore, "min-score", 1, "Minimum score required to return a match")
