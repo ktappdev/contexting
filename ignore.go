@@ -41,12 +41,16 @@ func BuildIgnoreMapForRoot(root string, extra []string) (map[string]bool, error)
 }
 
 func shouldIgnorePath(relPath string, baseName string, ignored map[string]bool) bool {
-	if len(ignored) == 0 {
+	normalizedRel := normalizeIgnorePattern(relPath)
+	if normalizedRel == "" {
 		return false
 	}
 
-	normalizedRel := normalizeIgnorePattern(relPath)
-	if normalizedRel == "" {
+	if isDotPath(normalizedRel) || strings.HasPrefix(normalizeIgnorePattern(baseName), ".") {
+		return true
+	}
+
+	if len(ignored) == 0 {
 		return false
 	}
 
@@ -83,4 +87,14 @@ func normalizeIgnorePattern(path string) string {
 	}
 	normalized := filepath.ToSlash(trimmed)
 	return strings.Trim(normalized, "/")
+}
+
+func isDotPath(normalizedRel string) bool {
+	segments := strings.Split(normalizedRel, "/")
+	for _, segment := range segments {
+		if strings.HasPrefix(segment, ".") {
+			return true
+		}
+	}
+	return false
 }

@@ -23,6 +23,7 @@ contexting watch .                 # keep the index in-memory + flush on shutdow
 - CLI flags override `context.toml`, which in turn falls back to hard-coded defaults.
 - Relative paths in `context.toml` resolve from the config file location.
 - `watch` respects `.gitignore`, and if that file is missing it creates a starter list that ignores `.venv`, `site-packages`, `__pycache__`, `node_modules`, `.env*`, build/user artifacts, etc.
+- Hidden paths are skipped by default: any file or directory starting with `.` is excluded from indexing.
 
 ## Commands
 ### `contexting init`
@@ -43,6 +44,7 @@ contexting watch . --persist shutdown --debounce 750ms --verbose
 Highlights:
 - `--persist shutdown`: in-memory index is flushed to disk only on graceful shutdown (default)
 - `--persist interval --persist-interval 45s`: sprinkle in periodic saves
+- `--persist change`: flush snapshot after each applied filesystem change
 - `--llm-on-watch`: enable live synonym enrichment (off by default for responsiveness)
 - `--search-log` (default true): logs memory search requests in the watch stream
 - `--search-log-query-max` (default 120): truncates logged query text for readability

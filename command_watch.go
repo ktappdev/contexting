@@ -56,6 +56,10 @@ func newWatchCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if persistMode != PersistShutdown {
+				logWarnf("Persistence mode %q requested, but watch now runs shutdown-only persistence. Using shutdown mode.", persistMode)
+				persistMode = PersistShutdown
+			}
 			if persistInterval <= 0 {
 				persistInterval = 45 * time.Second
 			}
@@ -202,6 +206,15 @@ func newWatchCommand() *cobra.Command {
 						emitSynonymWarning(result.SynonymError)
 						if result.Changed {
 							logInfof("In-memory index updated: %d nodes (%d files, %d directories).", result.Stats.TotalNodes, result.Stats.TotalFiles, result.Stats.TotalDirs)
+							if persistMode == PersistChange {
+								flushed, flushErr := manager.FlushIfDirty()
+								if flushErr != nil {
+									logErrorf("Change-triggered flush failed: %v", flushErr)
+								} else if flushed {
+									logInfof("Saved snapshot after change to %s", outputPath)
+								}
+							}
+							logSnapshotFileSize(outputPath)
 						}
 					}
 				}
@@ -229,6 +242,15 @@ func newWatchCommand() *cobra.Command {
 							emitSynonymWarning(result.SynonymError)
 							if result.Changed {
 								logInfof("In-memory index updated: %d nodes (%d files, %d directories).", result.Stats.TotalNodes, result.Stats.TotalFiles, result.Stats.TotalDirs)
+								if persistMode == PersistChange {
+									flushed, flushErr := manager.FlushIfDirty()
+									if flushErr != nil {
+										logErrorf("Final change-triggered flush failed: %v", flushErr)
+									} else if flushed {
+										logInfof("Saved snapshot after final change to %s", outputPath)
+									}
+								}
+								logSnapshotFileSize(outputPath)
 							}
 						}
 					}
@@ -309,7 +331,7 @@ func newWatchCommand() *cobra.Command {
 	cmd.Flags().BoolVarP(&flags.Verbose, "verbose", "v", true, "Enable verbose logging")
 	cmd.Flags().DurationVar(&debounce, "debounce", 750*time.Millisecond, "Debounce interval for coalescing fs events")
 	cmd.Flags().BoolVar(&llmOnWatch, "llm-on-watch", false, "Enable live LLM synonym generation during watch (off by default)")
-	cmd.Flags().StringVar(&persist, "persist", string(PersistShutdown), "Persistence mode: shutdown|interval")
+	cmd.Flags().StringVar(&persist, "persist", string(PersistShutdown), "Persistence mode: shutdown|interval|change")
 	cmd.Flags().DurationVar(&persistInterval, "persist-interval", 45*time.Second, "Snapshot flush interval when --persist=interval")
 	cmd.Flags().BoolVar(&searchLog, "search-log", true, "Log incoming memory search queries in watch output")
 	cmd.Flags().IntVar(&searchLogQueryMax, "search-log-query-max", defaultSearchLogQueryMax, "Maximum query characters shown in search logs")

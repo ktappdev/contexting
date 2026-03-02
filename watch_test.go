@@ -31,6 +31,11 @@ func TestParsePersistMode(t *testing.T) {
 		t.Fatalf("expected interval mode, got mode=%q err=%v", mode, err)
 	}
 
+	mode, err = parsePersistMode("change")
+	if err != nil || mode != PersistChange {
+		t.Fatalf("expected change mode, got mode=%q err=%v", mode, err)
+	}
+
 	if _, err := parsePersistMode("bad-mode"); err == nil {
 		t.Fatalf("expected error for invalid mode")
 	}

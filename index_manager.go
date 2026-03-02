@@ -18,6 +18,7 @@ type WatchPersistMode string
 const (
 	PersistShutdown WatchPersistMode = "shutdown"
 	PersistInterval WatchPersistMode = "interval"
+	PersistChange   WatchPersistMode = "change"
 )
 
 type IndexManagerOptions struct {

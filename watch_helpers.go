@@ -116,10 +116,10 @@ func logChangeSummary(changes map[string]fsnotify.Op) {
 	logInfof("Filesystem changes: created=%d modified=%d removed=%d renamed=%d", created, modified, removed, renamed)
 	const maxDetails = 10
 	if len(details) <= maxDetails {
-	logInfof("Changed files: %s", strings.Join(details, ", "))
+		logInfof("Changed files: %s", strings.Join(details, ", "))
 		return
 	}
-logInfof("Changed files: %s, ... and %d more", strings.Join(details[:maxDetails], ", "), len(details)-maxDetails)
+	logInfof("Changed files: %s, ... and %d more", strings.Join(details[:maxDetails], ", "), len(details)-maxDetails)
 }
 
 func summarizeOp(op fsnotify.Op) string {
@@ -152,8 +152,10 @@ func parsePersistMode(value string) (WatchPersistMode, error) {
 		return PersistShutdown, nil
 	case PersistInterval:
 		return PersistInterval, nil
+	case PersistChange:
+		return PersistChange, nil
 	default:
-		return "", fmt.Errorf("invalid persist mode %q (expected shutdown|interval)", value)
+		return "", fmt.Errorf("invalid persist mode %q (expected shutdown|interval|change)", value)
 	}
 }
 
@@ -162,4 +164,20 @@ func tickerChan(ticker *time.Ticker) <-chan time.Time {
 		return nil
 	}
 	return ticker.C
+}
+
+func logSnapshotFileSize(outputPath string) {
+	info, err := os.Stat(outputPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			logInfof("Snapshot size: n/a (no context.json written yet)")
+			return
+		}
+		logWarnf("Could not read snapshot size for %s: %v", outputPath, err)
+		return
+	}
+
+	sizeBytes := info.Size()
+	sizeMB := float64(sizeBytes) / (1024.0 * 1024.0)
+	logInfof("Snapshot size: %.2f MB (%d bytes)", sizeMB, sizeBytes)
 }
