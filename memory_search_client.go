@@ -14,7 +14,10 @@ func QueryMemorySearch(runtimeFile string, query string, opts SearchOptions, exp
 		return nil, err
 	}
 
-	if state.RootPath != "" && state.RootPath != expectedRoot {
+	if state.RootPath == "" {
+		return nil, fmt.Errorf("runtime state missing root_path: restart watch server in the project directory")
+	}
+	if state.RootPath != expectedRoot {
 		return nil, fmt.Errorf("runtime state root path mismatch: expected %s, got %s. Use --root to specify the project directory or run from the project root", expectedRoot, state.RootPath)
 	}
 

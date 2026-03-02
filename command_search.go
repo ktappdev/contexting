@@ -90,7 +90,10 @@ func newSearchCommand() *cobra.Command {
 				if err != nil {
 					return err
 				}
-				if index.RootPath != "" && index.RootPath != absRoot {
+				if index.RootPath == "" {
+					return fmt.Errorf("index missing root_path: regenerate index by running 'contexting watch' or 'contexting init' in the project directory")
+				}
+				if index.RootPath != absRoot {
 					return fmt.Errorf("index root path mismatch: expected %s, got %s. Use --root to specify the project directory or run from the project root", absRoot, index.RootPath)
 				}
 				results = SearchHintsWithOptions(index, query, opts)
