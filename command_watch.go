@@ -214,7 +214,6 @@ func newWatchCommand() *cobra.Command {
 									logInfof("Saved snapshot after change to %s", outputPath)
 								}
 							}
-							logSnapshotFileSize(outputPath)
 						}
 					}
 				}
@@ -250,7 +249,6 @@ func newWatchCommand() *cobra.Command {
 										logInfof("Saved snapshot after final change to %s", outputPath)
 									}
 								}
-								logSnapshotFileSize(outputPath)
 							}
 						}
 					}

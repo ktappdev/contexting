@@ -4,7 +4,7 @@ Contexting keeps a live map of your codebase so agents can reason about paths wi
 
 ## Key features
 - `init`: create a fresh `context.json` snapshot with optional OpenRouter synonyms
-- `watch`: keep an in-memory index updated while the process runs and only write snapshots when you stop (or on a configurable interval)
+- `watch`: keep an in-memory index updated while the process runs and write snapshots only on graceful shutdown
 - `search-hints`: query the index for ranked paths with explainable scores
 - `eval`: benchmark hit@k/MRR for agent queries
 - `doctor`: inspect config/index/cache health and get fixes
@@ -37,14 +37,12 @@ Useful flags:
 - It always rebuilds the entire tree; use it when you need a clean snapshot.
 
 ### `contexting watch`
-Keeps the same index in memory and writes the snapshot only when you stop (default) or periodically.
+Keeps the same index in memory and writes the snapshot only when you stop gracefully.
 ```
-contexting watch . --persist shutdown --debounce 750ms --verbose
+contexting watch . --debounce 750ms --verbose
 ```
 Highlights:
-- `--persist shutdown`: in-memory index is flushed to disk only on graceful shutdown (default)
-- `--persist interval --persist-interval 45s`: sprinkle in periodic saves
-- `--persist change`: flush snapshot after each applied filesystem change
+- Snapshot persistence is shutdown-only (in-memory updates during runtime, flush on graceful shutdown)
 - `--llm-on-watch`: enable live synonym enrichment (off by default for responsiveness)
 - `--search-log` (default true): logs memory search requests in the watch stream
 - `--search-log-query-max` (default 120): truncates logged query text for readability
@@ -101,7 +99,7 @@ contexting config init --output context.toml
 ## Data flow
 1. `init` or load `context.json` → builds a tree with synonyms
 2. `watch` keeps that tree in RAM; events mutate only memory
-3. Snapshot is flushed on shutdown (persist=shutdown) or per interval (persist=interval)
+3. Snapshot is flushed on graceful shutdown
 4. `search-hints` and `eval` load the latest JSON or call the CLI for agent flows
 
 ## File formats

@@ -165,19 +165,3 @@ func tickerChan(ticker *time.Ticker) <-chan time.Time {
 	}
 	return ticker.C
 }
-
-func logSnapshotFileSize(outputPath string) {
-	info, err := os.Stat(outputPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			logInfof("Snapshot size: n/a (no context.json written yet)")
-			return
-		}
-		logWarnf("Could not read snapshot size for %s: %v", outputPath, err)
-		return
-	}
-
-	sizeBytes := info.Size()
-	sizeMB := float64(sizeBytes) / (1024.0 * 1024.0)
-	logInfof("Snapshot size: %.2f MB (%d bytes)", sizeMB, sizeBytes)
-}
