@@ -13,7 +13,7 @@ root = "."
 [watch]
 root = "."
 debounce = "750ms"
-llm = false
+llm = true
 persist = "shutdown"
 persist_interval = "45s"
 search_log = true

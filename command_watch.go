@@ -332,7 +332,7 @@ func newWatchCommand() *cobra.Command {
 	cmd.Flags().StringSliceVar(&flags.ExtraIgnores, "ignore", nil, "Additional ignore entries (name or relative path)")
 	cmd.Flags().BoolVarP(&flags.Verbose, "verbose", "v", true, "Enable verbose logging")
 	cmd.Flags().DurationVar(&debounce, "debounce", 750*time.Millisecond, "Debounce interval for coalescing fs events")
-	cmd.Flags().BoolVar(&llmOnWatch, "llm-on-watch", false, "Enable live LLM synonym generation during watch (off by default)")
+	cmd.Flags().BoolVar(&llmOnWatch, "llm-on-watch", true, "Enable live LLM synonym generation during watch (on by default)")
 	cmd.Flags().StringVar(&persist, "persist", string(PersistShutdown), "Persistence mode: shutdown|interval|change")
 	cmd.Flags().DurationVar(&persistInterval, "persist-interval", 45*time.Second, "Snapshot flush interval when --persist=interval")
 	cmd.Flags().BoolVar(&searchLog, "search-log", true, "Log incoming memory search queries in watch output")

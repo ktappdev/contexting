@@ -43,7 +43,7 @@ contexting watch . --debounce 750ms --verbose
 ```
 Highlights:
 - Snapshot persistence is shutdown-only (in-memory updates during runtime, flush on graceful shutdown)
-- `--llm-on-watch`: enable live synonym enrichment (off by default for responsiveness)
+- `--llm-on-watch`: enable live synonym enrichment (on by default)
 - `--search-log` (default true): logs memory search requests in the watch stream
 - `--search-log-query-max` (default 120): truncates logged query text for readability
 - `--create-config`/`--no-config-prompt`: control config creation
@@ -119,4 +119,4 @@ go test ./...
 - Run `contexting doctor --json` for diagnostics
 - If `context.json` is stale, restart watch or run `contexting init`
 - If you changed ignore rules (for example `.venv`/`site-packages`), run `contexting init` or restart `watch` to rebuild the in-memory/snapshot index.
-- To disable live LLM work use `--llm-on-watch=false` or remove `watch.llm` from config
+- LLM synonym generation is on by default; set `OPENROUTER_API_KEY` or use `--api-key`. Use `--llm-on-watch=false` or `watch.llm = false` to disable.

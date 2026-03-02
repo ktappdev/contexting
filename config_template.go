@@ -4,7 +4,7 @@ const starterConfigTemplate = `[common]
 output = "context.json"
 synonym_cache = ".contexting_synonyms_cache.json"
 llm_model = "openrouter/free"
-batch_size = 8
+batch_size = 0
 synonyms = 4
 ignore = [".git", ".venv", "site-packages", "__pycache__", "node_modules", "vendor", "dist"]
 verbose = true
@@ -15,11 +15,12 @@ root = "."
 [watch]
 root = "."
 debounce = "750ms"
-llm = false
+llm = true
 persist = "shutdown"
 persist_interval = "45s"
 search_log = true
 search_log_query_max = 120
+max_batch_size = 0
 
 [search]
 index = "context.json"
