@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"sync"
 	"time"
 )
 
@@ -59,29 +60,71 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 		return nil, fmt.Errorf("build tree: %w", err)
 	}
 
+	// Stats for progress
+	stats := ComputeStats(tree)
+	fmt.Printf("✓ Built tree: %d files, %d directories", stats.TotalFiles, stats.TotalDirs)
+	if stats.TotalFiles >= MaxFileCount/2 {
+		fmt.Printf(" (large repo - consider more ignore patterns)")
+	}
+	fmt.Println()
+
 	names := CollectNamesForLLM(tree)
 	combined := cloneSynonymMap(opts.SynonymCache)
 	missing := missingNames(names, combined)
 
-	batchSize := opts.MaxBatchSize
-	if batchSize <= 0 {
-		batchSize = opts.BatchSize
-	}
+	// Parallel execution of synonym generation and symbol extraction
+	var wg sync.WaitGroup
 	var synonymErr error
-	if opts.APIKey != "" && len(missing) > 0 {
-		generated, err := GenerateSynonymsForNamesWithContext(opts.Ctx, missing, opts.APIKey, batchSize, opts.Model, opts.SynonymsPerName)
-		if err != nil {
-			synonymErr = err
-		} else {
-			for name, values := range generated {
-				combined[name] = sanitizeSynonyms(values, opts.SynonymsPerName)
+	var symbolCount int
+
+	wg.Add(2)
+
+	// Goroutine A: Synonym generation
+	go func() {
+		defer wg.Done()
+		batchSize := opts.MaxBatchSize
+		if batchSize <= 0 {
+			batchSize = opts.BatchSize
+		}
+		if opts.APIKey != "" && len(missing) > 0 {
+			generated, err := GenerateSynonymsForNamesWithContext(opts.Ctx, missing, opts.APIKey, batchSize, opts.Model, opts.SynonymsPerName)
+			if err != nil {
+				synonymErr = err
+			} else {
+				for name, values := range generated {
+					combined[name] = sanitizeSynonyms(values, opts.SynonymsPerName)
+				}
 			}
 		}
-	}
+	}()
 
+	// Goroutine B: Symbol extraction
+	go func() {
+		defer wg.Done()
+		count := 0
+		walkTree(tree, func(node *Node) {
+			if node == tree || node.Type != "file" {
+				return
+			}
+			syms, err := extractSymbols(node.FullPath)
+			if err != nil {
+				return
+			}
+			node.Symbols = syms
+			count++
+		})
+		symbolCount = count
+	}()
+
+	wg.Wait()
+
+	// Assign synonyms after goroutines complete
 	AssignSynonymsToTree(tree, combined, opts.SynonymsPerName)
 
-	stats := ComputeStats(tree)
+	fmt.Printf("✓ Generated synonyms for %d names\n", len(names))
+	fmt.Printf("✓ Extracted symbols from %d files\n", symbolCount)
+
+	stats = ComputeStats(tree)
 	stats.CollectedNames = len(names)
 
 	index := &ContextIndex{

@@ -12,8 +12,11 @@ type Node struct {
 	FullPath string           `json:"full_path"`
 	Type     string           `json:"type"`
 	Synonyms []string         `json:"synonyms,omitempty"`
+	Symbols  []string         `json:"symbols,omitempty"`
 	Children map[string]*Node `json:"children,omitempty"`
 }
+
+const MaxFileCount = 10000 // Safety limit to prevent crashes on large repos
 
 type IndexStats struct {
 	TotalNodes     int `json:"total_nodes"`
@@ -35,6 +38,7 @@ func BuildTree(rootPath string, ignored map[string]bool) (*Node, error) {
 		Children: make(map[string]*Node),
 	}
 
+	fileCount := 0
 	err = filepath.WalkDir(absRoot, func(path string, d os.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
@@ -71,6 +75,14 @@ func BuildTree(rootPath string, ignored map[string]bool) (*Node, error) {
 		nodeType := "file"
 		if d.IsDir() {
 			nodeType = "directory"
+		} else {
+			fileCount++
+			if fileCount > MaxFileCount {
+				return fmt.Errorf("file count exceeds safety limit (%d files). Add more patterns to .gitignore or use --ignore flag", MaxFileCount)
+			}
+			if fileCount == MaxFileCount/2 {
+				logWarnf("Large repository detected (%d files). Consider adding more ignore patterns.", fileCount)
+			}
 		}
 
 		name := d.Name()

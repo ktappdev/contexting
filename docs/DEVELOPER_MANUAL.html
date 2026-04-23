@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Symbol Indexing - Developer Manual</title>
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border: #30363d;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --accent: #58a6ff;
+            --accent-hover: #79c0ff;
+            --success: #3fb950;
+            --warning: #d29922;
+            --error: #f85149;
+            --code-bg: #1f242c;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Navigation */
+        nav {
+            width: 280px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 24px 16px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        nav h1 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            padding-left: 12px;
+        }
+
+        nav .subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            padding-left: 12px;
+        }
+
+        nav ul {
+            list-style: none;
+        }
+
+        nav li {
+            margin-bottom: 4px;
+        }
+
+        nav a {
+            display: block;
+            padding: 8px 12px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.15s ease;
+        }
+
+        nav a:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        nav a.active {
+            background: var(--bg-tertiary);
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        nav .nav-section {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        nav .nav-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+        }
+
+        nav .sub-nav {
+            padding-left: 16px;
+        }
+
+        nav .sub-nav a {
+            font-size: 13px;
+            padding: 6px 12px;
+        }
+
+        /* Main Content */
+        main {
+            margin-left: 280px;
+            flex: 1;
+            padding: 40px 60px;
+            max-width: 1200px;
+        }
+
+        section {
+            margin-bottom: 64px;
+            scroll-margin-top: 40px;
+        }
+
+        h2 {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 32px 0 12px;
+        }
+
+        h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 24px 0 8px;
+        }
+
+        p {
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+        }
+
+        /* Code Blocks */
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            overflow-x: auto;
+            margin: 16px 0;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        code {
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            color: var(--text-primary);
+        }
+
+        .inline-code {
+            background: var(--bg-tertiary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+
+        th {
+            background: var(--bg-tertiary);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        td {
+            color: var(--text-secondary);
+        }
+
+        tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        /* Callouts */
+        .callout {
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid;
+        }
+
+        .callout-info {
+            background: rgba(88, 166, 255, 0.1);
+            border-color: var(--accent);
+        }
+
+        .callout-warning {
+            background: rgba(210, 153, 34, 0.1);
+            border-color: var(--warning);
+        }
+
+        .callout-success {
+            background: rgba(63, 185, 80, 0.1);
+            border-color: var(--success);
+        }
+
+        .callout-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .callout-info .callout-title { color: var(--accent); }
+        .callout-warning .callout-title { color: var(--warning); }
+        .callout-success .callout-title { color: var(--success); }
+
+        /* Diagrams */
+        .diagram {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 24px;
+            margin: 20px 0;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+            overflow-x: auto;
+        }
+
+        .diagram .box {
+            display: inline-block;
+            border: 2px solid var(--accent);
+            padding: 8px 16px;
+            border-radius: 4px;
+            margin: 4px;
+        }
+
+        .diagram .arrow {
+            color: var(--text-secondary);
+        }
+
+        /* Syntax Highlighting */
+        .kw { color: #ff7b72; } /* keyword */
+        .str { color: #a5d6ff; } /* string */
+        .num { color: #79c0ff; } /* number */
+        .fn { color: #d2a8ff; } /* function */
+        .typ { color: #ffa657; } /* type */
+        .cmt { color: #8b949e; font-style: italic; } /* comment */
+
+        /* Search */
+        .search-box {
+            margin-bottom: 24px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* Back to top */
+        .back-to-top {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            cursor: pointer;
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+        }
+
+        .back-to-top:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* Table of Contents in content */
+        .toc {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin: 24px 0;
+        }
+
+        .toc h4 {
+            margin-top: 0;
+        }
+
+        .toc ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .toc li {
+            margin-bottom: 8px;
+        }
+
+        .toc a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+
+        /* Score badges */
+        .score {
+            display: inline-block;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-size: 13px;
+            font-weight: 600;
+            margin: 2px;
+        }
+
+        .score-high { color: var(--success); border-color: var(--success); }
+        .score-med { color: var(--accent); border-color: var(--accent); }
+        .score-low { color: var(--text-secondary); border-color: var(--border); }
+    </style>
+</head>
+<body>
+    <nav>
+        <h1>Symbol Indexing</h1>
+        <div class="subtitle">Developer Manual</div>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search sections...">
+        </div>
+
+        <ul>
+            <li><a href="#overview" class="nav-link active">Overview</a></li>
+            <li><a href="#architecture" class="nav-link">Architecture</a></li>
+            <li><a href="#data-model" class="nav-link">Data Model</a></li>
+        </ul>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Core Components</div>
+            <ul>
+                <li><a href="#symbols-go" class="nav-link">symbols.go</a></li>
+                <li class="sub-nav"><a href="#extract-symbols" class="nav-link">extractSymbols()</a></li>
+                <li class="sub-nav"><a href="#extract-go" class="nav-link">extractGoSymbols()</a></li>
+                <li class="sub-nav"><a href="#extract-regex" class="nav-link">extractByRegex()</a></li>
+                <li class="sub-nav"><a href="#tokenize" class="nav-link">tokenizeIdentifier()</a></li>
+                <li><a href="#node-go" class="nav-link">node.go</a></li>
+                <li><a href="#indexer-go" class="nav-link">indexer.go</a></li>
+                <li><a href="#search-go" class="nav-link">search.go</a></li>
+                <li><a href="#mutation-go" class="nav-link">node_mutation.go</a></li>
+            </ul>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Reference</div>
+            <ul>
+                <li><a href="#scoring" class="nav-link">Scoring System</a></li>
+                <li><a href="#language-support" class="nav-link">Language Support</a></li>
+                <li><a href="#ignore-system" class="nav-link">Ignore System</a></li>
+                <li><a href="#performance" class="nav-link">Performance</a></li>
+                <li><a href="#thread-safety" class="nav-link">Thread Safety</a></li>
+                <li><a href="#troubleshooting" class="nav-link">Troubleshooting</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <section id="overview">
+            <h2>Overview</h2>
+            <p>
+                Symbol indexing enhances file discovery by extracting top-level code identifiers (functions, types, classes, constants) 
+                from source files and including them as searchable tokens alongside filename and synonym matching.
+            </p>
+
+            <div class="callout callout-info">
+                <div class="callout-title">Problem Solved</div>
+                <p style="margin: 0;">
+                    Filenames often don't reflect contents. <code class="inline-code">utils.go</code> may contain 
+                    <code class="inline-code">ParseAuthHeader()</code>, <code class="inline-code">client.ts</code> may have 
+                    <code class="inline-code">RetryWithBackoff()</code>. Symbol indexing makes these discoverable without full-text search.
+                </p>
+            </div>
+
+            <h3>Before vs After</h3>
+            <table>
+                <tr>
+                    <th>Query</th>
+                    <th>Before (Filename Only)</th>
+                    <th>After (With Symbols)</th>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">"JWT validation"</code></td>
+                    <td>Only <code class="inline-code">jwt_*.go</code> or files with JWT synonym</td>
+                    <td>Also <code class="inline-code">http_client.go</code> with <code class="inline-code">validateJWTToken()</code></td>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">"retry logic"</code></td>
+                    <td>Only <code class="inline-code">retry*.go</code></td>
+                    <td>Also <code class="inline-code">http_client.go</code> with <code class="inline-code">RetryWithBackoff()</code></td>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">"rate limiting"</code></td>
+                    <td>Only <code class="inline-code">rate_limit*.go</code></td>
+                    <td>Also <code class="inline-code">middleware.go</code> with <code class="inline-code">RateLimitByIP()</code></td>
+                </tr>
+            </table>
+
+            <h3>Key Design Decisions</h3>
+            <ul>
+                <li><strong>No full-text search</strong> — only declaration lines, keeps index small and fast</li>
+                <li><strong>No LLM calls</strong> — pure static analysis, zero API cost</li>
+                <li><strong>No type inference</strong> — just names, no resolution</li>
+                <li><strong>No cross-file tracking</strong> — not building a call graph</li>
+                <li><strong>Parallel execution</strong> — symbol extraction runs alongside synonym generation</li>
+                <li><strong>Backward compatible</strong> — <code class="inline-code">omitempty</code> JSON tag for old context files</li>
+            </ul>
+        </section>
+
+        <section id="architecture">
+            <h2>Architecture</h2>
+            
+            <h3>System Flow</h3>
+            <div class="diagram">
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         INDEX BUILD PHASE                                │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  1. BuildTree()                                                          │
+│     └─→ Walk filesystem, create Node tree                               │
+│                                                                          │
+│  2. CollectNamesForLLM()                                                 │
+│     └─→ Gather unique filenames for synonym generation                  │
+│                                                                          │
+│  3. PARALLEL EXECUTION (sync.WaitGroup)                                 │
+│     ┌────────────────────┐    ┌────────────────────┐                    │
+│     │  Goroutine A       │    │  Goroutine B       │                    │
+│     │  Synonym LLM Calls │    │  Symbol Extraction │                    │
+│     │  (network, slow)   │    │  (local, fast)     │                    │
+│     │                    │    │                    │                    │
+│     │  • Batch requests  │    │  • Walk tree       │                    │
+│     │  • Cache results   │    │  • extractSymbols()│                    │
+│     │  • ~50-200ms/batch │    │  • ~1-5ms/file     │                    │
+│     └────────────────────┘    └────────────────────┘                    │
+│              ↓                           ↓                               │
+│              └──────────┬───────────────┘                                │
+│                         ↓                                                │
+│  4. wg.Wait() — wait for both to complete                               │
+│                                                                          │
+│  5. AssignSynonymsToTree()                                               │
+│     └─→ Attach synonyms to nodes                                        │
+│                                                                          │
+│  6. Save context.json                                                    │
+│     └─→ Tree + Synonyms + Symbols                                       │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         SEARCH PHASE                                     │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  1. tokenize(query)                                                      │
+│     └─→ "JWT validation" → ["jwt", "validation"]                        │
+│                                                                          │
+│  2. walkTree(index.Tree)                                                 │
+│     └─→ For each node, calculate score:                                 │
+│                                                                          │
+│        • Filename exact match      +12                                  │
+│        • Synonym exact match       +8                                   │
+│        • Symbol exact match        +8                                   │
+│        • Basename contains         +7                                   │
+│        • Segment prefix            +5                                   │
+│        • Synonym contains          +5                                   │
+│        • Symbol contains           +5                                   │
+│        • Path contains             +4                                   │
+│        • Symbol token match        +4  (camelCase split)                │
+│        • File bias                 +1                                   │
+│                                                                          │
+│  3. Sort by score (descending)                                          │
+│                                                                          │
+│  4. Return top N results                                                 │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         FILE CHANGE PHASE                                │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  1. fsnotify detects change (Create/Write/Remove)                       │
+│                                                                          │
+│  2. upsertNodeByRelPath()                                                │
+│     ├─→ Create or update node in tree                                   │
+│     ├─→ Extract synonyms (from cache or lexical)                        │
+│     └─→ Extract symbols (if file, not directory)                        │
+│                                                                          │
+│  3. Compare old vs new                                                   │
+│     └─→ Set changed = true if symbols or synonyms differ                │
+│                                                                          │
+│  4. Mark dirty, persist on flush                                        │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+            </div>
+
+            <h3>File Responsibilities</h3>
+            <table>
+                <tr>
+                    <th>File</th>
+                    <th>Responsibility</th>
+                    <th>Key Functions</th>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">symbols.go</code></td>
+                    <td>Symbol extraction and tokenization</td>
+                    <td>
+                        <code class="inline-code">extractSymbols()</code><br>
+                        <code class="inline-code">extractGoSymbols()</code><br>
+                        <code class="inline-code">extractByRegex()</code><br>
+                        <code class="inline-code">tokenizeIdentifier()</code>
+                    </td>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">node.go</code></td>
+                    <td>Data structures</td>
+                    <td>
+                        <code class="inline-code">Node</code> struct<br>
+                        <code class="inline-code">BuildTree()</code><br>
+                        <code class="inline-code">walkTree()</code>
+                    </td>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">indexer.go</code></td>
+                    <td>Index building (parallel)</td>
+                    <td>
+                        <code class="inline-code">BuildIndex()</code><br>
+                        <code class="inline-code">AssignSynonymsToTree()</code>
+                    </td>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">search.go</code></td>
+                    <td>Search scoring</td>
+                    <td>
+                        <code class="inline-code">SearchHintsWithOptions()</code><br>
+                        <code class="inline-code">tokenize()</code>
+                    </td>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">node_mutation.go</code></td>
+                    <td>File change handling</td>
+                    <td>
+                        <code class="inline-code">upsertNodeByRelPath()</code><br>
+                        <code class="inline-code">removeNodeByRelPath()</code>
+                    </td>
+                </tr>
+            </table>
+        </section>
+
+        <section id="data-model">
+            <h2>Data Model</h2>
+
+            <h3>Node Structure</h3>
+            <pre><code><span class="kw">type</span> Node <span class="kw">struct</span> {
+    FullPath <span class="typ">string</span>           <span class="cmt">// Absolute path on disk</span>
+    Type     <span class="typ">string</span>           <span class="cmt">// "file" or "directory"</span>
+    Synonyms []<span class="typ">string</span>         <span class="cmt">// LLM-generated + lexical synonyms</span>
+    Symbols  []<span class="typ">string</span>         <span class="cmt">// Extracted code identifiers</span>
+    Children <span class="kw">map</span>[<span class="typ">string</span>]*Node  <span class="cmt">// Child nodes (directories only)</span>
+}</code></pre>
+
+            <div class="callout callout-info">
+                <div class="callout-title">Backward Compatibility</div>
+                <p style="margin: 0;">
+                    The <code class="inline-code">symbols</code> field uses <code class="inline-code">omitempty</code>. 
+                    Old <code class="inline-code">context.json</code> files without symbols load fine (field defaults to nil).
+                    New files include symbols when present.
+                </p>
+            </div>
+
+            <h3>Example context.json</h3>
+            <pre><code>{
+  "root_path": "/Users/dev/project",
+  "generated_at": "2025-01-15T10:30:00Z",
+  "model": "gpt-4o-mini",
+  "tree": {
+    "full_path": "/Users/dev/project",
+    "type": "directory",
+    "children": {
+      "http_client.go": {
+        "full_path": "/Users/dev/project/http_client.go",
+        "type": "file",
+        "synonyms": ["http", "client", "network", "request"],
+        "symbols": ["HTTPClient", "SendRequest", "RetryWithBackoff", "validateJWTToken", "MAX_RETRIES"]
+      },
+      "auth": {
+        "full_path": "/Users/dev/project/auth",
+        "type": "directory",
+        "children": {
+          "middleware.go": {
+            "full_path": "/Users/dev/project/auth/middleware.go",
+            "type": "file",
+            "synonyms": ["auth", "middleware", "authentication"],
+            "symbols": ["AuthMiddleware", "RequireAuth", "ExtractToken", "RateLimitByIP"]
+          }
+        }
+      }
+    }
+  }
+}</code></pre>
+        </section>
+
+        <section id="symbols-go">
+            <h2>symbols.go</h2>
+            <p>
+                Core symbol extraction logic. Dispatches to language-specific extractors based on file extension.
+            </p>
+
+            <h3 id="extract-symbols">extractSymbols()</h3>
+            <p>Dispatcher function — routes to appropriate extractor based on file extension.</p>
+            <pre><code><span class="kw">func</span> <span class="fn">extractSymbols</span>(path <span class="typ">string</span>) ([]<span class="typ">string</span>, <span class="typ">error</span>) {
+    ext := strings.ToLower(path)
+    <span class="kw">if</span> strings.HasSuffix(ext, <span class="str">".go"</span>) {
+        <span class="kw">return</span> <span class="fn">extractGoSymbols</span>(path)
+    }
+    <span class="kw">if</span> strings.HasSuffix(ext, <span class="str">".py"</span>) {
+        <span class="kw">return</span> <span class="fn">extractByRegex</span>(path, pythonPatterns)
+    }
+    <span class="cmt">// ... JS, TS, Rust, Ruby</span>
+    <span class="kw">return</span> <span class="kw">nil</span>, <span class="kw">nil</span>  <span class="cmt">// Unknown extension: no symbols, no error</span>
+}</code></pre>
+
+            <h3 id="extract-go">extractGoSymbols()</h3>
+            <p>
+                Uses Go's built-in <code class="inline-code">go/parser</code> package for AST-based extraction.
+                Zero dependencies, perfect accuracy for Go files.
+            </p>
+            <pre><code><span class="kw">func</span> <span class="fn">extractGoSymbols</span>(path <span class="typ">string</span>) ([]<span class="typ">string</span>, <span class="typ">error</span>) {
+    fset := token.<span class="fn">NewFileSet</span>()
+    f, err := parser.<span class="fn">ParseFile</span>(fset, path, <span class="kw">nil</span>, parser.AllErrors)
+    <span class="kw">if</span> err != <span class="kw">nil</span> {
+        <span class="kw">return</span> <span class="kw">nil</span>, err
+    }
+    <span class="kw">var</span> symbols []<span class="typ">string</span>
+    <span class="kw">for</span> name := <span class="kw">range</span> f.Scope.Objects {
+        symbols = <span class="fn">append</span>(symbols, name)
+    }
+    <span class="kw">return</span> <span class="fn">dedupeStrings</span>(symbols), <span class="kw">nil</span>
+}</code></pre>
+            <p>
+                Extracts all top-level declarations: <code class="inline-code">func</code>, 
+                <code class="inline-code">type</code>, <code class="inline-code">var</code>, 
+                <code class="inline-code">const</code>.
+            </p>
+
+            <h3 id="extract-regex">extractByRegex()</h3>
+            <p>
+                For non-Go languages: reads file content and applies regex patterns to extract identifiers.
+            </p>
+            <pre><code><span class="kw">func</span> <span class="fn">extractByRegex</span>(path <span class="typ">string</span>, patterns []<span class="typ">string</span>) ([]<span class="typ">string</span>, <span class="typ">error</span>) {
+    content, err := os.<span class="fn">ReadFile</span>(path)
+    <span class="kw">if</span> err != <span class="kw">nil</span> {
+        <span class="kw">return</span> <span class="kw">nil</span>, err
+    }
+
+    <span class="kw">var</span> symbols []<span class="typ">string</span>
+    <span class="kw">for</span> _, pattern := <span class="kw">range</span> patterns {
+        re := regexp.<span class="fn">MustCompile</span>(pattern)
+        matches := re.<span class="fn">FindAllStringSubmatch</span>(<span class="fn">string</span>(content), -<span class="num">1</span>)
+        <span class="kw">for</span> _, match := <span class="kw">range</span> matches {
+            <span class="kw">if</span> <span class="fn">len</span>(match) > <span class="num">1</span> {
+                symbols = <span class="fn">append</span>(symbols, match[<span class="num">1</span>])  <span class="cmt">// Capture group 1</span>
+            }
+        }
+    }
+    <span class="kw">return</span> <span class="fn">dedupeStrings</span>(symbols), <span class="kw">nil</span>
+}</code></pre>
+
+            <h3 id="tokenize">tokenizeIdentifier()</h3>
+            <p>
+                Splits CamelCase and snake_case identifiers into searchable tokens.
+                Critical for matching <code class="inline-code">"JWT validation"</code> → 
+                <code class="inline-code">validateJWTToken</code>.
+            </p>
+            <pre><code><span class="kw">func</span> <span class="fn">tokenizeIdentifier</span>(name <span class="typ">string</span>) []<span class="typ">string</span> {
+    <span class="kw">var</span> tokens []<span class="typ">string</span>
+
+    <span class="cmt">// 1. Split on underscores</span>
+    parts := strings.<span class="fn">Split</span>(name, <span class="str">"_"</span>)
+
+    <span class="kw">for</span> _, part := <span class="kw">range</span> parts {
+        <span class="cmt">// 2. Split on camelCase boundaries</span>
+        <span class="kw">var</span> current []<span class="typ">rune</span>
+        <span class="kw">for</span> i, r := <span class="kw">range</span> part {
+            <span class="kw">if</span> i > <span class="num">0</span> {
+                prev := <span class="fn">rune</span>(part[i-<span class="num">1</span>])
+                <span class="cmt">// lower→upper: "createUser" → "create" + "User"</span>
+                <span class="kw">if</span> unicode.<span class="fn">IsLower</span>(prev) && unicode.<span class="fn">IsUpper</span>(r) {
+                    tokens = <span class="fn">append</span>(tokens, <span class="fn">string</span>(current))
+                    current = []<span class="typ">rune</span>{r}
+                <span class="cmt">// upper sequence→lower: "JWTToken" → "JWT" + "Token"</span>
+                } <span class="kw">else if</span> unicode.<span class="fn">IsUpper</span>(prev) && unicode.<span class="fn">IsLower</span>(r) && <span class="fn">len</span>(current) > <span class="num">1</span> {
+                    lastUpper := current[<span class="fn">len</span>(current)-<span class="num">1</span>]
+                    tokens = <span class="fn">append</span>(tokens, <span class="fn">string</span>(current[:<span class="fn">len</span>(current)-<span class="num">1</span>]))
+                    current = []<span class="typ">rune</span>{lastUpper, r}
+                } <span class="cmt">// ... digit transitions</span>
+            }
+            current = <span class="fn">append</span>(current, r)
+        }
+        <span class="kw">if</span> <span class="fn">len</span>(current) > <span class="num">0</span> {
+            tokens = <span class="fn">append</span>(tokens, <span class="fn">string</span>(current))
+        }
+    }
+
+    <span class="cmt">// 3. Lowercase and dedupe</span>
+    <span class="kw">var</span> lower []<span class="typ">string</span>
+    seen := <span class="fn">make</span>(<span class="kw">map</span>[<span class="typ">string</span>]<span class="kw">struct</span>{})
+    <span class="kw">for</span> _, t := <span class="kw">range</span> tokens {
+        low := strings.<span class="fn">ToLower</span>(t)
+        <span class="kw">if</span> low == <span class="str">""</span> || <span class="fn">len</span>(low) < <span class="num">2</span> {
+            <span class="kw">continue</span>
+        }
+        <span class="kw">if</span> _, ok := seen[low]; !ok {
+            seen[low] = <span class="kw">struct</span>{}{}
+            lower = <span class="fn">append</span>(lower, low)
+        }
+    }
+    <span class="kw">return</span> lower
+}</code></pre>
+
+            <h4>Tokenization Examples</h4>
+            <table>
+                <tr>
+                    <th>Input</th>
+                    <th>Output</th>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">validateJWTToken</code></td>
+                    <td><code class="inline-code">["validate", "jwt", "token"]</code></td>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">HTTPClient</code></td>
+                    <td><code class="inline-code">["http", "client"]</code></td>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">parseURL</code></td>
+                    <td><code class="inline-code">["parse", "url"]</code></td>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">MAX_RETRIES</code></td>
+                    <td><code class="inline-code">["max", "retries"]</code></td>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">getHTTPResponseCode</code></td>
+                    <td><code class="inline-code">["get", "http", "response", "code"]</code></td>
+                </tr>
+            </table>
+        </section>
+
+        <section id="node-go">
+            <h2>node.go</h2>
+            <p>
+                Defines the <code class="inline-code">Node</code> struct and tree-building utilities.
+            </p>
+
+            <h3>Key Functions</h3>
+            <pre><code><span class="cmt">// BuildTree walks the filesystem and creates a Node tree</span>
+<span class="kw">func</span> <span class="fn">BuildTree</span>(rootPath <span class="typ">string</span>, ignored <span class="kw">map</span>[<span class="typ">string</span>]<span class="typ">bool</span>) (*Node, <span class="typ">error</span>)
+
+<span class="cmt">// CollectNamesForLLM gathers unique filenames for synonym generation</span>
+<span class="kw">func</span> <span class="fn">CollectNamesForLLM</span>(tree *Node) []<span class="typ">string</span>
+
+<span class="cmt">// AssignSynonymsToTree attaches synonyms to each node</span>
+<span class="kw">func</span> <span class="fn">AssignSynonymsToTree</span>(tree *Node, synonyms SynonymResponse, maxPerNode <span class="typ">int</span>)
+
+<span class="cmt">// walkTree traverses the tree in sorted order</span>
+<span class="kw">func</span> <span class="fn">walkTree</span>(node *Node, fn <span class="kw">func</span>(*Node))
+
+<span class="cmt">// ComputeStats calculates index statistics</span>
+<span class="kw">func</span> <span class="fn">ComputeStats</span>(tree *Node) IndexStats</code></pre>
+        </section>
+
+        <section id="indexer-go">
+            <h2>indexer.go</h2>
+            <p>
+                Orchestrates index building with parallel synonym generation and symbol extraction.
+            </p>
+
+            <h3>BuildIndex() Flow</h3>
+            <pre><code><span class="kw">func</span> <span class="fn">BuildIndex</span>(opts BuildOptions) (*BuildResult, <span class="typ">error</span>) {
+    <span class="cmt">// 1. Build tree from filesystem</span>
+    tree, err := <span class="fn">BuildTree</span>(absRoot, opts.IgnoredPaths)
+
+    <span class="cmt">// 2. Collect names for LLM</span>
+    names := <span class="fn">CollectNamesForLLM</span>(tree)
+    missing := <span class="fn">missingNames</span>(names, combined)
+
+    <span class="cmt">// 3. PARALLEL EXECUTION</span>
+    <span class="kw">var</span> wg sync.WaitGroup
+    wg.<span class="fn">Add</span>(<span class="num">2</span>)
+
+    <span class="cmt">// Goroutine A: Synonym generation (LLM, slow)</span>
+    <span class="kw">go</span> <span class="kw">func</span>() {
+        <span class="kw">defer</span> wg.<span class="fn">Done</span>()
+        generated, err := <span class="fn">GenerateSynonymsForNamesWithContext</span>(...)
+        <span class="cmt">// ... populate combined map</span>
+    }()
+
+    <span class="cmt">// Goroutine B: Symbol extraction (local, fast)</span>
+    <span class="kw">go</span> <span class="kw">func</span>() {
+        <span class="kw">defer</span> wg.<span class="fn">Done</span>()
+        count := <span class="num">0</span>
+        <span class="fn">walkTree</span>(tree, <span class="kw">func</span>(node *Node) {
+            <span class="kw">if</span> node.Type != <span class="str">"file"</span> {
+                <span class="kw">return</span>
+            }
+            syms, err := <span class="fn">extractSymbols</span>(node.FullPath)
+            node.Symbols = syms
+            count++
+        })
+        symbolCount = count
+    }()
+
+    <span class="cmt">// 4. Wait for both</span>
+    wg.<span class="fn">Wait</span>()
+
+    <span class="cmt">// 5. Assign synonyms</span>
+    <span class="fn">AssignSynonymsToTree</span>(tree, combined, opts.SynonymsPerName)
+
+    <span class="cmt">// 6. Return result</span>
+    <span class="kw">return</span> &BuildResult{Index: index, Stats: stats, ...}
+}</code></pre>
+
+            <div class="callout callout-success">
+                <div class="callout-title">Console Output</div>
+                <p style="margin: 0;">
+                    Progress messages are printed at key milestones:
+                </p>
+                <pre style="margin-top: 12px; background: rgba(63, 185, 80, 0.1); border: none;">✓ Built tree: 142 files, 23 directories
+✓ Generated synonyms for 89 names
+✓ Extracted symbols from 142 files</pre>
+            </div>
+        </section>
+
+        <section id="search-go">
+            <h2>search.go</h2>
+            <p>
+                Implements search scoring with symbol matching.
+            </p>
+
+            <h3>SearchHintsWithOptions()</h3>
+            <pre><code><span class="kw">func</span> <span class="fn">SearchHintsWithOptions</span>(index *ContextIndex, query <span class="typ">string</span>, opts SearchOptions) []SearchResult {
+    <span class="cmt">// 1. Tokenize query</span>
+    tokens := <span class="fn">tokenize</span>(query)  <span class="cmt">// "JWT validation" → ["jwt", "validation"]</span>
+
+    <span class="cmt">// 2. Walk tree and score each node</span>
+    <span class="fn">walkTree</span>(index.Tree, <span class="kw">func</span>(node *Node) {
+        score := <span class="num">0</span>
+        matches := []<span class="typ">string</span>{}
+        breakdown := []<span class="typ">string</span>{}
+
+        <span class="kw">for</span> _, token := <span class="kw">range</span> tokens {
+            <span class="cmt">// ... filename/path scoring ...</span>
+
+            <span class="cmt">// Synonym scoring</span>
+            <span class="kw">for</span> _, syn := <span class="kw">range</span> node.Synonyms {
+                <span class="kw">if</span> synLower == token {
+                    score += <span class="num">8</span>  <span class="cmt">// Exact synonym match</span>
+                }
+            }
+
+            <span class="cmt">// Symbol scoring (NEW)</span>
+            <span class="kw">for</span> _, sym := <span class="kw">range</span> node.Symbols {
+                symLower := strings.<span class="fn">ToLower</span>(sym)
+                symTokens := <span class="fn">tokenizeIdentifier</span>(symLower)
+
+                <span class="kw">if</span> symLower == token {
+                    score += <span class="num">8</span>  <span class="cmt">// Exact symbol match</span>
+                    matches = <span class="fn">append</span>(matches, <span class="str">"sym-exact:"</span>+sym)
+                } <span class="kw">else if</span> strings.<span class="fn">Contains</span>(symLower, token) {
+                    score += <span class="num">5</span>  <span class="cmt">// Symbol contains token</span>
+                    matches = <span class="fn">append</span>(matches, <span class="str">"sym:"</span>+sym)
+                }
+
+                <span class="cmt">// Tokenized parts (camelCase split)</span>
+                <span class="kw">for</span> _, symToken := <span class="kw">range</span> symTokens {
+                    <span class="kw">if</span> symToken == token {
+                        score += <span class="num">4</span>  <span class="cmt">// Tokenized symbol part</span>
+                        matches = <span class="fn">append</span>(matches, <span class="str">"sym-token:"</span>+symToken)
+                    }
+                }
+            }
+        }
+
+        <span class="cmt">// 3. Build result</span>
+        results = <span class="fn">append</span>(results, SearchResult{Path, Type, Score, Matches, Breakdown})
+    })
+
+    <span class="cmt">// 4. Sort and return</span>
+    <span class="fn">sort.Slice</span>(results, <span class="kw">func</span>(i, j <span class="typ">int</span>) <span class="typ">bool</span> {
+        <span class="kw">return</span> results[i].Score > results[j].Score
+    })
+    <span class="kw">return</span> results
+}</code></pre>
+        </section>
+
+        <section id="mutation-go">
+            <h2>node_mutation.go</h2>
+            <p>
+                Handles file system changes (create, write, remove) and keeps the index in sync.
+            </p>
+
+            <h3>upsertNodeByRelPath()</h3>
+            <pre><code><span class="kw">func</span> <span class="fn">upsertNodeByRelPath</span>(root *Node, absRoot <span class="typ">string</span>, relPath <span class="typ">string</span>, isDir <span class="typ">bool</span>, ...) <span class="typ">bool</span> {
+    changed := <span class="kw">false</span>
+
+    <span class="cmt">// ... navigate to parent ...</span>
+
+    node, ok := parent.Children[name]
+    <span class="kw">if</span> !ok {
+        <span class="cmt">// CREATE: new node</span>
+        <span class="kw">var</span> symList []<span class="typ">string</span>
+        <span class="kw">if</span> !isDir {
+            symList, _ = <span class="fn">extractSymbols</span>(fullPath)  <span class="cmt">// Only for files</span>
+        }
+        parent.Children[name] = &Node{
+            FullPath: fullPath,
+            Type:     nodeType,
+            Synonyms: nodeSynonyms,
+            Symbols:  symList,  <span class="cmt">// Attach symbols</span>
+            Children: <span class="fn">make</span>(<span class="kw">map</span>[<span class="typ">string</span>]*Node),
+        }
+        <span class="kw">return</span> <span class="kw">true</span>
+    }
+
+    <span class="cmt">// UPDATE: existing node</span>
+    <span class="kw">if</span> node.Type != nodeType {
+        node.Type = nodeType
+        changed = <span class="kw">true</span>
+        <span class="kw">if</span> nodeType == <span class="str">"directory"</span> {
+            node.Symbols = <span class="kw">nil</span>  <span class="cmt">// Clear symbols if converted to dir</span>
+        }
+    }
+
+    <span class="kw">if</span> node.Type == <span class="str">"file"</span> {
+        symList, _ := <span class="fn">extractSymbols</span>(fullPath)
+        <span class="kw">if</span> !<span class="fn">stringSlicesEqual</span>(node.Symbols, symList) {
+            node.Symbols = symList
+            changed = <span class="kw">true</span>  <span class="cmt">// Mark changed if symbols differ</span>
+        }
+    }
+
+    <span class="kw">return</span> changed
+}</code></pre>
+        </section>
+
+        <section id="scoring">
+            <h2>Scoring System</h2>
+            <p>
+                Search results are ranked by cumulative score from multiple matching strategies.
+            </p>
+
+            <h3>Score Breakdown</h3>
+            <table>
+                <tr>
+                    <th>Match Type</th>
+                    <th>Score</th>
+                    <th>Example</th>
+                </tr>
+                <tr>
+                    <td>Exact filename/path match</td>
+                    <td><span class="score score-high">+12</span></td>
+                    <td>Query <code class="inline-code">"auth"</code> matches <code class="inline-code">auth.go</code></td>
+                </tr>
+                <tr>
+                    <td>Synonym exact match</td>
+                    <td><span class="score score-med">+8</span></td>
+                    <td>Query <code class="inline-code">"network"</code> matches synonym of <code class="inline-code">http_client.go</code></td>
+                </tr>
+                <tr>
+                    <td>Symbol exact match</td>
+                    <td><span class="score score-med">+8</span></td>
+                    <td>Query <code class="inline-code">"retry"</code> matches symbol <code class="inline-code">RetryWithBackoff</code></td>
+                </tr>
+                <tr>
+                    <td>Basename contains</td>
+                    <td><span class="score score-med">+7</span></td>
+                    <td>Query <code class="inline-code">"client"</code> matches <code class="inline-code">http_client.go</code></td>
+                </tr>
+                <tr>
+                    <td>Segment prefix</td>
+                    <td><span class="score score-med">+5</span></td>
+                    <td>Query <code class="inline-code">"auth"</code> matches path <code class="inline-code">auth/middleware.go</code></td>
+                </tr>
+                <tr>
+                    <td>Synonym contains</td>
+                    <td><span class="score score-med">+5</span></td>
+                    <td>Query <code class="inline-code">"http"</code> overlaps with synonym <code class="inline-code">"https-client"</code></td>
+                </tr>
+                <tr>
+                    <td>Symbol contains</td>
+                    <td><span class="score score-med">+5</span></td>
+                    <td>Query <code class="inline-code">"token"</code> found in <code class="inline-code">validateJWTToken</code></td>
+                </tr>
+                <tr>
+                    <td>Path contains</td>
+                    <td><span class="score score-low">+4</span></td>
+                    <td>Query <code class="inline-code">"utils"</code> matches <code class="inline-code">src/utils/helpers.py</code></td>
+                </tr>
+                <tr>
+                    <td>Symbol token match</td>
+                    <td><span class="score score-low">+4</span></td>
+                    <td>Query <code class="inline-code">"jwt"</code> matches token from <code class="inline-code">validateJWTToken</code></td>
+                </tr>
+                <tr>
+                    <td>File bias</td>
+                    <td><span class="score score-low">+1</span></td>
+                    <td>Files ranked slightly higher than directories</td>
+                </tr>
+            </table>
+
+            <h3>Example Scoring</h3>
+            <pre><code>Query: "JWT validation"
+
+File: http_client.go
+  Symbols: ["HTTPClient", "SendRequest", "validateJWTToken", "MAX_RETRIES"]
+
+Scoring:
+  • "jwt" tokenized from "validateJWTToken"     +4
+  • "validation" contains in "validateJWTToken" +5
+  • File bias                                   +1
+  ────────────────────────────────────────────────
+  Total: 10 points
+
+Result: {
+  "path": "http_client.go",
+  "score": 10,
+  "matches": ["sym-token:jwt", "sym:validateJWTToken"],
+  "breakdown": ["sym token +4: jwt", "sym contains +5: validateJWTToken", "file bias +1"]
+}</code></pre>
+        </section>
+
+        <section id="language-support">
+            <h2>Language Support</h2>
+            <p>
+                Symbol extraction supports multiple languages via AST (Go) or regex patterns (others).
+            </p>
+
+            <h3>Supported Languages</h3>
+            <table>
+                <tr>
+                    <th>Language</th>
+                    <th>Extensions</th>
+                    <th>Method</th>
+                    <th>Patterns</th>
+                </tr>
+                <tr>
+                    <td>Go</td>
+                    <td><code class="inline-code">.go</code></td>
+                    <td>AST (<code class="inline-code">go/parser</code>)</td>
+                    <td>All top-level: <code class="inline-code">func</code>, <code class="inline-code">type</code>, <code class="inline-code">var</code>, <code class="inline-code">const</code></td>
+                </tr>
+                <tr>
+                    <td>Python</td>
+                    <td><code class="inline-code">.py</code></td>
+                    <td>Regex</td>
+                    <td>
+                        <code class="inline-code">^(?:async\s+)?def\s+(\w+)</code><br>
+                        <code class="inline-code">^class\s+(\w+)</code>
+                    </td>
+                </tr>
+                <tr>
+                    <td>JavaScript</td>
+                    <td><code class="inline-code">.js</code>, <code class="inline-code">.mjs</code></td>
+                    <td>Regex</td>
+                    <td>
+                        <code class="inline-code">^(?:export\s+)?(?:async\s+)?function\s+(\w+)</code><br>
+                        <code class="inline-code">^(?:export\s+)?class\s+(\w+)</code><br>
+                        <code class="inline-code">^(?:export\s+)?const\s+(\w+)\s*=</code>
+                    </td>
+                </tr>
+                <tr>
+                    <td>TypeScript</td>
+                    <td><code class="inline-code">.ts</code>, <code class="inline-code">.tsx</code></td>
+                    <td>Regex</td>
+                    <td>
+                        All JS patterns, plus:<br>
+                        <code class="inline-code">^(?:export\s+)?interface\s+(\w+)</code><br>
+                        <code class="inline-code">^(?:export\s+)?type\s+(\w+)</code><br>
+                        <code class="inline-code">^(?:export\s+)?enum\s+(\w+)</code>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Rust</td>
+                    <td><code class="inline-code">.rs</code></td>
+                    <td>Regex</td>
+                    <td>
+                        <code class="inline-code">^(?:pub\s+)?fn\s+(\w+)</code><br>
+                        <code class="inline-code">^struct\s+(\w+)</code><br>
+                        <code class="inline-code">^enum\s+(\w+)</code><br>
+                        <code class="inline-code">^trait\s+(\w+)</code><br>
+                        <code class="inline-code">^impl\s+(?:[^<]*<)?(\w+)</code>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Ruby</td>
+                    <td><code class="inline-code">.rb</code></td>
+                    <td>Regex</td>
+                    <td>
+                        <code class="inline-code">^def\s+(\w+)</code><br>
+                        <code class="inline-code">^class\s+(\w+)</code><br>
+                        <code class="inline-code">^module\s+(\w+)</code>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="callout callout-warning">
+                <div class="callout-title">Regex Limitations</div>
+                <p style="margin: 0;">
+                    Regex-based extraction may miss edge cases: multiline declarations, comments, unusual formatting.
+                    Go AST extraction is 100% accurate. For other languages, regex covers ~90% of common patterns.
+                </p>
+            </div>
+        </section>
+
+        <section id="ignore-system">
+            <h2>Ignore System</h2>
+            <p>
+                Ignore patterns are applied in layers to prevent indexing unwanted files and protect against crashes.
+            </p>
+
+            <h3>Ignore Layers (Applied in Order)</h3>
+            <ol>
+                <li><strong>Hard-coded defaults</strong> (<code class="inline-code">ignore.go:8-35</code>) — Always active</li>
+                <li><strong>Project .gitignore</strong> — Loaded automatically</li>
+                <li><strong>Config file</strong> — <code class="inline-code">ignore</code> array in config.toml</li>
+                <li><strong>CLI flag</strong> — <code class="inline-code">--ignore</code> for ad-hoc patterns</li>
+            </ol>
+
+            <h3>Hard-Coded Defaults (ALWAYS Active)</h3>
+            <pre><code>defaultIgnores = [
+    ".git", ".svn", ".hg",              // Version control
+    "node_modules", "vendor",           // Dependencies (critical!)
+    ".venv", ".cache", "__pycache__",   // Environments/caches
+    "dist", "build", "out", "tmp",      // Build outputs
+    ".vscode", ".idea",                 // IDE
+    ".DS_Store", "Thumbs.db",           // OS junk
+]</code></pre>
+
+            <h3>File Count Safety Limit</h3>
+            <table>
+                <tr><th>Threshold</th><th>Action</th><th>Message</th></tr>
+                <tr><td>5,000 files</td><td>Warning</td><td><code class="inline-code">Large repository detected</code></td></tr>
+                <tr><td>10,001 files</td><td><strong>Error — stops build</strong></td><td><code class="inline-code">file count exceeds safety limit</code></td></tr>
+            </table>
+            <p>Configured: <code class="inline-code">node.go:26</code> — <code class="inline-code">const MaxFileCount = 10000</code></p>
+        </section>
+
+        <section id="performance">
+            <h2>Performance</h2>
+
+            <h3>Benchmarks</h3>
+            <table>
+                <tr>
+                    <th>Operation</th>
+                    <th>Time</th>
+                    <th>Notes</th>
+                </tr>
+                <tr>
+                    <td>Build tree (1000 files)</td>
+                    <td>~50-100ms</td>
+                    <td>Filesystem walk, I/O bound</td>
+                </tr>
+                <tr>
+                    <td>Synonym generation (100 names)</td>
+                    <td>~500-2000ms</td>
+                    <td>Network bound, batched LLM calls</td>
+                </tr>
+                <tr>
+                    <td>Symbol extraction (1000 files)</td>
+                    <td>~100-500ms</td>
+                    <td>I/O bound, parallel with synonyms</td>
+                </tr>
+                <tr>
+                    <td>Search query</td>
+                    <td>~5-20ms</td>
+                    <td>In-memory tree walk, no I/O</td>
+                </tr>
+                <tr>
+                    <td>File change (upsert)</td>
+                    <td>~1-5ms</td>
+                    <td>Single file symbol extraction</td>
+                </tr>
+            </table>
+
+            <h3>Optimization Strategies</h3>
+            <ul>
+                <li><strong>Parallel execution</strong> — Symbol extraction runs alongside synonym LLM calls, saving ~100-500ms on large repos</li>
+                <li><strong>Index-time extraction</strong> — Symbols extracted once at build/change time, not per search</li>
+                <li><strong>In-memory search</strong> — Full tree in memory, no disk I/O during search</li>
+                <li><strong>Graceful degradation</strong> — Parse errors silently skipped, don't crash or block</li>
+            </ul>
+
+            <h3>Memory Usage</h3>
+            <p>
+                Symbol storage adds ~100-500 bytes per file to <code class="inline-code">context.json</code>.
+                For 1000 files: ~100-500KB additional. Negligible for modern systems.
+            </p>
+        </section>
+
+        <section id="thread-safety">
+            <h2>Thread Safety</h2>
+
+            <h3>Parallel Execution in BuildIndex()</h3>
+            <pre><code><span class="kw">var</span> wg sync.WaitGroup
+wg.<span class="fn">Add</span>(<span class="num">2</span>)
+
+<span class="cmt">// Goroutine A: writes to `combined` map and `synonymErr`</span>
+<span class="kw">go</span> <span class="kw">func</span>() {
+    <span class="kw">defer</span> wg.<span class="fn">Done</span>()
+    <span class="kw">for</span> name, values := <span class="kw">range</span> generated {
+        combined[name] = <span class="fn">sanitizeSynonyms</span>(values, ...)  <span class="cmt">// Safe: unique keys</span>
+    }
+}()
+
+<span class="cmt">// Goroutine B: writes to `node.Symbols` and local `count`</span>
+<span class="kw">go</span> <span class="kw">func</span>() {
+    <span class="kw">defer</span> wg.<span class="fn">Done</span>()
+    <span class="fn">walkTree</span>(tree, <span class="kw">func</span>(node *Node) {
+        node.Symbols = syms  <span class="cmt">// Safe: each node unique</span>
+        count++  <span class="cmt">// Safe: local variable</span>
+    })
+}()
+
+wg.<span class="fn">Wait</span>()
+
+<span class="cmt">// Main thread: reads `combined`, writes `node.Synonyms`</span>
+<span class="fn">AssignSynonymsToTree</span>(tree, combined, ...)</code></pre>
+
+            <h3>Why It's Safe</h3>
+            <ul>
+                <li><strong>No shared writes</strong> — Goroutine A writes <code class="inline-code">combined</code> map, Goroutine B writes <code class="inline-code">node.Symbols</code>. Different data structures.</li>
+                <li><strong>Unique keys</strong> — Each goroutine operates on unique keys (map keys for A, node pointers for B).</li>
+                <li><strong>WaitGroup synchronization</strong> — <code class="inline-code">AssignSynonymsToTree()</code> runs only after both goroutines complete.</li>
+                <li><strong>No mutex needed</strong> — No concurrent writes to same memory location.</li>
+            </ul>
+
+            <div class="callout callout-info">
+                <div class="callout-title">Search is Read-Only</div>
+                <p style="margin: 0;">
+                    <code class="inline-code">SearchHintsWithOptions()</code> only reads from the index.
+                    Safe to call concurrently from multiple goroutines.
+                </p>
+            </div>
+        </section>
+
+        <section id="troubleshooting">
+            <h2>Troubleshooting</h2>
+
+            <h3>Safety Features</h3>
+
+            <h4>Hard-Coded Default Ignores</h4>
+            <p>
+                Certain paths are <strong>always ignored</strong>, regardless of <code class="inline-code">.gitignore</code> presence.
+                This prevents crashes on projects missing <code class="inline-code">.gitignore</code>.
+            </p>
+            <pre><code>// ignore.go - ALWAYS active
+defaultIgnores = [
+    // Version control
+    ".git", ".svn", ".hg",
+    // Dependencies (critical - can crash indexer)
+    "node_modules", "vendor", "bower_components",
+    // Virtual environments
+    ".venv", ".cache", ".pytest_cache", "site-packages", "__pycache__",
+    // Build outputs
+    "dist", "build", "out", "tmp", "temp",
+    // IDE
+    ".vscode", ".idea",
+    // OS junk
+    ".DS_Store", "Thumbs.db",
+]</code></pre>
+
+            <h4>File Count Safety Limit</h4>
+            <p>
+                Indexing stops if file count exceeds safety threshold to prevent memory exhaustion.
+            </p>
+            <table>
+                <tr>
+                    <th>Threshold</th>
+                    <th>Action</th>
+                    <th>Message</th>
+                </tr>
+                <tr>
+                    <td>5,000 files</td>
+                    <td>Warning logged</td>
+                    <td><code class="inline-code">Large repository detected (5000 files). Consider adding more ignore patterns.</code></td>
+                </tr>
+                <tr>
+                    <td>10,001 files</td>
+                    <td><strong>Hard error</strong> — build stops</td>
+                    <td><code class="inline-code">file count exceeds safety limit (10000 files). Add more patterns to .gitignore or use --ignore flag</code></td>
+                </tr>
+            </table>
+            <p>
+                Default limit: <code class="inline-code">MaxFileCount = 10000</code> in <code class="inline-code">node.go:26</code>.
+                Adjust if needed for legitimate large repos.
+            </p>
+
+            <h3>Common Issues</h3>
+
+            <h4>Index build fails with "file count exceeds safety limit"</h4>
+            <ul>
+                <li><strong>Cause:</strong> Repository has >10,000 files after applying ignore patterns</li>
+                <li><strong>Fix:</strong> Add more patterns to <code class="inline-code">.gitignore</code> or use <code class="inline-code">--ignore</code> flag</li>
+                <li><strong>Example:</strong> <code class="inline-code">contexting build --ignore "generated" --ignore "*.min.js"</code></li>
+                <li><strong>Override:</strong> Edit <code class="inline-code">MaxFileCount</code> in <code class="inline-code">node.go:26</code> (not recommended)</li>
+            </ul>
+
+            <h4>Symbols not appearing in search results</h4>
+            <ul>
+                <li><strong>Check:</strong> Run <code class="inline-code">contexting build</code> and verify console shows "✓ Extracted symbols from N files"</li>
+                <li><strong>Check:</strong> Inspect <code class="inline-code">context.json</code> — do file nodes have <code class="inline-code">"symbols"</code> field?</li>
+                <li><strong>Check:</strong> Is the file extension supported? (Go, Python, JS/TS, Rust, Ruby)</li>
+                <li><strong>Check:</strong> Are symbols top-level? Nested functions/classes not extracted.</li>
+            </ul>
+
+            <h4>Search scores seem wrong</h4>
+            <ul>
+                <li><strong>Debug:</strong> Use <code class="inline-code">--debug</code> flag to see score breakdown</li>
+                <li><strong>Check:</strong> Tokenization — run <code class="inline-code">tokenizeIdentifier("YourSymbol")</code> to see how it splits</li>
+                <li><strong>Check:</strong> Query tokenization — <code class="inline-code">"JWT validation"</code> becomes <code class="inline-code">["jwt", "validation"]</code></li>
+            </ul>
+
+            <h4>Build fails with parse errors</h4>
+            <ul>
+                <li><strong>Go files:</strong> <code class="inline-code">go/parser</code> errors indicate syntax errors in source</li>
+                <li><strong>Other languages:</strong> Regex extraction is lenient — malformed files may return empty symbols but won't crash</li>
+                <li><strong>Check:</strong> File permissions — can the process read the source files?</li>
+            </ul>
+
+            <h4>Index not updating on file changes</h4>
+            <ul>
+                <li><strong>Check:</strong> Is watch mode running? <code class="inline-code">contexting watch</code></li>
+                <li><strong>Check:</strong> File path — is it within the indexed root?</li>
+                <li><strong>Check:</strong> Ignored paths — is the file/directory in .contextignore?</li>
+            </ul>
+
+            <h3>Debug Commands</h3>
+            <pre><code># Rebuild index with verbose output
+contexting build --verbose
+
+# Search with debug breakdown
+contexting search "JWT validation" --debug
+
+# Inspect context.json
+cat .context/context.json | jq '.tree.children["http_client.go"].symbols'
+
+# Check index stats
+contexting stats</code></pre>
+
+            <h3>Performance Profiling</h3>
+            <pre><code># Enable Go profiling
+export CONTEXTING_PROFILE=1
+contexting build
+
+# View profile
+go tool pprof http://localhost:6060/debug/pprof/profile</code></pre>
+        </section>
+
+        <section id="api-reference">
+            <h2>API Reference</h2>
+
+            <h3>Public Functions</h3>
+
+            <h4>symbols.go</h4>
+            <pre><code><span class="kw">func</span> <span class="fn">extractSymbols</span>(path <span class="typ">string</span>) ([]<span class="typ">string</span>, <span class="typ">error</span>)
+<span class="cmt">// Extract symbols from a file based on extension.</span>
+<span class="cmt">// Returns nil, nil for unsupported extensions (no error).</span>
+
+<span class="kw">func</span> <span class="fn">extractGoSymbols</span>(path <span class="typ">string</span>) ([]<span class="typ">string</span>, <span class="typ">error</span>)
+<span class="cmt">// Extract Go symbols using go/parser AST.</span>
+
+<span class="kw">func</span> <span class="fn">extractByRegex</span>(path <span class="typ">string</span>, patterns []<span class="typ">string</span>) ([]<span class="typ">string</span>, <span class="typ">error</span>)
+<span class="cmt">// Extract symbols using regex patterns.</span>
+
+<span class="kw">func</span> <span class="fn">tokenizeIdentifier</span>(name <span class="typ">string</span>) []<span class="typ">string</span>
+<span class="cmt">// Split CamelCase/snake_case into tokens.</span>
+<span class="cmt">// "validateJWTToken" → ["validate", "jwt", "token"]</span></code></pre>
+
+            <h4>search.go</h4>
+            <pre><code><span class="kw">func</span> <span class="fn">SearchHints</span>(index *ContextIndex, query <span class="typ">string</span>, limit <span class="typ">int</span>) []SearchResult
+<span class="cmt">// Search with default options.</span>
+
+<span class="kw">func</span> <span class="fn">SearchHintsWithOptions</span>(index *ContextIndex, query <span class="typ">string</span>, opts SearchOptions) []SearchResult
+<span class="cmt">// Search with custom options (limit, type filter, debug).</span></code></pre>
+
+            <h4>indexer.go</h4>
+            <pre><code><span class="kw">func</span> <span class="fn">BuildIndex</span>(opts BuildOptions) (*BuildResult, <span class="typ">error</span>)
+<span class="cmt">// Build complete index with synonyms and symbols.</span>
+<span class="cmt">// Runs synonym generation and symbol extraction in parallel.</span></code></pre>
+        </section>
+    </main>
+
+    <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+        ↑ Top
+    </button>
+
+    <script>
+        // Active nav highlighting
+        const sections = document.querySelectorAll('section');
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        function updateActiveNav() {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (window.scrollY >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        window.addEventListener('scroll', updateActiveNav);
+
+        // Back to top visibility
+        const backToTop = document.getElementById('backToTop');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 500) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+        });
+
+        // Search filter for nav
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            navLinks.forEach(link => {
+                const text = link.textContent.toLowerCase();
+                const parent = link.parentElement;
+                if (text.includes(query)) {
+                    parent.style.display = '';
+                } else {
+                    parent.style.display = query ? 'none' : '';
+                }
+            });
+        });
+
+        // Smooth scroll for nav links
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href').substring(1);
+                const target = document.getElementById(targetId);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        // Initialize
+        updateActiveNav();
+    </script>
+</body>
+</html>

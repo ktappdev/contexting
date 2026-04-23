@@ -6,13 +6,37 @@ import (
 )
 
 var defaultIgnores = []string{
+	// Version control (ALWAYS ignore)
 	".git",
-	".venv",
-	"site-packages",
-	"__pycache__",
+	".svn",
+	".hg",
+
+	// Dependencies (ALWAYS ignore - can crash indexer)
 	"node_modules",
 	"vendor",
+	"bower_components",
+
+	// Virtual environments / caches
+	".venv",
+	".cache",
+	".pytest_cache",
+	"site-packages",
+	"__pycache__",
+
+	// Build outputs
+	"dist",
+	"build",
+	"out",
+	"tmp",
+	"temp",
+
+	// IDE
+	".vscode",
+	".idea",
+
+	// OS junk
 	".DS_Store",
+	"Thumbs.db",
 }
 
 func BuildIgnoreMap(extra []string) map[string]bool {

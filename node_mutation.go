@@ -80,10 +80,15 @@ func upsertNodeByRelPath(root *Node, absRoot string, relPath string, isDir bool,
 
 	node, ok := parent.Children[name]
 	if !ok {
+		var symList []string
+		if !isDir {
+			symList, _ = extractSymbols(fullPath)
+		}
 		parent.Children[name] = &Node{
 			FullPath: fullPath,
 			Type:     nodeType,
 			Synonyms: nodeSynonyms,
+			Symbols:  symList,
 			Children: make(map[string]*Node),
 		}
 		return true
@@ -96,6 +101,9 @@ func upsertNodeByRelPath(root *Node, absRoot string, relPath string, isDir bool,
 	if node.Type != nodeType {
 		node.Type = nodeType
 		changed = true
+		if nodeType == "directory" {
+			node.Symbols = nil
+		}
 	}
 	if node.Children == nil {
 		node.Children = make(map[string]*Node)
@@ -104,6 +112,13 @@ func upsertNodeByRelPath(root *Node, absRoot string, relPath string, isDir bool,
 	if !stringSlicesEqual(node.Synonyms, nodeSynonyms) {
 		node.Synonyms = nodeSynonyms
 		changed = true
+	}
+	if node.Type == "file" {
+		symList, _ := extractSymbols(fullPath)
+		if !stringSlicesEqual(node.Symbols, symList) {
+			node.Symbols = symList
+			changed = true
+		}
 	}
 
 	return changed

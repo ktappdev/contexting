@@ -102,12 +102,36 @@ func SearchHintsWithOptions(index *ContextIndex, query string, opts SearchOption
 					continue
 				}
 				if len(token) < 3 || len(synLower) < 3 {
-					continue
+				continue
 				}
 				if strings.Contains(synLower, token) || strings.Contains(token, synLower) {
 					score += 5
 					matches = append(matches, "syn:"+syn)
 					breakdown = append(breakdown, "syn overlap +5: "+syn)
+				}
+			}
+		}
+
+		// Symbol scoring
+		for _, sym := range node.Symbols {
+			symLower := strings.ToLower(sym)
+			symTokens := tokenizeIdentifier(symLower)
+			for _, token := range tokens {
+				if symLower == token {
+					score += 8
+					matches = append(matches, "sym-exact:"+sym)
+					breakdown = append(breakdown, "sym exact +8: "+sym)
+				} else if strings.Contains(symLower, token) {
+					score += 5
+					matches = append(matches, "sym:"+sym)
+					breakdown = append(breakdown, "sym contains +5: "+sym)
+				}
+				for _, symToken := range symTokens {
+					if symToken == token {
+						score += 4
+						matches = append(matches, "sym-token:"+symToken)
+						breakdown = append(breakdown, "sym token +4: "+symToken)
+					}
 				}
 			}
 		}

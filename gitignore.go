@@ -9,19 +9,46 @@ import (
 )
 
 var starterGitignoreEntries = []string{
-	".venv/",
-	"site-packages/",
-	"__pycache__/",
-	"node_modules/",
-	"vendor/",
+	// Version control
+	".git",
+	".svn",
+	".hg",
+
+	// Virtual environments / caches
+	".venv",
+	".cache",
+	".pytest_cache",
+	"site-packages",
+	"__pycache__",
+
+	// Dependencies
+	"node_modules",
+	"vendor",
+
+	// Build outputs
+	"dist",
+	"build",
+	"out",
+	"tmp",
+	"temp",
+
+	// IDE / editor
+	".vscode",
+	".idea",
+	"*.swp",
+	"*.swo",
+
+	// Secrets / env
 	".env",
 	".env.local",
 	".env.*.local",
-	"dist/",
-	"build/",
-	"tmp/",
-	"*.log",
+
+	// OS junk
 	".DS_Store",
+	"Thumbs.db",
+
+	// Logs
+	"*.log",
 }
 
 func EnsureAndLoadGitignore(root string) ([]string, error) {
