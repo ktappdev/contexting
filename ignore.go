@@ -5,6 +5,31 @@ import (
 	"strings"
 )
 
+var dotFileWhitelist = map[string]bool{
+	".prettierrc":     true,
+	".eslintrc":       true,
+	".editorconfig":   true,
+	".env.example":    true,
+	".env.sample":     true,
+	".env.template":   true,
+	".npmrc":          true,
+	".nvmrc":          true,
+	".node-version":   true,
+	".python-version": true,
+	".ruby-version":   true,
+	".tool-versions":  true,
+	".dockerignore":   true,
+	".stylelintrc":    true,
+	".babelrc":        true,
+	".postcssrc":      true,
+	".lintstagedrc":   true,
+	".huskyrc":        true,
+	".gitattributes":  true,
+	".npmignore":      true,
+	".browserslistrc": true,
+	".commitlintrc":   true,
+}
+
 var defaultIgnores = []string{
 	// Version control (ALWAYS ignore)
 	".git",
@@ -67,6 +92,11 @@ func BuildIgnoreMapForRoot(root string, extra []string) (map[string]bool, error)
 func shouldIgnorePath(relPath string, baseName string, ignored map[string]bool) bool {
 	normalizedRel := normalizeIgnorePattern(relPath)
 	if normalizedRel == "" {
+		return false
+	}
+
+	// Check if baseName is a whitelisted dot file
+	if strings.HasPrefix(baseName, ".") && dotFileWhitelist[baseName] {
 		return false
 	}
 

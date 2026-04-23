@@ -78,7 +78,8 @@ func BuildTree(rootPath string, ignored map[string]bool) (*Node, error) {
 		} else {
 			fileCount++
 			if fileCount > MaxFileCount {
-				return fmt.Errorf("file count exceeds safety limit (%d files). Add more patterns to .gitignore or use --ignore flag", MaxFileCount)
+				logWarnf("File count limit reached (%d). Partial index built with what was scanned. Add ignore patterns to reduce file count.", MaxFileCount)
+				return filepath.SkipAll
 			}
 			if fileCount == MaxFileCount/2 {
 				logWarnf("Large repository detected (%d files). Consider adding more ignore patterns.", fileCount)
