@@ -381,6 +381,10 @@
             <li><a href="#overview" class="nav-link active">Overview</a></li>
             <li><a href="#architecture" class="nav-link">Architecture</a></li>
             <li><a href="#data-model" class="nav-link">Data Model</a></li>
+            <li><a href="#configuration" class="nav-link">Configuration</a></li>
+            <li class="sub-nav"><a href="#config-file" class="nav-link">context.toml</a></li>
+            <li class="sub-nav"><a href="#llm-config" class="nav-link">LLM Config</a></li>
+            <li class="sub-nav"><a href="#cli-flags" class="nav-link">CLI Flags</a></li>
         </ul>
 
         <div class="nav-section">
@@ -395,6 +399,18 @@
                 <li><a href="#indexer-go" class="nav-link">indexer.go</a></li>
                 <li><a href="#search-go" class="nav-link">search.go</a></li>
                 <li><a href="#mutation-go" class="nav-link">node_mutation.go</a></li>
+            </ul>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">CLI Commands</div>
+            <ul>
+                <li><a href="#cmd-init" class="nav-link">init / build</a></li>
+                <li><a href="#cmd-watch" class="nav-link">watch</a></li>
+                <li><a href="#cmd-search" class="nav-link">search</a></li>
+                <li><a href="#cmd-eval" class="nav-link">eval</a></li>
+                <li><a href="#cmd-doctor" class="nav-link">doctor</a></li>
+                <li><a href="#cmd-config" class="nav-link">config</a></li>
             </ul>
         </div>
 
@@ -455,7 +471,7 @@
             <h3>Key Design Decisions</h3>
             <ul>
                 <li><strong>No full-text search</strong> — only declaration lines, keeps index small and fast</li>
-                <li><strong>No LLM calls</strong> — pure static analysis, zero API cost</li>
+                <li><strong>LLM for synonyms only</strong> — symbol extraction is pure static analysis, zero API cost</li>
                 <li><strong>No type inference</strong> — just names, no resolution</li>
                 <li><strong>No cross-file tracking</strong> — not building a call graph</li>
                 <li><strong>Parallel execution</strong> — symbol extraction runs alongside synonym generation</li>
@@ -597,7 +613,262 @@
                         <code class="inline-code">removeNodeByRelPath()</code>
                     </td>
                 </tr>
+                <tr>
+                    <td><code class="inline-code">command_init.go</code></td>
+                    <td>Build/init command</td>
+                    <td>
+                        <code class="inline-code">newInitCommand()</code>
+                    </td>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">command_watch.go</code></td>
+                    <td>Watch/file monitor command</td>
+                    <td>
+                        <code class="inline-code">newWatchCommand()</code>
+                    </td>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">command_search.go</code></td>
+                    <td>Search command</td>
+                    <td>
+                        <code class="inline-code">newSearchCommand()</code>
+                    </td>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">command_eval.go</code></td>
+                    <td>Search quality evaluation</td>
+                    <td>
+                        <code class="inline-code">newEvalCommand()</code>
+                    </td>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">command_doctor.go</code></td>
+                    <td>Project health check</td>
+                    <td>
+                        <code class="inline-code">newDoctorCommand()</code>
+                    </td>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">command_config.go</code></td>
+                    <td>Config management</td>
+                    <td>
+                        <code class="inline-code">newConfigCommand()</code><br>
+                        <code class="inline-code">newConfigInitCommand()</code>
+                    </td>
+                </tr>
             </table>
+        </section>
+
+        <section id="configuration">
+            <h2>Configuration</h2>
+            <p>
+                The system is configured through <code class="inline-code">context.toml</code> plus CLI flags.
+                Config is loaded from <code class="inline-code">.context/context.toml</code> by default.
+                Run <code class="inline-code">contexting config init</code> to generate a starter file.
+            </p>
+
+            <h3 id="config-file">context.toml</h3>
+            <p>All config sections with defaults and descriptions:</p>
+
+            <pre><code><span class="cmt"># context.toml — top-level config file</span>
+
+[common]
+output = "context.json"                    <span class="cmt"># Index output path</span>
+synonym_cache = ".contexting_synonyms_cache.json"
+llm_model = "openai/gpt-oss-safeguard-20b"  <span class="cmt"># Default LLM model (overridden by [llm])</span>
+batch_size = 0                              <span class="cmt"># 0 = send all names per request</span>
+synonyms = 10                               <span class="cmt"># Desired synonyms per name</span>
+ignore = [".git", "node_modules", ...]      <span class="cmt"># Extra ignore patterns</span>
+verbose = true
+
+[llm]
+provider = "openrouter"                     <span class="cmt"># Cosmetic label for logs</span>
+endpoint = "https://openrouter.ai/api/v1/chat/completions"
+model = "openai/gpt-oss-safeguard-20b"
+api_key = ""                                <span class="cmt"># Raw key (alternative to env var)</span>
+api_key_env = "OPENROUTER_API_KEY"          <span class="cmt"># Env var containing API key</span>
+temperature = 0.0
+max_tokens = 0                              <span class="cmt"># 0 = no limit</span>
+
+[init]
+root = "."
+
+[watch]
+root = "."
+debounce = "750ms"
+llm = true                                  <span class="cmt"># Use LLM for synonyms during watch</span>
+persist = "shutdown"                        <span class="cmt"># When to persist: shutdown|interval|change</span>
+persist_interval = "45s"
+search_log = true
+search_log_query_max = 120
+max_batch_size = 0
+
+[search]
+index = "context.json"
+limit = 5
+min_score = 1
+type = "all"
+dir_summary = false
+dir_limit = 5
+drill_limit = 3
+memory = true
+runtime_file = ".contexting_runtime.json"
+explain = false
+json = false
+show_tokens = false
+
+[eval]
+index = "context.json"
+cases = "eval_cases.json"
+limit = 5
+min_score = 1
+type = "all"
+explain = false
+json = false</code></pre>
+
+            <h3 id="llm-config">LLM Configuration</h3>
+            <p>
+                The <code class="inline-code">[llm]</code> section controls synonym generation. Supports any
+                OpenAI-compatible API — OpenRouter, OpenAI, llama.cpp, vLLM, etc.
+            </p>
+
+            <h4>LLMConfig Struct</h4>
+            <pre><code><span class="kw">type</span> LLMConfig <span class="kw">struct</span> {
+    Provider    <span class="typ">string</span>  <span class="cmt">// Log label (cosmetic)</span>
+    Endpoint    <span class="typ">string</span>  <span class="cmt">// API URL, e.g. https://openrouter.ai/api/v1/chat/completions</span>
+    Model       <span class="typ">string</span>  <span class="cmt">// Model name, e.g. openai/gpt-oss-safeguard-20b</span>
+    APIKey      <span class="typ">string</span>  <span class="cmt">// Raw API key (use api_key_env for security)</span>
+    APIKeyEnv   <span class="typ">string</span>  <span class="cmt">// Env var name, e.g. OPENROUTER_API_KEY</span>
+    Temperature <span class="typ">float64</span> <span class="cmt">// Sampling temperature (0 = deterministic)</span>
+    MaxTokens   <span class="typ">int</span>    <span class="cmt">// Max tokens in response (0 = no limit)</span>
+}</code></pre>
+
+            <h4>Resolution Order (lowest to highest priority)</h4>
+            <table>
+                <tr><th>Config Source</th><th>Example</th></tr>
+                <tr>
+                    <td>Hardcoded defaults</td>
+                    <td><code class="inline-code">endpoint = "https://openrouter.ai/api/v1/chat/completions"</code>, <code class="inline-code">model = "openai/gpt-oss-safeguard-20b"</code></td>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">[llm]</code> section in context.toml</td>
+                    <td><code class="inline-code">model = "anthropic/claude-3-opus"</code></td>
+                </tr>
+                <tr>
+                    <td>CLI flags (<code class="inline-code">--llm-endpoint</code>, <code class="inline-code">--llm-model</code>, <code class="inline-code">--api-key</code>)</td>
+                    <td><code class="inline-code">contexting init --llm-endpoint http://localhost:8080/v1</code></td>
+                </tr>
+            </table>
+
+            <div class="callout callout-info">
+                <div class="callout-title">API Key Resolution</div>
+                <p style="margin: 0;">
+                    Keys resolved in order: CLI <code class="inline-code">--api-key</code> flag → <code class="inline-code">LLMConfig.APIKeyEnv</code> env var →
+                    <code class="inline-code">LLMConfig.APIKey</code> in config file. Falls back to <code class="inline-code">OPENROUTER_API_KEY</code>
+                    env var if <code class="inline-code">api_key_env</code> is empty. If no key found, synonym generation is skipped.
+                </p>
+            </div>
+
+            <h4>Example: Local LLM with llama.cpp</h4>
+            <pre><code>[llm]
+endpoint = "http://localhost:8080/v1/chat/completions"
+model = "local-model"
+api_key = ""  <span class="cmt"># Local endpoints often don't need auth</span></code></pre>
+
+            <h4>Example: OpenAI Direct</h4>
+            <pre><code>[llm]
+provider = "openai"
+endpoint = "https://api.openai.com/v1/chat/completions"
+model = "gpt-4o-mini"
+api_key_env = "OPENAI_API_KEY"</code></pre>
+
+            <h3 id="cli-flags">Key CLI Flags</h3>
+            <table>
+                <tr>
+                    <th>Flag</th>
+                    <th>Command</th>
+                    <th>Default</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">--llm-model</code></td>
+                    <td><code class="inline-code">init</code>, <code class="inline-code">watch</code></td>
+                    <td><code class="inline-code">openai/gpt-oss-safeguard-20b</code></td>
+                    <td>LLM model for synonym generation</td>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">--llm-endpoint</code></td>
+                    <td><code class="inline-code">init</code>, <code class="inline-code">watch</code></td>
+                    <td><code class="inline-code">https://openrouter.ai/api/v1/chat/completions</code></td>
+                    <td>API endpoint URL</td>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">--api-key</code></td>
+                    <td><code class="inline-code">init</code>, <code class="inline-code">watch</code></td>
+                    <td><code class="inline-code">""</code></td>
+                    <td>LLM API key (falls back to env var)</td>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">--batch-size</code></td>
+                    <td><code class="inline-code">init</code>, <code class="inline-code">watch</code></td>
+                    <td><code class="inline-code">0</code></td>
+                    <td>Names per LLM request (0 = all)</td>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">--synonyms</code></td>
+                    <td><code class="inline-code">init</code>, <code class="inline-code">watch</code></td>
+                    <td><code class="inline-code">10</code></td>
+                    <td>Desired synonyms per file name</td>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">--ignore</code></td>
+                    <td><code class="inline-code">init</code>, <code class="inline-code">watch</code></td>
+                    <td><code class="inline-code">[]</code></td>
+                    <td>Additional ignore patterns</td>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">--llm</code></td>
+                    <td><code class="inline-code">watch</code></td>
+                    <td><code class="inline-code">true</code></td>
+                    <td>Enable/disable LLM synonym gen during watch</td>
+                </tr>
+                <tr>
+                    <td><code class="inline-code">--root</code></td>
+                    <td><code class="inline-code">init</code>, <code class="inline-code">watch</code>, <code class="inline-code">search</code></td>
+                    <td><code class="inline-code">.</code></td>
+                    <td>Project root path</td>
+                </tr>
+            </table>
+
+            <h4>resolveLLMConfig()</h4>
+            <p>
+                Both <code class="inline-code">init</code> and <code class="inline-code">watch</code> commands use <code class="inline-code">resolveLLMConfig()</code>
+                to merge CLI flags with config file values:
+            </p>
+            <pre><code><span class="kw">func</span> <span class="fn">resolveLLMConfig</span>(flags CommonFlags, llmCfg LLMConfig) (endpoint, model, apiKey <span class="typ">string</span>, temperature <span class="typ">float64</span>, maxTokens <span class="typ">int</span>, provider <span class="typ">string</span>) {
+    provider = llmCfg.Provider
+    <span class="kw">if</span> provider == <span class="str">""</span> { provider = <span class="str">"openrouter"</span> }
+
+    endpoint = flags.Endpoint
+    <span class="kw">if</span> endpoint == <span class="str">""</span> { endpoint = llmCfg.Endpoint }
+    <span class="kw">if</span> endpoint == <span class="str">""</span> { endpoint = defaultEndpoint }
+
+    model = flags.Model
+    <span class="kw">if</span> model == <span class="str">""</span> { model = llmCfg.Model }
+    <span class="kw">if</span> model == <span class="str">""</span> { model = defaultModel }
+
+    apiKey = flags.APIKey
+    <span class="kw">if</span> apiKey == <span class="str">""</span> {
+        keyEnv := llmCfg.APIKeyEnv
+        <span class="kw">if</span> keyEnv == <span class="str">""</span> { keyEnv = <span class="str">"OPENROUTER_API_KEY"</span> }
+        apiKey = os.<span class="fn">Getenv</span>(keyEnv)
+    }
+    <span class="kw">if</span> apiKey == <span class="str">""</span> { apiKey = llmCfg.APIKey }
+
+    temperature = llmCfg.Temperature
+    maxTokens = llmCfg.MaxTokens
+    <span class="kw">return</span>
+}</code></pre>
         </section>
 
         <section id="data-model">
@@ -1408,6 +1679,106 @@ contexting build
 
 # View profile
 go tool pprof http://localhost:6060/debug/pprof/profile</code></pre>
+        </section>
+
+        <section id="cmd-init">
+            <h2>CLI Commands</h2>
+
+            <h3>init / build</h3>
+            <p>Build the search index. Scans the file tree, extracts symbols, generates LLM synonyms.</p>
+            <pre><code><span class="cmt"># Basic usage</span>
+contexting init
+
+<span class="cmt"># With custom LLM endpoint (local model)</span>
+contexting init --llm-endpoint http://localhost:8080/v1 --llm-model llama-3.2 --api-key ""
+
+<span class="cmt"># With extra ignores</span>
+contexting init --ignore generated --ignore "*.pb.go"</code></pre>
+
+            <h3 id="cmd-watch">watch</h3>
+            <p>Monitors filesystem changes and keeps the index updated in real-time.</p>
+            <pre><code><span class="cmt"># Start watching</span>
+contexting watch
+
+<span class="cmt"># With custom LLM config</span>
+contexting watch --llm-endpoint https://api.openai.com/v1 --llm-model gpt-4o-mini
+
+<span class="cmt"># Synonyms off during watch (cache + lexical only)</span>
+contexting watch --llm=false</code></pre>
+
+            <div class="callout callout-info">
+                <div class="callout-title">Persist Modes</div>
+                <p style="margin: 0;">
+                    <code class="inline-code">watch</code> writes index on <code class="inline-code">shutdown</code> (default),
+                    periodic <code class="inline-code">interval</code>, or on every <code class="inline-code">change</code>.
+                    Configure via <code class="inline-code">watch.persist</code> in context.toml.
+                </p>
+            </div>
+
+            <h3 id="cmd-search">search</h3>
+            <p>Query the index with scoring breakdown and debug support.</p>
+            <pre><code><span class="cmt"># Basic search</span>
+contexting search "JWT validation"
+
+<span class="cmt"># Score breakdown</span>
+contexting search "auth middleware" --explain
+
+<span class="cmt"># Filter by type</span>
+contexting search "util" --type files
+
+<span class="cmt"># JSON output</span>
+contexting search "rate limit" --json
+
+<span class="cmt"># Search across projects</span>
+contexting search "parser" --root /path/to/project</code></pre>
+
+            <h3 id="cmd-eval">eval</h3>
+            <p>Evaluate search quality against a set of expected query → path cases. Useful for regression testing and tuning.</p>
+            <pre><code><span class="cmt"># Run eval against cases file</span>
+contexting eval --cases eval_cases.json
+
+<span class="cmt"># With score breakdown per case</span>
+contexting eval --cases eval_cases.json --explain
+
+<span class="cmt"># JSON report</span>
+contexting eval --cases eval_cases.json --json</code></pre>
+
+            <h4>Eval Cases Format</h4>
+            <pre><code>[
+  {
+    "query": "JWT validation",
+    "expected": ["http_client.go"]
+  },
+  {
+    "query": "rate limiting",
+    "expected": ["middleware.go"],
+    "min_score": 5
+  }
+]</code></pre>
+
+            <h3 id="cmd-doctor">doctor</h3>
+            <p>Run health checks on the project, config, and index. Reports actionable fixes.</p>
+            <pre><code><span class="cmt"># Check everything</span>
+contexting doctor
+
+<span class="cmt"># JSON output for tooling</span>
+contexting doctor --json
+
+<span class="cmt"># Override paths</span>
+contexting doctor --root /path/to/project --index my_context.json</code></pre>
+
+            <p>Checks performed: config file exists and valid, index file exists and parsable, root path is valid, synonym cache is readable, write access to project directory.</p>
+
+            <h3 id="cmd-config">config</h3>
+            <p>Manage context.toml configuration files.</p>
+            <pre><code><span class="cmt"># Generate starter config</span>
+contexting config init
+
+<span class="cmt"># Write to specific path</span>
+contexting config init --output /path/to/context.toml
+
+<span class="cmt"># Overwrite existing</span>
+contexting config init --force</code></pre>
         </section>
 
         <section id="api-reference">
