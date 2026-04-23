@@ -13,14 +13,18 @@ import (
 )
 
 const (
-	openRouterURL = "https://openrouter.ai/api/v1/chat/completions"
-	defaultModel  = "openai/gpt-oss-safeguard-20b"
+	defaultModel    = "openai/gpt-oss-safeguard-20b"
+	defaultSynonyms = 10
 )
 
+var defaultEndpoint = "https://openrouter.ai/api/v1/chat/completions"
+
 type OpenRouterRequest struct {
-	Model    string          `json:"model"`
-	Messages []Message       `json:"messages"`
-	Format   json.RawMessage `json:"response_format,omitempty"`
+	Model       string          `json:"model"`
+	Messages   []Message       `json:"messages"`
+	Format     json.RawMessage `json:"response_format,omitempty"`
+	Temperature *float64       `json:"temperature,omitempty"`
+	MaxTokens  *int            `json:"max_tokens,omitempty"`
 }
 
 type Message struct {
@@ -46,11 +50,11 @@ func GetAPIKey() (string, error) {
 	return key, nil
 }
 
-func GenerateSynonymsBatch(names []string, apiKey string, model string, synonymsPerName int) (SynonymResponse, error) {
-	return GenerateSynonymsBatchWithContext(context.Background(), names, apiKey, model, synonymsPerName)
+func GenerateSynonymsBatch(names []string, apiKey string, model string, endpoint string, temperature float64, maxTokens int, synonymsPerName int) (SynonymResponse, error) {
+	return GenerateSynonymsBatchWithContext(context.Background(), names, apiKey, model, endpoint, temperature, maxTokens, synonymsPerName)
 }
 
-func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKey string, model string, synonymsPerName int) (SynonymResponse, error) {
+func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKey string, model string, endpoint string, temperature float64, maxTokens int, synonymsPerName int) (SynonymResponse, error) {
 	if strings.TrimSpace(apiKey) == "" {
 		return nil, fmt.Errorf("API key is required")
 	}
@@ -60,8 +64,11 @@ func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKe
 	if model == "" {
 		model = defaultModel
 	}
+	if endpoint == "" {
+		endpoint = defaultEndpoint
+	}
 	if synonymsPerName <= 0 {
-		synonymsPerName = 4
+		synonymsPerName = defaultSynonyms
 	}
 
 	systemPrompt := fmt.Sprintf(
@@ -79,13 +86,19 @@ func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKe
 		},
 		Format: json.RawMessage(`{"type":"json_object"}`),
 	}
+	if temperature > 0 {
+		reqBody.Temperature = &temperature
+	}
+	if maxTokens > 0 {
+		reqBody.MaxTokens = &maxTokens
+	}
 
 	jsonBody, err := json.Marshal(reqBody)
 	if err != nil {
 		return nil, fmt.Errorf("marshal request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, openRouterURL, bytes.NewBuffer(jsonBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
 	}
@@ -132,11 +145,11 @@ func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKe
 	return synonyms, nil
 }
 
-func GenerateSynonymsForNames(names []string, apiKey string, batchSize int, model string, synonymsPerName int) (SynonymResponse, error) {
-	return GenerateSynonymsForNamesWithContext(context.Background(), names, apiKey, batchSize, model, synonymsPerName)
+func GenerateSynonymsForNames(names []string, apiKey string, batchSize int, model string, endpoint string, temperature float64, maxTokens int, synonymsPerName int) (SynonymResponse, error) {
+	return GenerateSynonymsForNamesWithContext(context.Background(), names, apiKey, batchSize, model, endpoint, temperature, maxTokens, synonymsPerName)
 }
 
-func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, apiKey string, batchSize int, model string, synonymsPerName int) (SynonymResponse, error) {
+func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, apiKey string, batchSize int, model string, endpoint string, temperature float64, maxTokens int, synonymsPerName int) (SynonymResponse, error) {
 	if len(names) == 0 {
 		return make(SynonymResponse), nil
 	}
@@ -144,12 +157,12 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 		model = defaultModel
 	}
 	if synonymsPerName <= 0 {
-		synonymsPerName = 4
+		synonymsPerName = defaultSynonyms
 	}
 
 	// batchSize <= 0 means send all names in a single request
 	if batchSize <= 0 || batchSize >= len(names) {
-		return GenerateSynonymsBatchWithContext(ctx, names, apiKey, model, synonymsPerName)
+		return GenerateSynonymsBatchWithContext(ctx, names, apiKey, model, endpoint, temperature, maxTokens, synonymsPerName)
 	}
 
 	result := make(SynonymResponse)
@@ -160,7 +173,7 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 		}
 
 		batch := names[i:end]
-		synonyms, err := GenerateSynonymsBatchWithContext(ctx, batch, apiKey, model, synonymsPerName)
+		synonyms, err := GenerateSynonymsBatchWithContext(ctx, batch, apiKey, model, endpoint, temperature, maxTokens, synonymsPerName)
 		if err != nil {
 			return nil, fmt.Errorf("batch %d-%d failed: %w", i, end, err)
 		}

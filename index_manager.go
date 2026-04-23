@@ -32,6 +32,9 @@ type IndexManagerOptions struct {
 	APIKey          string
 	UseLLM          bool
 	MaxBatchSize    int
+	Endpoint        string
+	Temperature     float64
+	MaxTokens       int
 }
 
 type ApplyResult struct {
@@ -53,6 +56,9 @@ type IndexManager struct {
 	apiKey          string
 	useLLM          bool
 	maxBatchSize    int
+	endpoint        string
+	temperature     float64
+	maxTokens       int
 
 	index  *ContextIndex
 	cache  SynonymResponse
@@ -69,7 +75,7 @@ func NewIndexManager(opts IndexManagerOptions) *IndexManager {
 		opts.BatchSize = 0 // default: send all
 	}
 	if opts.SynonymsPerName <= 0 {
-		opts.SynonymsPerName = 4
+		opts.SynonymsPerName = defaultSynonyms
 	}
 	if opts.IgnoredPaths == nil {
 		opts.IgnoredPaths = BuildIgnoreMap(nil)
@@ -86,6 +92,9 @@ func NewIndexManager(opts IndexManagerOptions) *IndexManager {
 		apiKey:          opts.APIKey,
 		useLLM:          opts.UseLLM,
 		maxBatchSize:    opts.MaxBatchSize,
+		endpoint:        opts.Endpoint,
+		temperature:     opts.Temperature,
+		maxTokens:       opts.MaxTokens,
 		cache:           cache,
 	}
 }
@@ -125,6 +134,9 @@ func (m *IndexManager) Bootstrap(ctx context.Context) (IndexStats, error) {
 		SynonymsPerName: m.synonymsPerName,
 		SynonymCache:    m.cache,
 		MaxBatchSize:    m.maxBatchSize,
+		Endpoint:        m.endpoint,
+		Temperature:     m.temperature,
+		MaxTokens:       m.maxTokens,
 	})
 	if buildErr != nil {
 		return IndexStats{}, buildErr
@@ -212,7 +224,7 @@ func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsno
 		}
 		sort.Strings(names)
 
-		synonyms, err := GenerateSynonymsForNamesWithContext(ctx, names, m.activeAPIKey(), m.maxBatchSize, m.model, m.synonymsPerName)
+		synonyms, err := GenerateSynonymsForNamesWithContext(ctx, names, m.activeAPIKey(), m.maxBatchSize, m.model, m.endpoint, m.temperature, m.maxTokens, m.synonymsPerName)
 		if err != nil {
 			result.SynonymError = err
 		} else {

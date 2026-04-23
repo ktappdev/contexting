@@ -3,9 +3,24 @@ output = "context.json"
 synonym_cache = ".contexting_synonyms_cache.json"
 llm_model = "openai/gpt-oss-safeguard-20b"
 batch_size = 0
-synonyms = 4
+synonyms = 10
 ignore = [".git", ".venv", "site-packages", "__pycache__", "node_modules", "vendor", "dist"]
 verbose = true
+
+[llm]
+# LLM provider name shown in logs (cosmetic)
+provider = "openrouter"
+# API endpoint - supports OpenRouter, OpenAI-compatible (llama.cpp, etc)
+endpoint = "https://openrouter.ai/api/v1/chat/completions"
+# Model to use
+model = "openai/gpt-oss-safeguard-20b"
+# API key (alternative: use api_key_env for env var name)
+api_key = ""
+# Environment variable containing API key
+api_key_env = "OPENROUTER_API_KEY"
+# Optional: sampling parameters
+temperature = 0.0
+max_tokens = 0
 
 [init]
 root = "."

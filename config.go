@@ -14,6 +14,7 @@ type ContextingConfig struct {
 	Watch  WatchConfig  `toml:"watch"`
 	Search SearchConfig `toml:"search"`
 	Eval   EvalConfig   `toml:"eval"`
+	LLM    LLMConfig    `toml:"llm"`
 }
 
 type CommonConfig struct {
@@ -65,6 +66,16 @@ type EvalConfig struct {
 	TypeFilter string `toml:"type"`
 	Explain    *bool  `toml:"explain"`
 	JSON       *bool  `toml:"json"`
+}
+
+type LLMConfig struct {
+	Provider    string  `toml:"provider"`
+	Endpoint    string  `toml:"endpoint"`
+	Model       string  `toml:"model"`
+	APIKey      string  `toml:"api_key"`
+	APIKeyEnv   string  `toml:"api_key_env"`
+	Temperature float64 `toml:"temperature"`
+	MaxTokens   int     `toml:"max_tokens"`
 }
 
 func LoadContextingConfig(path string) (*ContextingConfig, error) {

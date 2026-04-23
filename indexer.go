@@ -18,6 +18,9 @@ type BuildOptions struct {
 	SynonymsPerName int
 	SynonymCache    SynonymResponse
 	MaxBatchSize    int
+	Endpoint        string
+	Temperature     float64
+	MaxTokens       int
 }
 
 type BuildResult struct {
@@ -41,7 +44,7 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 		opts.BatchSize = 0 // default: send all
 	}
 	if opts.SynonymsPerName <= 0 {
-		opts.SynonymsPerName = 4
+		opts.SynonymsPerName = defaultSynonyms
 	}
 	if opts.IgnoredPaths == nil {
 		opts.IgnoredPaths = BuildIgnoreMap(nil)
@@ -87,7 +90,7 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 			batchSize = opts.BatchSize
 		}
 		if opts.APIKey != "" && len(missing) > 0 {
-			generated, err := GenerateSynonymsForNamesWithContext(opts.Ctx, missing, opts.APIKey, batchSize, opts.Model, opts.SynonymsPerName)
+			generated, err := GenerateSynonymsForNamesWithContext(opts.Ctx, missing, opts.APIKey, batchSize, opts.Model, opts.Endpoint, opts.Temperature, opts.MaxTokens, opts.SynonymsPerName)
 			if err != nil {
 				synonymErr = err
 			} else {

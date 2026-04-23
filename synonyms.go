@@ -37,7 +37,7 @@ var lowSignalTokens = map[string]struct{}{
 
 func sanitizeSynonyms(values []string, max int) []string {
 	if max <= 0 {
-		max = 4
+		max = defaultSynonyms
 	}
 	seen := make(map[string]struct{}, len(values))
 	out := make([]string, 0, max)

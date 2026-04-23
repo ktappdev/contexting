@@ -86,13 +86,14 @@ func newWatchCommand() *cobra.Command {
 				return err
 			}
 
-			apiKey := resolveAPIKey(flags.APIKey)
+			llmEndpoint, llmModel, llmKey, llmTemp, llmMaxTokens, llmProvider := resolveLLMConfig(flags, cfg.LLM)
+			logInfof("LLM: provider=%s model=%s endpoint=%s api_key=%s", llmProvider, llmModel, llmEndpoint, maskAPIKey(llmKey))
 			if !llmOnWatch {
-				apiKey = ""
+				llmKey = ""
 				logInfof("Watch LLM mode is off (default). Using cache + lexical synonyms only.")
 			}
-			if llmOnWatch && apiKey == "" {
-				logWarnf("OPENROUTER_API_KEY not set and --api-key not provided; continuing without synonyms")
+			if llmOnWatch && llmKey == "" {
+				logWarnf("LLM API key not configured; continuing without synonyms")
 			}
 
 			ctx, stop := signalAwareContext()
@@ -103,12 +104,15 @@ func newWatchCommand() *cobra.Command {
 				OutputPath:      outputPath,
 				CachePath:       cachePath,
 				IgnoredPaths:    ignored,
-				Model:           flags.Model,
+				Model:           llmModel,
 				BatchSize:       flags.BatchSize,
 				SynonymsPerName: flags.SynonymsPerName,
-				APIKey:          apiKey,
+				APIKey:          llmKey,
 				UseLLM:          llmOnWatch,
 				MaxBatchSize:    maxBatchSize,
+				Endpoint:        llmEndpoint,
+				Temperature:     llmTemp,
+				MaxTokens:       llmMaxTokens,
 			})
 
 			bootstrapStats, err := manager.Bootstrap(ctx)
@@ -323,11 +327,12 @@ func newWatchCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&flags.OutputPath, "output", "o", "context.json", "Output JSON path")
-	cmd.Flags().StringVar(&flags.Model, "llm-model", defaultModel, "LLM model used for synonym generation")
-	cmd.Flags().StringVar(&flags.APIKey, "api-key", "", "OpenRouter API key (falls back to OPENROUTER_API_KEY)")
+	cmd.Flags().StringVar(&flags.Model, "llm-model", "", "LLM model used for synonym generation")
+	cmd.Flags().StringVar(&flags.APIKey, "api-key", "", "LLM API key (falls back to config api_key_env, LLM_API_KEY, OPENROUTER_API_KEY)")
+	cmd.Flags().StringVar(&flags.Endpoint, "llm-endpoint", "", "LLM API endpoint URL")
 	cmd.Flags().IntVar(&flags.BatchSize, "batch-size", 0, "Names per LLM request (0 = send all, legacy option)")
 	cmd.Flags().IntVar(&maxBatchSize, "max-batch-size", 0, "Maximum names per LLM request (0 = send all at once, default)")
-	cmd.Flags().IntVar(&flags.SynonymsPerName, "synonyms", 4, "Desired synonyms per name")
+	cmd.Flags().IntVar(&flags.SynonymsPerName, "synonyms", defaultSynonyms, "Desired synonyms per name")
 	cmd.Flags().StringVar(&flags.SynonymCache, "synonym-cache", ".contexting_synonyms_cache.json", "Path to persistent synonym cache JSON")
 	cmd.Flags().StringSliceVar(&flags.ExtraIgnores, "ignore", nil, "Additional ignore entries (name or relative path)")
 	cmd.Flags().BoolVarP(&flags.Verbose, "verbose", "v", true, "Enable verbose logging")

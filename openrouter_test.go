@@ -30,11 +30,11 @@ func TestGetAPIKey(t *testing.T) {
 }
 
 func TestGenerateSynonymsBatchValidation(t *testing.T) {
-	if _, err := GenerateSynonymsBatch([]string{"src"}, "", defaultModel, 4); err == nil {
+	if _, err := GenerateSynonymsBatch([]string{"src"}, "", defaultModel, "", 0, 0, 4); err == nil {
 		t.Fatalf("expected error for empty API key")
 	}
 
-	resp, err := GenerateSynonymsBatch(nil, "sk-test", defaultModel, 4)
+	resp, err := GenerateSynonymsBatch(nil, "sk-test", defaultModel, "", 0, 0, 4)
 	if err != nil {
 		t.Fatalf("expected no error for empty names, got %v", err)
 	}
@@ -44,7 +44,7 @@ func TestGenerateSynonymsBatchValidation(t *testing.T) {
 }
 
 func TestGenerateSynonymsForNamesHandlesEmptyList(t *testing.T) {
-	result, err := GenerateSynonymsForNames([]string{}, "sk-test", 8, defaultModel, 4)
+	result, err := GenerateSynonymsForNames([]string{}, "sk-test", 8, defaultModel, "", 0, 0, 4)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -57,8 +57,8 @@ func TestGenerateSynonymsForNamesHandlesEmptyList(t *testing.T) {
 }
 
 func TestOpenRouterConstants(t *testing.T) {
-	if openRouterURL != "https://openrouter.ai/api/v1/chat/completions" {
-		t.Fatalf("unexpected openRouterURL: %s", openRouterURL)
+	if defaultEndpoint != "https://openrouter.ai/api/v1/chat/completions" {
+		t.Fatalf("unexpected defaultEndpoint: %s", defaultEndpoint)
 	}
 	if defaultModel != "openai/gpt-oss-safeguard-20b" {
 		t.Fatalf("unexpected defaultModel: %s", defaultModel)
