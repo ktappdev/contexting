@@ -1,7 +1,7 @@
 [common]
 output = "context.json"
 synonym_cache = ".contexting_synonyms_cache.json"
-llm_model = "openai/gpt-oss-safeguard-20b"
+llm_model = "qwen3.5-4b"
 batch_size = 0
 synonyms = 10
 ignore = [".git", ".venv", "site-packages", "__pycache__", "node_modules", "vendor", "dist"]
@@ -9,16 +9,16 @@ verbose = true
 
 [llm]
 # LLM provider name shown in logs (cosmetic)
-provider = "openrouter"
-# API endpoint - supports OpenRouter, OpenAI-compatible (llama.cpp, etc)
-endpoint = "https://openrouter.ai/api/v1/chat/completions"
+provider = "local"
+# API endpoint - OpenAI-compatible
+endpoint = "https://llama.kentaylor.dev/v1/chat/completions"
 # Model to use
-model = "openai/gpt-oss-safeguard-20b"
-# API key (alternative: use api_key_env for env var name)
+model = "qwen3.5-4b"
+# API key (not needed for local endpoint)
 api_key = ""
-# Environment variable containing API key
-api_key_env = "OPENROUTER_API_KEY"
-# Optional: sampling parameters
+# Environment variable containing API key (not needed for local)
+api_key_env = ""
+# Sampling parameters
 temperature = 0.0
 max_tokens = 0
 

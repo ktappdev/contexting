@@ -13,12 +13,12 @@ import (
 )
 
 const (
-	defaultModel           = "openai/gpt-oss-safeguard-20b"
+	defaultModel           = "qwen3.5-4b"
 	defaultSynonyms        = 10
 	defaultHTTPTimeout     = 45 * time.Second // HTTP client timeout for API requests
 )
 
-var defaultEndpoint = "https://openrouter.ai/api/v1/chat/completions"
+var defaultEndpoint = "https://llama.kentaylor.dev/v1/chat/completions"
 
 type OpenRouterRequest struct {
 	Model       string          `json:"model"`
@@ -56,9 +56,7 @@ func GenerateSynonymsBatch(names []string, apiKey string, model string, endpoint
 }
 
 func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKey string, model string, endpoint string, temperature float64, maxTokens int, synonymsPerName int) (SynonymResponse, error) {
-	if strings.TrimSpace(apiKey) == "" {
-		return nil, fmt.Errorf("API key is required")
-	}
+
 	if len(names) == 0 {
 		return make(SynonymResponse), nil
 	}
@@ -104,7 +102,9 @@ func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKe
 		return nil, fmt.Errorf("create request: %w", err)
 	}
 
-	req.Header.Set("Authorization", "Bearer "+apiKey)
+	if apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+apiKey)
+	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("HTTP-Referer", "https://github.com/contexting")
 	req.Header.Set("X-Title", "Contexting")
@@ -136,7 +136,11 @@ func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKe
 
 	var synonyms SynonymResponse
 	if err := json.Unmarshal([]byte(content), &synonyms); err != nil {
-		return nil, fmt.Errorf("parse synonyms JSON: %w", err)
+		// Try to fix common LLM JSON issues (trailing commas, extra text)
+		fixed := sanitizeJSON(content)
+		if err2 := json.Unmarshal([]byte(fixed), &synonyms); err2 != nil {
+			return nil, fmt.Errorf("parse synonyms JSON: %w", err)
+		}
 	}
 
 	for name, values := range synonyms {
@@ -163,26 +167,47 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 
 	// batchSize <= 0 means send all names in a single request
 	if batchSize <= 0 || batchSize >= len(names) {
+		fmt.Printf("  Synonyms: processing %d names...\n", len(names))
 		return GenerateSynonymsBatchWithContext(ctx, names, apiKey, model, endpoint, temperature, maxTokens, synonymsPerName)
 	}
 
+	totalBatches := (len(names) + batchSize - 1) / batchSize
 	result := make(SynonymResponse)
 	for i := 0; i < len(names); i += batchSize {
+		batchNum := i/batchSize + 1
 		end := i + batchSize
 		if end > len(names) {
 			end = len(names)
 		}
 
+		fmt.Printf("\r  Synonyms: batch %d/%d (%d names)...", batchNum, totalBatches, end-i)
 		batch := names[i:end]
 		synonyms, err := GenerateSynonymsBatchWithContext(ctx, batch, apiKey, model, endpoint, temperature, maxTokens, synonymsPerName)
 		if err != nil {
-			return nil, fmt.Errorf("batch %d-%d failed: %w", i, end, err)
+			fmt.Printf("\n  ⚠ Synonyms: batch %d/%d failed, skipping: %v\n", batchNum, totalBatches, err)
+			continue
 		}
 
 		for name, values := range synonyms {
 			result[name] = values
 		}
 	}
+	fmt.Printf("\r  Synonyms: %d names processed      \n", len(result))
 
 	return result, nil
+}
+
+// sanitizeJSON fixes common LLM JSON output issues.
+func sanitizeJSON(s string) string {
+	// Extract just the JSON object if wrapped in markdown or extra text
+	if idx := strings.Index(s, "{"); idx > 0 {
+		s = s[idx:]
+	}
+	if idx := strings.LastIndex(s, "}"); idx >= 0 && idx < len(s)-1 {
+		s = s[:idx+1]
+	}
+	// Remove trailing commas before } or ]
+	s = strings.ReplaceAll(s, ",]", "]")
+	s = strings.ReplaceAll(s, ",}", "}")
+	return s
 }

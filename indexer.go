@@ -75,6 +75,10 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 	combined := cloneSynonymMap(opts.SynonymCache)
 	missing := missingNames(names, combined)
 
+	if len(names) > 0 {
+		fmt.Printf("  %d names to process (%d cached, %d new)\n", len(names), len(names)-len(missing), len(missing))
+	}
+
 	// Parallel execution of synonym generation and symbol extraction
 	var wg sync.WaitGroup
 	var synonymErr error
@@ -115,6 +119,9 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 			}
 			node.Symbols = syms
 			count++
+			if count%100 == 0 {
+				fmt.Printf("\r  Extracting symbols: %d/%d files...", count, stats.TotalFiles)
+			}
 		})
 		symbolCount = count
 	}()

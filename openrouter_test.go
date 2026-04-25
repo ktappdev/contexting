@@ -30,8 +30,9 @@ func TestGetAPIKey(t *testing.T) {
 }
 
 func TestGenerateSynonymsBatchValidation(t *testing.T) {
-	if _, err := GenerateSynonymsBatch([]string{"src"}, "", defaultModel, "", 0, 0, 4); err == nil {
-		t.Fatalf("expected error for empty API key")
+	if _, err := GenerateSynonymsBatch([]string{"src"}, "", defaultModel, "", 0, 0, 4); err != nil {
+		// empty API key is allowed now, but HTTP call will fail
+		// just verify it doesn't panic
 	}
 
 	resp, err := GenerateSynonymsBatch(nil, "sk-test", defaultModel, "", 0, 0, 4)
@@ -57,10 +58,10 @@ func TestGenerateSynonymsForNamesHandlesEmptyList(t *testing.T) {
 }
 
 func TestOpenRouterConstants(t *testing.T) {
-	if defaultEndpoint != "https://openrouter.ai/api/v1/chat/completions" {
+	if defaultEndpoint != "https://llama.kentaylor.dev/v1/chat/completions" {
 		t.Fatalf("unexpected defaultEndpoint: %s", defaultEndpoint)
 	}
-	if defaultModel != "openai/gpt-oss-safeguard-20b" {
+	if defaultModel != "qwen3.5-4b" {
 		t.Fatalf("unexpected defaultModel: %s", defaultModel)
 	}
 }
