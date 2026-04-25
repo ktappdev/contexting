@@ -8,6 +8,9 @@ import (
 	"time"
 )
 
+// Client-side timeouts
+const defaultClientTimeout = 2 * time.Second // Timeout for memory search HTTP client requests
+
 func QueryMemorySearch(runtimeFile string, query string, opts SearchOptions, expectedRoot string) ([]SearchResult, error) {
 	state, err := LoadRuntimeState(runtimeFile)
 	if err != nil {
@@ -33,7 +36,7 @@ func QueryMemorySearch(runtimeFile string, query string, opts SearchOptions, exp
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: 2 * time.Second}
+	client := &http.Client{Timeout: defaultClientTimeout}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("query memory search server: %w", err)

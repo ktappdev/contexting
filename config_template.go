@@ -19,7 +19,7 @@ llm = true
 persist = "shutdown"
 persist_interval = "45s"
 search_log = true
-search_log_query_max = 120
+search_log_query_max = 120 # Matches defaultSearchLogQueryMax in memory_search_server.go
 max_batch_size = 0
 
 [search]

@@ -11,6 +11,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Timeouts used for watching and persistence
+const defaultDebounce = 750 * time.Millisecond // Coalesces multiple fs events into single re-index
+const defaultPersistInterval = 45 * time.Second
+
 func newWatchCommand() *cobra.Command {
 	flags := CommonFlags{}
 	var debounce time.Duration
@@ -336,10 +340,10 @@ func newWatchCommand() *cobra.Command {
 	cmd.Flags().StringVar(&flags.SynonymCache, "synonym-cache", ".contexting_synonyms_cache.json", "Path to persistent synonym cache JSON")
 	cmd.Flags().StringSliceVar(&flags.ExtraIgnores, "ignore", nil, "Additional ignore entries (name or relative path)")
 	cmd.Flags().BoolVarP(&flags.Verbose, "verbose", "v", true, "Enable verbose logging")
-	cmd.Flags().DurationVar(&debounce, "debounce", 750*time.Millisecond, "Debounce interval for coalescing fs events")
+	cmd.Flags().DurationVar(&debounce, "debounce", defaultDebounce, "Debounce interval for coalescing fs events")
 	cmd.Flags().BoolVar(&llmOnWatch, "llm-on-watch", true, "Enable live LLM synonym generation during watch (on by default)")
 	cmd.Flags().StringVar(&persist, "persist", string(PersistShutdown), "Persistence mode: shutdown|interval|change")
-	cmd.Flags().DurationVar(&persistInterval, "persist-interval", 45*time.Second, "Snapshot flush interval when --persist=interval")
+	cmd.Flags().DurationVar(&persistInterval, "persist-interval", defaultPersistInterval, "Snapshot flush interval when --persist=interval")
 	cmd.Flags().BoolVar(&searchLog, "search-log", true, "Log incoming memory search queries in watch output")
 	cmd.Flags().IntVar(&searchLogQueryMax, "search-log-query-max", defaultSearchLogQueryMax, "Maximum query characters shown in search logs")
 

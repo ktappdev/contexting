@@ -79,7 +79,7 @@ Ignore = ["*.log", "*.tmp"]
 `
 
 	configPath := filepath.Join(tmpDir, "config.toml")
-	err := os.WriteFile(configPath, []byte(configStr), 0644)
+	err := os.WriteFile(configPath, []byte(configStr), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to write config file: %v", err)
 	}

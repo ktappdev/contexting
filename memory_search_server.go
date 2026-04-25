@@ -11,6 +11,10 @@ import (
 	"time"
 )
 
+// Server-side timeouts
+const defaultReadHeaderTimeout = 3 * time.Second // Timeout for reading HTTP request headers (prevents slowloris)
+const defaultShutdownTimeout = 2 * time.Second  // Timeout for graceful HTTP server shutdown
+
 const defaultSearchLogQueryMax = 120
 
 type memorySearchServer struct {
@@ -76,7 +80,7 @@ func startMemorySearchServer(ctx context.Context, manager *IndexManager, runtime
 
 	httpServer := &http.Server{
 		Handler:           mux,
-		ReadHeaderTimeout: 3 * time.Second,
+		ReadHeaderTimeout: defaultReadHeaderTimeout,
 	}
 
 	server := &memorySearchServer{
@@ -133,7 +137,7 @@ func (s *memorySearchServer) Close() error {
 	if s == nil {
 		return nil
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultShutdownTimeout)
 	defer cancel()
 	_ = s.httpServer.Shutdown(ctx)
 	_ = s.listener.Close()

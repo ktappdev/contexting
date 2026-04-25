@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	defaultModel    = "openai/gpt-oss-safeguard-20b"
-	defaultSynonyms = 10
+	defaultModel           = "openai/gpt-oss-safeguard-20b"
+	defaultSynonyms        = 10
+	defaultHTTPTimeout     = 45 * time.Second // HTTP client timeout for API requests
 )
 
 var defaultEndpoint = "https://openrouter.ai/api/v1/chat/completions"
@@ -108,7 +109,7 @@ func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKe
 	req.Header.Set("HTTP-Referer", "https://github.com/contexting")
 	req.Header.Set("X-Title", "Contexting")
 
-	client := &http.Client{Timeout: 45 * time.Second}
+	client := &http.Client{Timeout: defaultHTTPTimeout}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("send request: %w", err)

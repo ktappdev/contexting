@@ -101,10 +101,6 @@ func BuildTree(rootPath string, ignored map[string]bool) (*Node, error) {
 	return root, nil
 }
 
-func traverseFolder(rootPath string, ignoredPaths map[string]bool) (*Node, error) {
-	return BuildTree(rootPath, ignoredPaths)
-}
-
 func CollectNamesForLLM(tree *Node) []string {
 	if tree == nil {
 		return nil

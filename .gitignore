@@ -1,3 +1,5 @@
 contexting
 .env
 .pi/agent-sessions/
+ctx.json
+syns.json

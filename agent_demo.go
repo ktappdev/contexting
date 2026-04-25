@@ -2,16 +2,6 @@ package main
 
 import "fmt"
 
-// LoadAndSearchHints is a lightweight agent-facing helper:
-// load context JSON and return ranked path hints for a natural-language query.
-func LoadAndSearchHints(indexPath string, query string, limit int) ([]SearchResult, error) {
-	index, err := LoadContextIndex(indexPath)
-	if err != nil {
-		return nil, err
-	}
-	return SearchHintsWithOptions(index, query, SearchOptions{Limit: limit}), nil
-}
-
 func printSearchResults(results []SearchResult) {
 	if len(results) == 0 {
 		fmt.Println("No matches found")
