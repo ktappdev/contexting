@@ -30,7 +30,15 @@ func newWatchCommand() *cobra.Command {
 		Short: "Watch a directory, keep index in memory, and flush snapshot on shutdown",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := LoadContextingConfig(configPath)
+			var absConfigPath string
+			if configPath != "" {
+				var err error
+				absConfigPath, err = filepath.Abs(configPath)
+				if err != nil {
+					return fmt.Errorf("resolve config path: %w", err)
+				}
+			}
+			cfg, err := LoadContextingConfig(absConfigPath)
 			if err != nil {
 				return err
 			}
@@ -88,6 +96,16 @@ func newWatchCommand() *cobra.Command {
 			ignored, err := BuildIgnoreMapForRoot(absRoot, flags.ExtraIgnores)
 			if err != nil {
 				return err
+			}
+			// Only skip internal files by basename when the resolved paths are inside the project.
+			// If --config or --output points outside the project, skipping by basename could
+			// incorrectly exclude legitimate project files.
+			if isInsideProject(absConfigPath, absRoot) {
+				ignored[filepath.Base(absConfigPath)] = true
+				ignored[filepath.Base(absConfigPath)+".example"] = true
+			}
+			if isInsideProject(outputPath, absRoot) {
+				ignored[filepath.Base(outputPath)] = true
 			}
 
 			llmEndpoint, llmModel, llmKey, llmTemp, llmMaxTokens, llmProvider := resolveLLMConfig(flags, cfg.LLM)
@@ -284,7 +302,7 @@ func newWatchCommand() *cobra.Command {
 					if !ok {
 						continue
 					}
-					if shouldSkipEvent(absRoot, event, ignored, outputPath, cachePath) {
+					if shouldSkipEvent(absRoot, event, ignored, outputPath, cachePath, absConfigPath) {
 						continue
 					}
 					relName := event.Name

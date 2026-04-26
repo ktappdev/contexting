@@ -54,8 +54,8 @@ func syncWatchDirectories(watcher *fsnotify.Watcher, root string, ignored map[st
 	return nil
 }
 
-func shouldSkipEvent(root string, event fsnotify.Event, ignored map[string]bool, outputPath string, cachePath string) bool {
-	if shouldSkipInternalOutput(event.Name, outputPath, cachePath) {
+func shouldSkipEvent(root string, event fsnotify.Event, ignored map[string]bool, outputPath string, cachePath string, configPath string) bool {
+	if shouldSkipInternalOutput(event.Name, outputPath, cachePath, configPath) {
 		return true
 	}
 	rel, err := filepath.Rel(root, event.Name)
@@ -68,8 +68,18 @@ func shouldSkipEvent(root string, event fsnotify.Event, ignored map[string]bool,
 	return shouldIgnorePath(rel, filepath.Base(event.Name), ignored)
 }
 
-func shouldSkipInternalOutput(eventPath string, outputPath string, cachePath string) bool {
-	if eventPath == outputPath || eventPath == cachePath {
+// isInsideProject returns true if path is inside rootPath or equals rootPath.
+// Uses slash-normalized comparison so it works cross-platform.
+func isInsideProject(path string, root string) bool {
+	rel, err := filepath.Rel(root, path)
+	if err != nil {
+		return false
+	}
+	return rel == "." || (!strings.HasPrefix(rel, "..") && rel != "..")
+}
+
+func shouldSkipInternalOutput(eventPath string, outputPath string, cachePath string, configPath string) bool {
+	if eventPath == outputPath || eventPath == cachePath || eventPath == configPath || eventPath == configPath+".example" {
 		return true
 	}
 	base := filepath.Base(eventPath)

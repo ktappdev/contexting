@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -14,7 +15,15 @@ func newInitCommand() *cobra.Command {
 		Short: "Build context index and write context JSON",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := LoadContextingConfig(configPath)
+			var absConfigPath string
+			if configPath != "" {
+				var err error
+				absConfigPath, err = filepath.Abs(configPath)
+				if err != nil {
+					return fmt.Errorf("resolve config path: %w", err)
+				}
+			}
+			cfg, err := LoadContextingConfig(absConfigPath)
 			if err != nil {
 				return err
 			}
@@ -37,6 +46,14 @@ func newInitCommand() *cobra.Command {
 			ignored, err := BuildIgnoreMapForRoot(absRoot, flags.ExtraIgnores)
 			if err != nil {
 				return err
+			}
+			// Only skip internal files by basename when the resolved paths are inside the project.
+			if isInsideProject(absConfigPath, absRoot) {
+				ignored[filepath.Base(absConfigPath)] = true
+				ignored[filepath.Base(absConfigPath)+".example"] = true
+			}
+			if isInsideProject(outputPath, absRoot) {
+				ignored[filepath.Base(outputPath)] = true
 			}
 			llmEndpoint, llmModel, llmKey, llmTemp, llmMaxTokens, llmProvider := resolveLLMConfig(flags, cfg.LLM)
 			logInfof("LLM: provider=%s model=%s endpoint=%s api_key=%s", llmProvider, llmModel, llmEndpoint, maskAPIKey(llmKey))
