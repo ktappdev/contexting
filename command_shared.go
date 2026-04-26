@@ -15,9 +15,7 @@ type CommonFlags struct {
 }
 
 func (c *CommonFlags) normalize() {
-	if c.BatchSize <= 0 {
-		c.BatchSize = 8
-	}
+	// BatchSize 0 means smart batching (up to 1000 names per request)
 	if c.SynonymsPerName <= 0 {
 		c.SynonymsPerName = defaultSynonyms
 	}

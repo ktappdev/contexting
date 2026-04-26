@@ -9,18 +9,19 @@ import (
 )
 
 type BuildOptions struct {
-	Ctx             context.Context
-	RootPath        string
-	IgnoredPaths    map[string]bool
-	APIKey          string
-	Model           string
-	BatchSize       int
-	SynonymsPerName int
-	SynonymCache    SynonymResponse
-	MaxBatchSize    int
-	Endpoint        string
-	Temperature     float64
-	MaxTokens       int
+	Ctx              context.Context
+	RootPath         string
+	IgnoredPaths     map[string]bool
+	APIKey           string
+	Model            string
+	BatchSize        int
+	SynonymsPerName  int
+	SynonymCache     SynonymResponse
+	MaxBatchSize     int
+	Endpoint         string
+	Temperature      float64
+	MaxTokens        int
+	ParallelRequests int // Concurrent LLM requests (default 1 = sequential)
 }
 
 type BuildResult struct {
@@ -94,7 +95,7 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 			batchSize = opts.BatchSize
 		}
 		if opts.APIKey != "" && len(missing) > 0 {
-			generated, err := GenerateSynonymsForNamesWithContext(opts.Ctx, missing, opts.APIKey, batchSize, opts.Model, opts.Endpoint, opts.Temperature, opts.MaxTokens, opts.SynonymsPerName)
+			generated, err := GenerateSynonymsForNamesWithContext(opts.Ctx, missing, opts.APIKey, batchSize, opts.Model, opts.Endpoint, opts.Temperature, opts.MaxTokens, opts.SynonymsPerName, opts.ParallelRequests)
 			if err != nil {
 				synonymErr = err
 			} else {

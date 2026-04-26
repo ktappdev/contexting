@@ -69,13 +69,14 @@ type EvalConfig struct {
 }
 
 type LLMConfig struct {
-	Provider    string  `toml:"provider"`
-	Endpoint    string  `toml:"endpoint"`
-	Model       string  `toml:"model"`
-	APIKey      string  `toml:"api_key"`
-	APIKeyEnv   string  `toml:"api_key_env"`
-	Temperature float64 `toml:"temperature"`
-	MaxTokens   int     `toml:"max_tokens"`
+	Provider         string  `toml:"provider"`
+	Endpoint         string  `toml:"endpoint"`
+	Model            string  `toml:"model"`
+	APIKey           string  `toml:"api_key"`
+	APIKeyEnv        string  `toml:"api_key_env"`
+	Temperature      float64 `toml:"temperature"`
+	MaxTokens        int     `toml:"max_tokens"`
+	ParallelRequests int     `toml:"parallel_requests"` // Concurrent LLM requests (default 1 = sequential)
 }
 
 func LoadContextingConfig(path string) (*ContextingConfig, error) {

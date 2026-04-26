@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -151,10 +152,10 @@ func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKe
 }
 
 func GenerateSynonymsForNames(names []string, apiKey string, batchSize int, model string, endpoint string, temperature float64, maxTokens int, synonymsPerName int) (SynonymResponse, error) {
-	return GenerateSynonymsForNamesWithContext(context.Background(), names, apiKey, batchSize, model, endpoint, temperature, maxTokens, synonymsPerName)
+	return GenerateSynonymsForNamesWithContext(context.Background(), names, apiKey, batchSize, model, endpoint, temperature, maxTokens, synonymsPerName, 1)
 }
 
-func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, apiKey string, batchSize int, model string, endpoint string, temperature float64, maxTokens int, synonymsPerName int) (SynonymResponse, error) {
+func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, apiKey string, batchSize int, model string, endpoint string, temperature float64, maxTokens int, synonymsPerName int, parallelLimit int) (SynonymResponse, error) {
 	if len(names) == 0 {
 		return make(SynonymResponse), nil
 	}
@@ -164,15 +165,32 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 	if synonymsPerName <= 0 {
 		synonymsPerName = defaultSynonyms
 	}
+	if parallelLimit <= 0 {
+		parallelLimit = 1
+	}
 
-	// batchSize <= 0 means send all names in a single request
-	if batchSize <= 0 || batchSize >= len(names) {
+	// Smart batching: 0 means "auto" — up to 60 names per request
+	if batchSize <= 0 {
+		if len(names) <= 60 {
+			batchSize = len(names)
+		} else {
+			numBatches := (len(names) + 59) / 60
+			batchSize = (len(names) + numBatches - 1) / numBatches
+		}
+	}
+	if batchSize >= len(names) {
 		fmt.Printf("  Synonyms: processing %d names...\n", len(names))
 		return GenerateSynonymsBatchWithContext(ctx, names, apiKey, model, endpoint, temperature, maxTokens, synonymsPerName)
 	}
 
 	totalBatches := (len(names) + batchSize - 1) / batchSize
+	fmt.Printf("  Synonyms: %d names in %d batches (parallel=%d)\n", len(names), totalBatches, parallelLimit)
+
 	result := make(SynonymResponse)
+	sem := make(chan struct{}, parallelLimit)
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+
 	for i := 0; i < len(names); i += batchSize {
 		batchNum := i/batchSize + 1
 		end := i + batchSize
@@ -180,24 +198,33 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 			end = len(names)
 		}
 
-		fmt.Printf("\r  Synonyms: batch %d/%d (%d names)...", batchNum, totalBatches, end-i)
-		batch := names[i:end]
-		synonyms, err := GenerateSynonymsBatchWithContext(ctx, batch, apiKey, model, endpoint, temperature, maxTokens, synonymsPerName)
-		if err != nil {
-			fmt.Printf("\n  ⚠ Synonyms: batch %d/%d failed, skipping: %v\n", batchNum, totalBatches, err)
-			continue
-		}
+		wg.Add(1)
+		go func(batchNum int, batch []string) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
 
-		for name, values := range synonyms {
-			result[name] = values
-		}
+			synonyms, err := GenerateSynonymsBatchWithContext(ctx, batch, apiKey, model, endpoint, temperature, maxTokens, synonymsPerName)
+			if err != nil {
+				fmt.Printf("  ⚠ Synonyms: batch %d/%d failed: %v\n", batchNum, totalBatches, err)
+				return
+			}
+			mu.Lock()
+			for name, values := range synonyms {
+				result[name] = values
+			}
+			mu.Unlock()
+		}(batchNum, names[i:end])
 	}
-	fmt.Printf("\r  Synonyms: %d names processed      \n", len(result))
+	wg.Wait()
+	fmt.Printf("  Synonyms: %d names processed\n", len(result))
 
 	return result, nil
 }
 
 // sanitizeJSON fixes common LLM JSON output issues.
+// Handles: markdown wrapping, trailing commas, mismatched brackets/braces,
+// truncated JSON (missing closing brackets), and extra trailing characters.
 func sanitizeJSON(s string) string {
 	// Extract just the JSON object if wrapped in markdown or extra text
 	if idx := strings.Index(s, "{"); idx > 0 {
@@ -207,6 +234,47 @@ func sanitizeJSON(s string) string {
 		s = s[:idx+1]
 	}
 	// Remove trailing commas before } or ]
+	s = strings.ReplaceAll(s, ",]", "]")
+	s = strings.ReplaceAll(s, ",}", "}")
+	// Fix mismatched brackets: track expected close chars and fix wrong ones
+	fixed := make([]byte, 0, len(s))
+	var stack []byte
+	for i := 0; i < len(s); i++ {
+		ch := s[i]
+		switch ch {
+		case '{':
+			stack = append(stack, '}')
+			fixed = append(fixed, ch)
+		case '[':
+			stack = append(stack, ']')
+			fixed = append(fixed, ch)
+		case '}', ']':
+			if len(stack) > 0 && stack[len(stack)-1] == ch {
+				stack = stack[:len(stack)-1]
+				fixed = append(fixed, ch)
+			} else if len(stack) > 0 {
+				// Mismatched bracket: replace with expected close
+				fixed = append(fixed, stack[len(stack)-1])
+				stack = stack[:len(stack)-1]
+			}
+			// If stack empty and extra close char, skip it
+		default:
+			fixed = append(fixed, ch)
+		}
+	}
+	// Close any unclosed brackets (truncated JSON)
+	for i := len(stack) - 1; i >= 0; i-- {
+		fixed = append(fixed, stack[i])
+	}
+	s = string(fixed)
+	// Remove stray backslashes before structural JSON characters
+	// These sequences are never valid in JSON and indicate LLM hallucination
+	s = strings.ReplaceAll(s, "\\,", ",")
+	s = strings.ReplaceAll(s, "\\]", "]")
+	s = strings.ReplaceAll(s, "\\}", "}")
+	s = strings.ReplaceAll(s, "\\[", "[")
+	s = strings.ReplaceAll(s, "\\{", "{")
+	// Remove trailing commas again after fixes
 	s = strings.ReplaceAll(s, ",]", "]")
 	s = strings.ReplaceAll(s, ",}", "}")
 	return s

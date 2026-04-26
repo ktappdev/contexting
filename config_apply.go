@@ -23,7 +23,7 @@ func applyStringFlag(cmd *cobra.Command, name string, target *string, value stri
 }
 
 func applyIntFlag(cmd *cobra.Command, name string, target *int, value int) {
-	if value <= 0 || cmd.Flags().Changed(name) {
+	if cmd.Flags().Changed(name) {
 		return
 	}
 	*target = value

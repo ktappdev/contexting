@@ -21,8 +21,6 @@ api_key_env = ""
 # Sampling parameters
 temperature = 0.0
 max_tokens = 0
-# Concurrent LLM requests (1 = sequential, 2+ = parallel batches)
-parallel_requests = 1
 
 [init]
 root = "."

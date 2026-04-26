@@ -51,18 +51,19 @@ func newInitCommand() *cobra.Command {
 			defer stop()
 
 			result, err := BuildIndex(BuildOptions{
-				Ctx:             ctx,
-				RootPath:        rootPath,
-				IgnoredPaths:    ignored,
-				APIKey:          llmKey,
-				Model:           llmModel,
-				BatchSize:       flags.BatchSize,
-				SynonymsPerName: flags.SynonymsPerName,
-				SynonymCache:    cache,
-				MaxBatchSize:    cfg.Watch.MaxBatchSize,
-				Endpoint:        llmEndpoint,
-				Temperature:     llmTemp,
-				MaxTokens:       llmMaxTokens,
+				Ctx:              ctx,
+				RootPath:         rootPath,
+				IgnoredPaths:     ignored,
+				APIKey:           llmKey,
+				Model:            llmModel,
+				BatchSize:        flags.BatchSize,
+				SynonymsPerName:  flags.SynonymsPerName,
+				SynonymCache:     cache,
+				MaxBatchSize:     cfg.Watch.MaxBatchSize,
+				Endpoint:         llmEndpoint,
+				Temperature:      llmTemp,
+				MaxTokens:        llmMaxTokens,
+				ParallelRequests: cfg.LLM.ParallelRequests,
 			})
 			if err != nil {
 				return err
