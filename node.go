@@ -13,6 +13,7 @@ type Node struct {
 	Type     string           `json:"type"`
 	Synonyms []string         `json:"synonyms,omitempty"`
 	Symbols  []string         `json:"symbols,omitempty"`
+	ModTime  int64            `json:"mod_time,omitempty"`
 	Children map[string]*Node `json:"children,omitempty"`
 }
 

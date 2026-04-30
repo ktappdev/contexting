@@ -103,6 +103,74 @@ func NewIndexManager(opts IndexManagerOptions) *IndexManager {
 	}
 }
 
+type fsEntry struct {
+	mtime int64
+	isDir bool
+}
+
+func collectFilesystemState(rootPath string, ignored map[string]bool) (map[string]fsEntry, error) {
+	absRoot, err := filepath.Abs(rootPath)
+	if err != nil {
+		return nil, fmt.Errorf("resolve root path: %w", err)
+	}
+
+	state := make(map[string]fsEntry)
+	err = filepath.WalkDir(absRoot, func(path string, d os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+
+		rel, err := filepath.Rel(absRoot, path)
+		if err != nil {
+			return err
+		}
+		if rel == "." {
+			return nil
+		}
+
+		if shouldIgnorePath(rel, d.Name(), ignored) {
+			if d.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		normalized := filepath.ToSlash(rel)
+		if d.IsDir() {
+			state[normalized] = fsEntry{isDir: true}
+		} else {
+			info, err := d.Info()
+			if err != nil {
+				return nil // skip files we can't stat
+			}
+			state[normalized] = fsEntry{mtime: info.ModTime().UnixNano(), isDir: false}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return state, nil
+}
+
+func collectSnapshotPaths(tree *Node) map[string]*Node {
+	paths := make(map[string]*Node)
+	if tree == nil {
+		return paths
+	}
+	walkTree(tree, func(node *Node) {
+		if node == tree {
+			return
+		}
+		rel, err := filepath.Rel(tree.FullPath, node.FullPath)
+		if err != nil {
+			return
+		}
+		paths[filepath.ToSlash(rel)] = node
+	})
+	return paths
+}
+
 func (m *IndexManager) Bootstrap(ctx context.Context) (IndexStats, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -119,6 +187,75 @@ func (m *IndexManager) Bootstrap(ctx context.Context) (IndexStats, error) {
 			m.index = loadedIndex
 			m.loaded = true
 			m.dirty = false
+
+			// Diff snapshot against filesystem to catch changes made while not running
+			fsState, fsErr := collectFilesystemState(m.rootPath, m.ignored)
+			if fsErr != nil {
+				logWarnf("Unable to scan filesystem for staleness check: %v — falling back to full rebuild", fsErr)
+			} else {
+				snapPaths := collectSnapshotPaths(m.index.Tree)
+				changesDetected := false
+				var newCount, deletedCount, modifiedCount int
+				newNamesNeedSynonyms := make(map[string]struct{})
+
+				// Remove deleted files/dirs from snapshot
+				for relPath := range snapPaths {
+					if _, exists := fsState[relPath]; !exists {
+						if removeNodeByRelPath(m.index.Tree, relPath) {
+							changesDetected = true
+							deletedCount++
+						}
+					}
+				}
+
+				// Add new or update modified files/dirs
+				for relPath, entry := range fsState {
+					node, exists := snapPaths[relPath]
+					if !exists {
+						// New file/dir not in snapshot
+						if upsertNodeByRelPath(m.index.Tree, absRoot, relPath, entry.isDir, entry.mtime, m.cache, m.synonymsPerName) {
+							changesDetected = true
+							newCount++
+							if !entry.isDir {
+								name := filepath.Base(relPath)
+								if _, cached := m.cache[name]; !cached {
+									newNamesNeedSynonyms[name] = struct{}{}
+								}
+							}
+						}
+						continue
+					}
+					// Check type mismatch (dir↔file)
+					nodeIsDir := node.Type == "directory"
+					if nodeIsDir != entry.isDir {
+						if upsertNodeByRelPath(m.index.Tree, absRoot, relPath, entry.isDir, entry.mtime, m.cache, m.synonymsPerName) {
+							changesDetected = true
+							modifiedCount++
+						}
+						continue
+					}
+					// Check modified file (mtime changed)
+					if !entry.isDir && entry.mtime > 0 && entry.mtime != node.ModTime {
+						if upsertNodeByRelPath(m.index.Tree, absRoot, relPath, entry.isDir, entry.mtime, m.cache, m.synonymsPerName) {
+							changesDetected = true
+							modifiedCount++
+						}
+					}
+				}
+
+				if changesDetected {
+					m.dirty = true
+					m.index.GeneratedAt = time.Now().UTC()
+					logWarnf("########################################")
+					logWarnf("# Bootstrap diff: +%d new, -%d deleted, %d modified", newCount, deletedCount, modifiedCount)
+					if len(newNamesNeedSynonyms) > 0 {
+						logWarnf("# Run: contexting sync")
+						logWarnf("# to generate synonyms for %d new names", len(newNamesNeedSynonyms))
+					}
+					logWarnf("########################################")
+				}
+			}
+
 			stats := ComputeStats(m.index.Tree)
 			stats.CollectedNames = len(CollectNamesForLLM(m.index.Tree))
 			return stats, nil
@@ -193,7 +330,7 @@ func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsno
 			continue
 		}
 
-		isDir, statErr := isExistingDirectory(absPath)
+		isDir, mtime, statErr := isExistingDirectory(absPath)
 		if statErr != nil {
 			if os.IsNotExist(statErr) {
 				continue
@@ -206,7 +343,7 @@ func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsno
 			continue
 		}
 
-		if upsertNodeByRelPath(m.index.Tree, m.rootPath, relPath, isDir, m.cache, m.synonymsPerName) {
+		if upsertNodeByRelPath(m.index.Tree, m.rootPath, relPath, isDir, mtime, m.cache, m.synonymsPerName) {
 			result.Changed = true
 		}
 

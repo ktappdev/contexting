@@ -32,7 +32,7 @@ func removeNodeByRelPath(root *Node, relPath string) bool {
 	return true
 }
 
-func upsertNodeByRelPath(root *Node, absRoot string, relPath string, isDir bool, cache SynonymResponse, maxSynonyms int) bool {
+func upsertNodeByRelPath(root *Node, absRoot string, relPath string, isDir bool, mtime int64, cache SynonymResponse, maxSynonyms int) bool {
 	if root == nil {
 		return false
 	}
@@ -67,6 +67,9 @@ func upsertNodeByRelPath(root *Node, absRoot string, relPath string, isDir bool,
 			next.Children = make(map[string]*Node)
 			changed = true
 		}
+		if mtime > 0 && next.ModTime != mtime {
+			next.ModTime = mtime
+		}
 		parent = next
 	}
 
@@ -89,6 +92,7 @@ func upsertNodeByRelPath(root *Node, absRoot string, relPath string, isDir bool,
 			Type:     nodeType,
 			Synonyms: nodeSynonyms,
 			Symbols:  symList,
+			ModTime:  mtime,
 			Children: make(map[string]*Node),
 		}
 		return true
@@ -107,6 +111,10 @@ func upsertNodeByRelPath(root *Node, absRoot string, relPath string, isDir bool,
 	}
 	if node.Children == nil {
 		node.Children = make(map[string]*Node)
+		changed = true
+	}
+	if node.ModTime != mtime {
+		node.ModTime = mtime
 		changed = true
 	}
 	if !stringSlicesEqual(node.Synonyms, nodeSynonyms) {
@@ -153,12 +161,12 @@ func splitRelPath(relPath string) []string {
 	return out
 }
 
-func isExistingDirectory(path string) (bool, error) {
+func isExistingDirectory(path string) (isDir bool, mtime int64, err error) {
 	info, err := os.Stat(path)
 	if err != nil {
-		return false, err
+		return false, 0, err
 	}
-	return info.IsDir(), nil
+	return info.IsDir(), info.ModTime().UnixNano(), nil
 }
 
 func stringSlicesEqual(a, b []string) bool {
