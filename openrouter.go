@@ -55,10 +55,10 @@ func GetAPIKey() (string, error) {
 }
 
 func GenerateSynonymsBatch(names []string, apiKey string, model string, endpoint string, temperature float64, maxTokens int, synonymsPerName int) (SynonymResponse, error) {
-	return GenerateSynonymsBatchWithContext(context.Background(), names, apiKey, model, endpoint, temperature, maxTokens, synonymsPerName)
+	return GenerateSynonymsBatchWithContext(context.Background(), names, apiKey, model, endpoint, temperature, maxTokens, synonymsPerName, synonymsPerName)
 }
 
-func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKey string, model string, endpoint string, temperature float64, maxTokens int, synonymsPerName int) (SynonymResponse, error) {
+func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKey string, model string, endpoint string, temperature float64, maxTokens int, synonymsMin int, synonymsMax int) (SynonymResponse, error) {
 
 	if len(names) == 0 {
 		return make(SynonymResponse), nil
@@ -69,14 +69,17 @@ func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKe
 	if endpoint == "" {
 		endpoint = defaultEndpoint
 	}
-	if synonymsPerName <= 0 {
-		synonymsPerName = defaultSynonyms
+	if synonymsMax <= 0 {
+		synonymsMax = defaultSynonyms
+	}
+	if synonymsMin <= 0 {
+		synonymsMin = synonymsMax
 	}
 
 	systemPrompt := fmt.Sprintf(
-		"You are a helpful assistant. For each folder or file name in the list, generate exactly %d plausible alternative words or short phrases a developer might use when searching for that file in a codebase. Return ONLY a valid JSON object where each key is an exact filename from the input list and each value is an array of %d synonym strings. Example: {\"auth.go\": [\"login\", \"authentication\", \"session\"], \"config\": [\"settings\", \"configuration\", \"options\"]}. No markdown, no prose, no extra text.",
-		synonymsPerName,
-		synonymsPerName,
+		"You are a helpful assistant. For each folder or file name in the list, generate %d to %d plausible alternative words or short phrases a developer might use when searching for that file in a codebase. Aim for as many as you can, but at least %d and no more than %d. Return ONLY a valid JSON object where each key is an exact filename from the input list and each value is an array of synonym strings. Example: {\"auth.go\": [\"login\", \"authentication\", \"session\"]}. No markdown, no prose, no extra text.",
+		synonymsMin, synonymsMax,
+		synonymsMin, synonymsMax,
 	)
 	userContent := fmt.Sprintf("File and folder names:\n%s", strings.Join(names, "\n"))
 
@@ -154,19 +157,22 @@ func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKe
 	return synonyms, nil
 }
 
-func GenerateSynonymsForNames(names []string, apiKey string, batchSize int, model string, endpoint string, temperature float64, maxTokens int, synonymsPerName int) (SynonymResponse, error) {
-	return GenerateSynonymsForNamesWithContext(context.Background(), names, apiKey, batchSize, model, endpoint, temperature, maxTokens, synonymsPerName, 1)
+func GenerateSynonymsForNames(names []string, apiKey string, batchSize int, model string, endpoint string, temperature float64, maxTokens int, synonymsMin int, synonymsMax int) (SynonymResponse, error) {
+	return GenerateSynonymsForNamesWithContext(context.Background(), names, apiKey, batchSize, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax, 1)
 }
 
-func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, apiKey string, batchSize int, model string, endpoint string, temperature float64, maxTokens int, synonymsPerName int, parallelLimit int) (SynonymResponse, error) {
+func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, apiKey string, batchSize int, model string, endpoint string, temperature float64, maxTokens int, synonymsMin int, synonymsMax int, parallelLimit int) (SynonymResponse, error) {
 	if len(names) == 0 {
 		return make(SynonymResponse), nil
 	}
 	if model == "" {
 		model = defaultModel
 	}
-	if synonymsPerName <= 0 {
-		synonymsPerName = defaultSynonyms
+	if synonymsMax <= 0 {
+		synonymsMax = defaultSynonyms
+	}
+	if synonymsMin <= 0 {
+		synonymsMin = synonymsMax
 	}
 	if parallelLimit <= 0 {
 		parallelLimit = 1
@@ -183,7 +189,7 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 	}
 	if batchSize >= len(names) {
 		fmt.Printf("  Synonyms: processing %d names...\n", len(names))
-		return GenerateSynonymsBatchWithContext(ctx, names, apiKey, model, endpoint, temperature, maxTokens, synonymsPerName)
+		return GenerateSynonymsBatchWithContext(ctx, names, apiKey, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax)
 	}
 
 	totalBatches := (len(names) + batchSize - 1) / batchSize
@@ -208,7 +214,7 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 			sem <- struct{}{}
 			defer func() { <-sem }()
 
-			synonyms, err := GenerateSynonymsBatchWithContext(ctx, batch, apiKey, model, endpoint, temperature, maxTokens, synonymsPerName)
+			synonyms, err := GenerateSynonymsBatchWithContext(ctx, batch, apiKey, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax)
 			if err != nil {
 				fmt.Printf("  ⚠ Synonyms: batch %d/%d failed: %v\n", batchNum, totalBatches, err)
 				return

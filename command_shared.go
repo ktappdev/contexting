@@ -10,6 +10,8 @@ type CommonFlags struct {
 	Endpoint        string
 	BatchSize       int
 	SynonymsPerName int
+	SynonymsMin     int
+	SynonymsMax     int
 	Verbose         bool
 	ExtraIgnores    []string
 }
@@ -18,6 +20,16 @@ func (c *CommonFlags) normalize() {
 	// BatchSize 0 means smart batching (up to 1000 names per request)
 	if c.SynonymsPerName <= 0 {
 		c.SynonymsPerName = defaultSynonyms
+	}
+	// Resolve synonyms min/max: if set, use them; otherwise fall back to SynonymsPerName
+	if c.SynonymsMin <= 0 {
+		c.SynonymsMin = c.SynonymsPerName
+	}
+	if c.SynonymsMax <= 0 {
+		c.SynonymsMax = c.SynonymsPerName
+	}
+	if c.SynonymsMin > c.SynonymsMax {
+		c.SynonymsMin = c.SynonymsMax
 	}
 	if c.SynonymCache == "" {
 		c.SynonymCache = ".contexting_synonyms_cache.json"

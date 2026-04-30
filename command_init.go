@@ -101,12 +101,15 @@ func newInitCommand() *cobra.Command {
 				Model:            llmModel,
 				BatchSize:        flags.BatchSize,
 				SynonymsPerName:  flags.SynonymsPerName,
+			SynonymsMin:      flags.SynonymsMin,
+			SynonymsMax:      flags.SynonymsMax,
 				SynonymCache:     cache,
 				MaxBatchSize:     cfg.Watch.MaxBatchSize,
 				Endpoint:         llmEndpoint,
 				Temperature:      llmTemp,
 				MaxTokens:        llmMaxTokens,
 				ParallelRequests: cfg.LLM.ParallelRequests,
+			Verbose:          flags.Verbose,
 			})
 			if err != nil {
 				return err
@@ -134,7 +137,9 @@ func newInitCommand() *cobra.Command {
 	cmd.Flags().StringVar(&flags.APIKey, "api-key", "", "LLM API key (falls back to config api_key_env, LLM_API_KEY, OPENROUTER_API_KEY)")
 	cmd.Flags().StringVar(&flags.Endpoint, "llm-endpoint", "", "LLM API endpoint URL")
 	cmd.Flags().IntVar(&flags.BatchSize, "batch-size", 8, "Names per LLM request")
-	cmd.Flags().IntVar(&flags.SynonymsPerName, "synonyms", defaultSynonyms, "Desired synonyms per name")
+	cmd.Flags().IntVar(&flags.SynonymsPerName, "synonyms", defaultSynonyms, "Synonyms per name (fallback for min/max)")
+	cmd.Flags().IntVar(&flags.SynonymsMin, "synonyms-min", 0, "Min synonyms per name (0 = use synonyms value)")
+	cmd.Flags().IntVar(&flags.SynonymsMax, "synonyms-max", 0, "Max synonyms per name (0 = use synonyms value)")
 	cmd.Flags().StringVar(&flags.SynonymCache, "synonym-cache", ".contexting_synonyms_cache.json", "Path to persistent synonym cache JSON")
 	cmd.Flags().StringSliceVar(&flags.ExtraIgnores, "ignore", nil, "Additional ignore entries (name or relative path)")
 	cmd.Flags().BoolVarP(&flags.Verbose, "verbose", "v", false, "Enable verbose logging")

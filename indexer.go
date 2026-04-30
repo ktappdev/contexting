@@ -16,12 +16,15 @@ type BuildOptions struct {
 	Model            string
 	BatchSize        int
 	SynonymsPerName  int
+	SynonymsMin      int
+	SynonymsMax      int
 	SynonymCache     SynonymResponse
 	MaxBatchSize     int
 	Endpoint         string
 	Temperature      float64
 	MaxTokens        int
 	ParallelRequests int // Concurrent LLM requests (default 1 = sequential)
+	Verbose          bool   // Enable verbose progress output
 }
 
 type BuildResult struct {
@@ -126,7 +129,7 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 				batchSize = opts.BatchSize
 			}
 			if opts.APIKey != "" && len(missing) > 0 {
-				generated, err := GenerateSynonymsForNamesWithContext(opts.Ctx, missing, opts.APIKey, batchSize, opts.Model, opts.Endpoint, opts.Temperature, opts.MaxTokens, opts.SynonymsPerName, opts.ParallelRequests)
+				generated, err := GenerateSynonymsForNamesWithContext(opts.Ctx, missing, opts.APIKey, batchSize, opts.Model, opts.Endpoint, opts.Temperature, opts.MaxTokens, opts.SynonymsMin, opts.SynonymsMax, opts.ParallelRequests)
 				if err != nil {
 					synonymErr = err
 				} else {
@@ -153,7 +156,7 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 			}
 			node.Symbols = syms
 			count++
-			if count%100 == 0 {
+			if count%100 == 0 && opts.Verbose {
 				fmt.Printf("\r  Extracting symbols: %d/%d files...", count, stats.TotalFiles)
 			}
 		})

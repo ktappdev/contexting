@@ -68,13 +68,15 @@ func newSyncCommand() *cobra.Command {
 
 			// Determine which names need synonyms
 			synonymsPerName := flags.SynonymsPerName
+			synonymsMin := flags.SynonymsMin
+			synonymsMax := flags.SynonymsMax
 			var needsSynonyms []string
 			var needsShort []string
 			for _, name := range allNames {
 				cached, ok := cache[name]
 				if !ok {
 					needsSynonyms = append(needsSynonyms, name)
-				} else if len(cached) < synonymsPerName {
+				} else if len(cached) < synonymsMin {
 					needsShort = append(needsShort, name)
 				}
 			}
@@ -92,7 +94,7 @@ func newSyncCommand() *cobra.Command {
 			ctx, stop := signalAwareContext()
 			defer stop()
 
-			generated, err := GenerateSynonymsForNamesWithContext(ctx, targets, llmKey, cfg.Watch.MaxBatchSize, llmModel, llmEndpoint, llmTemp, llmMaxTokens, synonymsPerName, cfg.LLM.ParallelRequests)
+			generated, err := GenerateSynonymsForNamesWithContext(ctx, targets, llmKey, cfg.Watch.MaxBatchSize, llmModel, llmEndpoint, llmTemp, llmMaxTokens, synonymsMin, synonymsMax, cfg.LLM.ParallelRequests)
 			if err != nil {
 				return fmt.Errorf("generate synonyms: %w", err)
 			}
@@ -123,7 +125,9 @@ func newSyncCommand() *cobra.Command {
 	cmd.Flags().StringVar(&flags.APIKey, "api-key", "", "LLM API key (falls back to config api_key_env, LLM_API_KEY, OPENROUTER_API_KEY)")
 	cmd.Flags().StringVar(&flags.Endpoint, "llm-endpoint", "", "LLM API endpoint URL")
 	cmd.Flags().IntVar(&flags.BatchSize, "batch-size", 8, "Names per LLM request")
-	cmd.Flags().IntVar(&flags.SynonymsPerName, "synonyms", defaultSynonyms, "Desired synonyms per name")
+	cmd.Flags().IntVar(&flags.SynonymsPerName, "synonyms", defaultSynonyms, "Synonyms per name (fallback for min/max)")
+	cmd.Flags().IntVar(&flags.SynonymsMin, "synonyms-min", 0, "Min synonyms per name (0 = use synonyms value)")
+	cmd.Flags().IntVar(&flags.SynonymsMax, "synonyms-max", 0, "Max synonyms per name (0 = use synonyms value)")
 	cmd.Flags().StringVar(&flags.SynonymCache, "synonym-cache", ".contexting_synonyms_cache.json", "Path to persistent synonym cache JSON")
 	cmd.Flags().BoolVarP(&flags.Verbose, "verbose", "v", false, "Enable verbose logging")
 

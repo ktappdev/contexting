@@ -45,7 +45,7 @@ func TestGenerateSynonymsBatchValidation(t *testing.T) {
 }
 
 func TestGenerateSynonymsForNamesHandlesEmptyList(t *testing.T) {
-	result, err := GenerateSynonymsForNames([]string{}, "sk-test", 8, defaultModel, "", 0, 0, 4)
+	result, err := GenerateSynonymsForNames([]string{}, "sk-test", 8, defaultModel, "", 0, 0, 4, 4)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}

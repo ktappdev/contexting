@@ -24,6 +24,8 @@ type CommonConfig struct {
 	APIKey          string   `toml:"api_key"`
 	BatchSize       int      `toml:"batch_size"`
 	SynonymsPerName int      `toml:"synonyms"`
+	SynonymsMin     int      `toml:"synonyms_min"`
+	SynonymsMax     int      `toml:"synonyms_max"`
 	Verbose         *bool    `toml:"verbose"`
 	ExtraIgnores    []string `toml:"ignore"`
 	DotWhitelist    []string `toml:"dot_whitelist"` // Extra dot files to keep (merged with defaults)

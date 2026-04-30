@@ -9,6 +9,8 @@ func applyCommonConfig(cmd *cobra.Command, flags *CommonFlags, cfg CommonConfig)
 	applyStringFlag(cmd, "api-key", &flags.APIKey, cfg.APIKey)
 	applyIntFlag(cmd, "batch-size", &flags.BatchSize, cfg.BatchSize)
 	applyIntFlag(cmd, "synonyms", &flags.SynonymsPerName, cfg.SynonymsPerName)
+	applyIntFlag(cmd, "synonyms-min", &flags.SynonymsMin, cfg.SynonymsMin)
+	applyIntFlag(cmd, "synonyms-max", &flags.SynonymsMax, cfg.SynonymsMax)
 	applyStringSliceFlag(cmd, "ignore", &flags.ExtraIgnores, cfg.ExtraIgnores)
 	if cfg.Verbose != nil {
 		applyBoolFlag(cmd, "verbose", &flags.Verbose, *cfg.Verbose)
