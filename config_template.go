@@ -6,7 +6,7 @@ synonym_cache = ".contexting_synonyms_cache.json"
 llm_model = "qwen3.5-4b"
 batch_size = 0
 synonyms = 4
-ignore = [".git", ".venv", "site-packages", "__pycache__", "node_modules", "vendor", "dist"]
+ignore = [".git", ".venv", "site-packages", "__pycache__", "node_modules", "vendor", "dist", "migrations", "pb_migrations", "alembic", "flyway"]
 # Extra dot files to keep (merged with built-in defaults like .prettierrc, .editorconfig, etc.)
 # dot_whitelist = [".env.local", ".env.production"]
 verbose = true
