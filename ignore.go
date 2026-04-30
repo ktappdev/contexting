@@ -5,7 +5,9 @@ import (
 	"strings"
 )
 
-var dotFileWhitelist = map[string]bool{
+const dotWhitelistKey = "__dot_whitelist__"
+
+var defaultDotWhitelist = map[string]bool{
 	".prettierrc":     true,
 	".eslintrc":       true,
 	".editorconfig":   true,
@@ -64,6 +66,27 @@ var defaultIgnores = []string{
 	"Thumbs.db",
 }
 
+func BuildDotWhitelist(extra []string) map[string]bool {
+	merged := make(map[string]bool, len(defaultDotWhitelist)+len(extra))
+	for k, v := range defaultDotWhitelist {
+		merged[k] = v
+	}
+	for _, name := range extra {
+		trimmed := strings.TrimSpace(name)
+		if trimmed != "" {
+			merged[trimmed] = true
+		}
+	}
+	return merged
+}
+
+// EmbedDotWhitelist stores the dot file whitelist in the ignore map via a sentinel key.
+func EmbedDotWhitelist(ignored map[string]bool, whitelist map[string]bool) {
+	for name := range whitelist {
+		ignored[dotWhitelistKey+name] = true
+	}
+}
+
 func BuildIgnoreMap(extra []string) map[string]bool {
 	ignored := make(map[string]bool, len(defaultIgnores)+len(extra))
 	for _, pattern := range defaultIgnores {
@@ -96,8 +119,10 @@ func shouldIgnorePath(relPath string, baseName string, ignored map[string]bool) 
 	}
 
 	// Check if baseName is a whitelisted dot file
-	if strings.HasPrefix(baseName, ".") && dotFileWhitelist[baseName] {
-		return false
+	if strings.HasPrefix(baseName, ".") {
+		if defaultDotWhitelist[baseName] || ignored[dotWhitelistKey+baseName] {
+			return false
+		}
 	}
 
 	if isDotPath(normalizedRel) || strings.HasPrefix(normalizeIgnorePattern(baseName), ".") {

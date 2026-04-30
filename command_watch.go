@@ -97,6 +97,7 @@ func newWatchCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			EmbedDotWhitelist(ignored, BuildDotWhitelist(cfg.Common.DotWhitelist))
 			// Only skip internal files by basename when the resolved paths are inside the project.
 			// If --config or --output points outside the project, skipping by basename could
 			// incorrectly exclude legitimate project files.

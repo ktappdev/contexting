@@ -7,7 +7,19 @@ llm_model = "qwen3.5-4b"
 batch_size = 0
 synonyms = 4
 ignore = [".git", ".venv", "site-packages", "__pycache__", "node_modules", "vendor", "dist"]
+# Extra dot files to keep (merged with built-in defaults like .prettierrc, .editorconfig, etc.)
+# dot_whitelist = [".env.local", ".env.production"]
 verbose = true
+
+# [llm]
+# provider = "openrouter"            # openrouter (default), openai, anthropic
+# endpoint = "https://openrouter.ai/api/v1/chat/completions"
+# model = "qwen3.5-4b"
+# api_key = "sk-or-v1-..."            # or use api_key_env for security
+# api_key_env = "LLM_API_KEY"         # read key from env var instead of config file
+# temperature = 0.3
+# max_tokens = 512
+# parallel_requests = 1
 
 [init]
 root = "."

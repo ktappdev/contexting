@@ -5,6 +5,8 @@ llm_model = "qwen3.5-4b"
 batch_size = 0
 synonyms = 10
 ignore = [".git", ".venv", "site-packages", "__pycache__", "node_modules", "vendor", "dist"]
+# Extra dot files to keep (merged with built-in defaults like .prettierrc, .editorconfig, etc.)
+dot_whitelist = []
 verbose = true
 
 [llm]

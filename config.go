@@ -26,6 +26,7 @@ type CommonConfig struct {
 	SynonymsPerName int      `toml:"synonyms"`
 	Verbose         *bool    `toml:"verbose"`
 	ExtraIgnores    []string `toml:"ignore"`
+	DotWhitelist    []string `toml:"dot_whitelist"` // Extra dot files to keep (merged with defaults)
 }
 
 type InitConfig struct {

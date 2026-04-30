@@ -26,6 +26,7 @@ type IndexManagerOptions struct {
 	OutputPath      string
 	CachePath       string
 	IgnoredPaths    map[string]bool
+	DotWhitelist    []string // Extra dot files merged with defaults
 	Model           string
 	BatchSize       int
 	SynonymsPerName int
@@ -79,6 +80,9 @@ func NewIndexManager(opts IndexManagerOptions) *IndexManager {
 	}
 	if opts.IgnoredPaths == nil {
 		opts.IgnoredPaths = BuildIgnoreMap(nil)
+	}
+	if len(opts.DotWhitelist) > 0 {
+		EmbedDotWhitelist(opts.IgnoredPaths, BuildDotWhitelist(opts.DotWhitelist))
 	}
 
 	return &IndexManager{

@@ -72,6 +72,7 @@ func newInitCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			EmbedDotWhitelist(ignored, BuildDotWhitelist(cfg.Common.DotWhitelist))
 			// Only skip internal files by basename when the resolved paths are inside the project.
 			if isInsideProject(absConfigPath, absRoot) {
 				ignored[filepath.Base(absConfigPath)] = true
