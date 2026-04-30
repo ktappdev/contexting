@@ -58,10 +58,10 @@ func TestGenerateSynonymsForNamesHandlesEmptyList(t *testing.T) {
 }
 
 func TestOpenRouterConstants(t *testing.T) {
-	if defaultEndpoint != "https://llama.kentaylor.dev/v1/chat/completions" {
+	if defaultEndpoint != "https://openrouter.ai/api/v1/chat/completions" {
 		t.Fatalf("unexpected defaultEndpoint: %s", defaultEndpoint)
 	}
-	if defaultModel != "qwen3.5-4b" {
+	if defaultModel != "meta-llama/llama-3.1-8b-instruct" {
 		t.Fatalf("unexpected defaultModel: %s", defaultModel)
 	}
 }

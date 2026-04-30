@@ -3,23 +3,26 @@ package main
 const starterConfigTemplate = `[common]
 output = "context.json"
 synonym_cache = ".contexting_synonyms_cache.json"
-llm_model = "qwen3.5-4b"
-batch_size = 0
-synonyms = 4
+llm_model = "meta-llama/llama-3.1-8b-instruct"  # any OpenAI-compatible model name
+batch_size = 15             # names per batch; 15 works well for 8B models
+synonyms = 4                # synonyms to generate per name
 ignore = [".git", ".venv", "site-packages", "__pycache__", "node_modules", "vendor", "dist", "migrations", "pb_migrations", "alembic", "flyway"]
 # Extra dot files to keep (merged with built-in defaults like .prettierrc, .editorconfig, etc.)
 # dot_whitelist = [".env.local", ".env.production"]
 verbose = true
 
-# [llm]
-# provider = "openrouter"            # openrouter (default), openai, anthropic
-# endpoint = "https://openrouter.ai/api/v1/chat/completions"
-# model = "qwen3.5-4b"
+[llm]
+parallel_requests = 4  # concurrent LLM requests (1 = sequential)
+temperature = 0.3
+provider = "openrouter"
+endpoint = "https://openrouter.ai/api/v1/chat/completions"
+model = "meta-llama/llama-3.1-8b-instruct"
 # api_key = "sk-or-v1-..."            # or use api_key_env for security
-# api_key_env = "LLM_API_KEY"         # read key from env var instead of config file
-# temperature = 0.3
+api_key_env = "OPENROUTER_API_KEY"     # read key from env var
 # max_tokens = 512
-# parallel_requests = 1
+# provider = "local"
+# endpoint = "https://llama.kentaylor.dev/v1/chat/completions"
+# model = "qwen3.5-0.8b"
 
 [init]
 root = "."

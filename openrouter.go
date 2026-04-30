@@ -10,16 +10,17 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
 const (
-	defaultModel           = "qwen3.5-4b"
-	defaultSynonyms        = 10
+	defaultModel           = "meta-llama/llama-3.1-8b-instruct"
+	defaultSynonyms        = 4
 	defaultHTTPTimeout     = 45 * time.Second // HTTP client timeout for API requests
 )
 
-var defaultEndpoint = "https://llama.kentaylor.dev/v1/chat/completions"
+var defaultEndpoint = "https://openrouter.ai/api/v1/chat/completions"
 
 type OpenRouterRequest struct {
 	Model       string          `json:"model"`
@@ -27,6 +28,7 @@ type OpenRouterRequest struct {
 	Format     json.RawMessage `json:"response_format,omitempty"`
 	Temperature *float64       `json:"temperature,omitempty"`
 	MaxTokens  *int            `json:"max_tokens,omitempty"`
+	Reasoning  json.RawMessage `json:"reasoning,omitempty"`
 }
 
 type Message struct {
@@ -84,7 +86,8 @@ func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKe
 			{Role: "system", Content: systemPrompt},
 			{Role: "user", Content: userContent},
 		},
-		Format: json.RawMessage(`{"type":"json_object"}`),
+		Format:    json.RawMessage(`{"type":"json_object"}`),
+		Reasoning: json.RawMessage(`{"exclude":true}`),
 	}
 	if temperature > 0 {
 		reqBody.Temperature = &temperature
@@ -190,6 +193,7 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 	sem := make(chan struct{}, parallelLimit)
 	var wg sync.WaitGroup
 	var mu sync.Mutex
+	var completed int32
 
 	for i := 0; i < len(names); i += batchSize {
 		batchNum := i/batchSize + 1
@@ -214,6 +218,8 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 				result[name] = values
 			}
 			mu.Unlock()
+			atomic.AddInt32(&completed, 1)
+			fmt.Printf("  Synonyms: batch %d/%d done (%d names)\n", batchNum, totalBatches, len(batch))
 		}(batchNum, names[i:end])
 	}
 	wg.Wait()

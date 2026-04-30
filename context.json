@@ -11,25 +11,47 @@
         "type": "file",
         "synonyms": [
           "readme",
-          "md"
+          "main-doc",
+          "project-info",
+          "installation",
+          "contribution-guide",
+          "quickstart",
+          "overview",
+          "license-info",
+          "repository-readme",
+          "welcome-file"
         ]
       },
       "SYMBOL_INDEXING.md": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/SYMBOL_INDEXING.md",
         "type": "file",
         "synonyms": [
-          "symbol",
-          "indexing",
-          "md"
+          "symbol-indexing",
+          "indexing-config",
+          "symbol-lookup",
+          "go-symbols",
+          "code-index",
+          "reference-table",
+          "identifier-map",
+          "namespace-list",
+          "type-registration",
+          "api-symbols"
         ]
       },
       "agent_demo.go": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/agent_demo.go",
         "type": "file",
         "synonyms": [
-          "agent",
-          "demo",
-          "go"
+          "demo-agent",
+          "agent-example",
+          "main-demo",
+          "sample-agent",
+          "agent-run",
+          "demo-code",
+          "agent-test",
+          "example-go",
+          "agent-usage",
+          "demonstration"
         ],
         "symbols": [
           "printSearchResults"
@@ -39,8 +61,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/cache.go",
         "type": "file",
         "synonyms": [
-          "cache",
-          "go"
+          "cache-impl",
+          "memory-cache",
+          "lru-cache",
+          "caching-layer",
+          "data-store",
+          "cache-manager",
+          "storage-cache",
+          "cached-data",
+          "in-memory-cache",
+          "cache-service"
         ],
         "symbols": [
           "LoadSynonymCache",
@@ -51,9 +81,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/cache_test.go",
         "type": "file",
         "synonyms": [
-          "cache",
-          "test",
-          "go"
+          "cache-tests",
+          "test-cache",
+          "cache-unit-test",
+          "cache-validation",
+          "cache-asserts",
+          "cache-benchmarks",
+          "cache-coverage",
+          "test-caching",
+          "cache-integration",
+          "cache-sanity"
         ],
         "symbols": [
           "TestLoadAndSaveSynonymCache"
@@ -63,9 +100,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/command_config.go",
         "type": "file",
         "synonyms": [
-          "command",
-          "config",
-          "go"
+          "config-command",
+          "setup-config",
+          "apply-config",
+          "init-config",
+          "load-config",
+          "config-handler",
+          "config-runner",
+          "configure-tool",
+          "config-action",
+          "config-executor"
         ],
         "symbols": [
           "newConfigCommand",
@@ -76,9 +120,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/command_doctor.go",
         "type": "file",
         "synonyms": [
-          "command",
-          "doctor",
-          "go"
+          "doctor-command",
+          "health-check",
+          "diagnose-tool",
+          "fix-diagnostics",
+          "system-audit",
+          "error-scanner",
+          "config-audit",
+          "debug-commands",
+          "tool-doctor",
+          "lint-runner"
         ],
         "symbols": [
           "newDoctorCommand",
@@ -89,9 +140,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/command_eval.go",
         "type": "file",
         "synonyms": [
-          "command",
-          "eval",
-          "go"
+          "eval-command",
+          "run-eval",
+          "expression-eval",
+          "code-eval",
+          "script-executor",
+          "eval-runner",
+          "test-eval",
+          "evaluate-tool",
+          "eval-action",
+          "expr-eval"
         ],
         "symbols": [
           "newEvalCommand"
@@ -101,9 +159,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/command_init.go",
         "type": "file",
         "synonyms": [
-          "command",
-          "init",
-          "go"
+          "init-command",
+          "setup-init",
+          "create-project",
+          "new-project",
+          "initialize-env",
+          "project-setup",
+          "init-creator",
+          "bootstrap-init",
+          "starter-init",
+          "project-init"
         ],
         "symbols": [
           "newInitCommand"
@@ -113,9 +178,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/command_search.go",
         "type": "file",
         "synonyms": [
-          "command",
-          "search",
-          "go"
+          "search-command",
+          "find-files",
+          "grep-tool",
+          "code-search",
+          "file-lookup",
+          "pattern-match",
+          "search-engine",
+          "regex-finder",
+          "text-search",
+          "code-query"
         ],
         "symbols": [
           "newSearchCommand"
@@ -125,9 +197,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/command_shared.go",
         "type": "file",
         "synonyms": [
-          "command",
-          "shared",
-          "go"
+          "shared-utils",
+          "common-tools",
+          "helper-functions",
+          "utility-shared",
+          "generic-utils",
+          "base-components",
+          "core-helpers",
+          "shared-logic",
+          "common-code",
+          "utils-shared"
         ],
         "symbols": [
           "CommonFlags",
@@ -155,8 +234,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/commands.go",
         "type": "file",
         "synonyms": [
-          "commands",
-          "go"
+          "cmd-list",
+          "command-handlers",
+          "action-dispatcher",
+          "command-registry",
+          "tool-collection",
+          "cmd-factory",
+          "command-map",
+          "action-queue",
+          "cmd-manager",
+          "command-set"
         ],
         "symbols": [
           "configPath",
@@ -169,8 +256,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/config.go",
         "type": "file",
         "synonyms": [
-          "config",
-          "go"
+          "config-manager",
+          "settings-store",
+          "options-config",
+          "global-settings",
+          "app-config",
+          "conf-loader",
+          "parameter-store",
+          "env-config",
+          "settings-defaults",
+          "config-service"
         ],
         "symbols": [
           "LoadContextingConfig",
@@ -187,9 +282,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/config_apply.go",
         "type": "file",
         "synonyms": [
-          "config",
-          "apply",
-          "go"
+          "apply-config",
+          "update-settings",
+          "reload-config",
+          "sync-configuration",
+          "deploy-config",
+          "merge-config",
+          "refresh-settings",
+          "activate-config",
+          "configure-now",
+          "config-update"
         ],
         "symbols": [
           "applyCommonConfig",
@@ -203,9 +305,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/config_bootstrap.go",
         "type": "file",
         "synonyms": [
-          "config",
-          "bootstrap",
-          "go"
+          "bootstrap-config",
+          "init-config-flow",
+          "setup-defaults",
+          "create-baseline",
+          "initialize-structure",
+          "boot-configuration",
+          "establish-config",
+          "primary-setup",
+          "config-launcher",
+          "config-initializer"
         ],
         "symbols": [
           "ensureStarterConfigPrompt",
@@ -218,10 +327,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/config_bootstrap_test.go",
         "type": "file",
         "synonyms": [
-          "config",
-          "bootstrap",
-          "test",
-          "go"
+          "test-bootstrap",
+          "verify-setup",
+          "check-initialization",
+          "validate-structure",
+          "test-boot-configuration",
+          "assert-defaults",
+          "run-bootstrap-tests",
+          "verify-create-flow",
+          "test-config-creation",
+          "bootstrap-validation"
         ],
         "symbols": [
           "TestWriteStarterConfig",
@@ -232,9 +347,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/config_template.go",
         "type": "file",
         "synonyms": [
-          "config",
-          "template",
-          "go"
+          "template-config",
+          "config-schema",
+          "config-model",
+          "json-template",
+          "yaml-template",
+          "config-pattern",
+          "default-config",
+          "config-skeleton",
+          "structure-template",
+          "config-example"
         ],
         "symbols": [
           "starterConfigTemplate"
@@ -259,41 +381,80 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/context.json",
         "type": "file",
         "synonyms": [
-          "context",
-          "json"
+          "context-data",
+          "settings-json",
+          "app-state",
+          "runtime-config",
+          "env-settings",
+          "context-file",
+          "metadata-json",
+          "configuration-json",
+          "context-store",
+          "json-context"
         ]
       },
       "context.toml": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/context.toml",
         "type": "file",
         "synonyms": [
-          "context",
-          "toml"
+          "context-data-toml",
+          "settings-toml",
+          "app-state-toml",
+          "runtime-config-toml",
+          "env-settings-toml",
+          "context-file-toml",
+          "metadata-toml",
+          "configuration-toml",
+          "context-store-toml",
+          "toml-context"
         ]
       },
       "context.toml.example": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/context.toml.example",
         "type": "file",
         "synonyms": [
-          "context",
-          "toml",
-          "example"
+          "context-example",
+          "sample-toml",
+          "template-config",
+          "settings-sample",
+          "config-examples",
+          "reference-toml",
+          "context-template",
+          "default-settings",
+          "toml-model",
+          "example-context"
         ]
       },
       "docs": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs",
         "type": "directory",
         "synonyms": [
-          "docs"
+          "documentation",
+          "readme-files",
+          "user-guide",
+          "api-docs",
+          "technical-specs",
+          "help-resources",
+          "knowledge-base",
+          "manual-pages",
+          "guides",
+          "reference-docs"
         ],
         "children": {
           "DEVELOPER_MANUAL.html": {
             "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/DEVELOPER_MANUAL.html",
             "type": "file",
             "synonyms": [
-              "developer",
-              "manual",
-              "html"
+              "developer-guide",
+              "dev-manual",
+              "installation-guide",
+              "quick-start",
+              "setup-docs",
+              "getting-started",
+              "contributing",
+              "usage-guide",
+              "architecture-overview",
+              "api-reference"
             ]
           }
         }
@@ -302,8 +463,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/doctor.go",
         "type": "file",
         "synonyms": [
-          "doctor",
-          "go"
+          "diagnostic-tool",
+          "health-checker",
+          "system-auditor",
+          "error-scanner",
+          "fix-diagnostics",
+          "config-validator",
+          "lint-runner",
+          "debug-commands",
+          "tool-doctor",
+          "issue-finder"
         ],
         "symbols": [
           "checkIndexFile",
@@ -326,9 +495,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/doctor_test.go",
         "type": "file",
         "synonyms": [
-          "doctor",
-          "test",
-          "go"
+          "test-doctor",
+          "validate-diagnostic",
+          "check-health",
+          "run-tests",
+          "verify-tool",
+          "assert-fixes",
+          "test-scanner",
+          "diagnostic-validation",
+          "health-check-test",
+          "doctor-asserts"
         ],
         "symbols": [
           "TestRunDoctorHealthy",
@@ -339,8 +515,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/errors.go",
         "type": "file",
         "synonyms": [
-          "errors",
-          "go"
+          "error-handling",
+          "error-types",
+          "exception-list",
+          "error-messages",
+          "failures",
+          "runtime-errors",
+          "panic-handlers",
+          "validation-errors",
+          "log-errors",
+          "error-config"
         ],
         "symbols": [
           "isCanceledError"
@@ -350,8 +534,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/eval.go",
         "type": "file",
         "synonyms": [
-          "eval",
-          "go"
+          "expression-eval",
+          "code-executor",
+          "script-runner",
+          "evaluator",
+          "test-runner",
+          "expr-parser",
+          "run-time-eval",
+          "logic-eval",
+          "code-eval",
+          "eval-engine"
         ],
         "symbols": [
           "EvaluateSearch",
@@ -367,9 +559,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/eval_report.go",
         "type": "file",
         "synonyms": [
-          "eval",
-          "report",
-          "go"
+          "eval-results",
+          "report-generation",
+          "test-output",
+          "analysis-summary",
+          "evaluation-report",
+          "result-collector",
+          "metrics-output",
+          "performance-data",
+          "eval-logs",
+          "summary-gen"
         ],
         "symbols": [
           "printFailedCases",
@@ -381,9 +580,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/eval_test.go",
         "type": "file",
         "synonyms": [
-          "eval",
-          "test",
-          "go"
+          "test-eval",
+          "verify-expression",
+          "run-tests",
+          "check-results",
+          "assert-eval",
+          "test-runner",
+          "eval-benchmarks",
+          "coverage-test",
+          "eval-validation",
+          "test-eval-code"
         ],
         "symbols": [
           "TestEvaluateSearchMetrics",
@@ -394,8 +600,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/gitignore.go",
         "type": "file",
         "synonyms": [
-          "gitignore",
-          "go"
+          "git-ignores",
+          "excluded-files",
+          "build-artifacts",
+          "temp-files",
+          "node-modules",
+          "vendor-ignore",
+          "dist-output",
+          "cache-data",
+          "log-files",
+          "secret-keys"
         ],
         "symbols": [
           "starterGitignoreEntries",
@@ -408,9 +622,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/gitignore_test.go",
         "type": "file",
         "synonyms": [
-          "gitignore",
-          "test",
-          "go"
+          "test-gitignore",
+          "verify-exclusions",
+          "check-patterns",
+          "validate-ignore",
+          "test-ignored",
+          "assert-builds",
+          "verify-temp",
+          "check-artifacts",
+          "test-config",
+          "ignore-validation"
         ],
         "symbols": [
           "TestEnsureAndLoadGitignoreCreatesStarter",
@@ -422,24 +643,48 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/go.mod",
         "type": "file",
         "synonyms": [
-          "go",
-          "mod"
+          "go-module",
+          "dependencies",
+          "module-def",
+          "vendor-list",
+          "go-deps",
+          "project-mod",
+          "go-config",
+          "pkg-dependencies",
+          "mod-file",
+          "go-spec"
         ]
       },
       "go.sum": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/go.sum",
         "type": "file",
         "synonyms": [
-          "go",
-          "sum"
+          "checksums",
+          "dep-checksums",
+          "verified-deps",
+          "hashes",
+          "go-checksums",
+          "mod-verify",
+          "dependency-hashes",
+          "sum-file",
+          "integrity-checks",
+          "verified-mod"
         ]
       },
       "ignore.go": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/ignore.go",
         "type": "file",
         "synonyms": [
-          "ignore",
-          "go"
+          "exclude",
+          "blacklist",
+          "skip",
+          "omit",
+          "filter",
+          "deny",
+          "reject",
+          "pass",
+          "allow",
+          "ignore_list"
         ],
         "symbols": [
           "dotFileWhitelist",
@@ -455,9 +700,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/index_manager.go",
         "type": "file",
         "synonyms": [
-          "index",
-          "manager",
-          "go"
+          "index_handler",
+          "index_controller",
+          "indexer",
+          "index_processor",
+          "index_service",
+          "index_engine",
+          "indexer_logic",
+          "index_manager_impl",
+          "index_system",
+          "index_logic"
         ],
         "symbols": [
           "PersistInterval",
@@ -474,10 +726,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/index_manager_test.go",
         "type": "file",
         "synonyms": [
-          "index",
-          "manager",
-          "test",
-          "go"
+          "index_manager_tests",
+          "index_handler_tests",
+          "indexer_tests",
+          "index_processor_tests",
+          "index_service_tests",
+          "index_engine_tests",
+          "indexer_unit_tests",
+          "index_system_tests",
+          "index_logic_tests",
+          "index_manager_validation"
         ],
         "symbols": [
           "TestIndexManagerApplyAndFlush"
@@ -487,8 +745,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/indexer.go",
         "type": "file",
         "synonyms": [
-          "indexer",
-          "go"
+          "indexer_impl",
+          "index_handler",
+          "index_controller",
+          "index_service",
+          "index_engine",
+          "index_processor",
+          "index_system",
+          "index_logic",
+          "indexer_logic",
+          "indexing_service"
         ],
         "symbols": [
           "cloneSynonymMap",
@@ -502,9 +768,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/indexer_test.go",
         "type": "file",
         "synonyms": [
-          "indexer",
-          "test",
-          "go"
+          "indexer_tests",
+          "index_handler_tests",
+          "indexer_unit_tests",
+          "indexer_validation",
+          "indexing_service_tests",
+          "index_engine_tests",
+          "index_processor_tests",
+          "index_system_tests",
+          "index_logic_tests",
+          "indexer_integration"
         ],
         "symbols": [
           "TestBuildIndexUsesCacheAndLexicalSynonyms"
@@ -514,9 +787,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/io_atomic.go",
         "type": "file",
         "synonyms": [
-          "io",
-          "atomic",
-          "go"
+          "atomic_ops",
+          "sync_atomics",
+          "io_sync",
+          "thread_safety",
+          "concurrent_io",
+          "atomic_writer",
+          "safe_io",
+          "mutex_io",
+          "lock_io",
+          "atomic_operations"
         ],
         "symbols": [
           "writeFileAtomic"
@@ -526,8 +806,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/logger.go",
         "type": "file",
         "synonyms": [
-          "logger",
-          "go"
+          "logging",
+          "log_handler",
+          "logger_impl",
+          "syslog",
+          "debug_logger",
+          "error_logger",
+          "info_logger",
+          "trace_logger",
+          "console_logger",
+          "file_logger"
         ],
         "symbols": [
           "logTimeFormat",
@@ -541,8 +829,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/main.go",
         "type": "file",
         "synonyms": [
-          "main",
-          "go"
+          "entry_point",
+          "app_init",
+          "main_func",
+          "root_handler",
+          "start_app",
+          "bootstrap",
+          "cli_entry",
+          "application_start",
+          "global_init",
+          "setup_main"
         ],
         "symbols": [
           "main"
@@ -552,9 +848,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/main_test.go",
         "type": "file",
         "synonyms": [
-          "main",
-          "test",
-          "go"
+          "main_tests",
+          "entry_point_tests",
+          "app_init_tests",
+          "root_handler_tests",
+          "bootstrap_tests",
+          "cli_entry_tests",
+          "application_start_tests",
+          "global_init_tests",
+          "main_validation",
+          "entry_point_unit"
         ],
         "symbols": [
           "TestRootCommandHasExpectedSubcommands"
@@ -564,10 +867,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/memory_search_client.go",
         "type": "file",
         "synonyms": [
-          "memory",
-          "search",
-          "client",
-          "go"
+          "search_client",
+          "client_impl",
+          "mem_search",
+          "query_client",
+          "db_client",
+          "cache_client",
+          "searcher",
+          "lookup_client",
+          "query_handler",
+          "search_service"
         ],
         "symbols": [
           "defaultClientTimeout",
@@ -578,10 +887,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/memory_search_server.go",
         "type": "file",
         "synonyms": [
-          "memory",
-          "search",
-          "server",
-          "go"
+          "search_server",
+          "server_impl",
+          "mem_search_svc",
+          "query_server",
+          "db_server",
+          "cache_server",
+          "search_endpoint",
+          "lookup_server",
+          "search_handler",
+          "search_gateway"
         ],
         "symbols": [
           "defaultReadHeaderTimeout",
@@ -599,11 +914,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/memory_search_server_test.go",
         "type": "file",
         "synonyms": [
-          "memory",
-          "search",
-          "server",
-          "test",
-          "go"
+          "search_server_tests",
+          "mem_search_svc_tests",
+          "query_server_tests",
+          "search_endpoint_tests",
+          "search_handler_tests",
+          "search_gateway_tests",
+          "server_impl_tests",
+          "db_server_tests",
+          "cache_server_tests",
+          "search_unit_tests"
         ],
         "symbols": [
           "TestFormatSearchLogQuery"
@@ -613,8 +933,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/node.go",
         "type": "file",
         "synonyms": [
-          "node",
-          "go"
+          "node_impl",
+          "node_struct",
+          "node_data",
+          "entity_node",
+          "node_instance",
+          "node_config",
+          "node_state",
+          "node_object",
+          "node_class",
+          "node_handler"
         ],
         "symbols": [
           "ComputeStats",
@@ -632,9 +960,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/node_mutation.go",
         "type": "file",
         "synonyms": [
-          "node",
-          "mutation",
-          "go"
+          "node_changes",
+          "node_updates",
+          "node_modifications",
+          "node_ops",
+          "node_delta",
+          "node_diff",
+          "node_patch",
+          "node_transaction",
+          "node_event",
+          "node_sync"
         ],
         "symbols": [
           "removeNodeByRelPath",
@@ -649,9 +984,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/node_test.go",
         "type": "file",
         "synonyms": [
-          "node",
-          "test",
-          "go"
+          "node_tests",
+          "node_struct_tests",
+          "node_data_tests",
+          "entity_node_tests",
+          "node_instance_tests",
+          "node_config_tests",
+          "node_state_tests",
+          "node_object_tests",
+          "node_class_tests",
+          "node_handler_tests"
         ],
         "symbols": [
           "mustMkdir",
@@ -666,8 +1008,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/openrouter.go",
         "type": "file",
         "synonyms": [
-          "openrouter",
-          "go"
+          "openrouter_client",
+          "or_api",
+          "openrouter_sdk",
+          "openrouter_impl",
+          "router_client",
+          "api_client",
+          "openrouter_handler",
+          "or_service",
+          "openrouter_config",
+          "router_integration"
         ],
         "symbols": [
           "GenerateSynonymsBatch",
@@ -691,9 +1041,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/openrouter_test.go",
         "type": "file",
         "synonyms": [
-          "openrouter",
-          "test",
-          "go"
+          "openrouter_tests",
+          "or_api_tests",
+          "openrouter_sdk_tests",
+          "openrouter_impl_tests",
+          "router_client_tests",
+          "api_client_tests",
+          "openrouter_handler_tests",
+          "or_service_tests",
+          "openrouter_config_tests",
+          "router_integration_tests"
         ],
         "symbols": [
           "TestOpenRouterConstants",
@@ -706,8 +1063,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/paths.go",
         "type": "file",
         "synonyms": [
-          "paths",
-          "go"
+          "routes",
+          "url_paths",
+          "path_helpers",
+          "route_map",
+          "endpoint_paths",
+          "uri_routes",
+          "path_definitions",
+          "route_config",
+          "path_resolver",
+          "api_paths"
         ],
         "symbols": [
           "resolveProjectPath",
@@ -718,9 +1083,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/runtime_state.go",
         "type": "file",
         "synonyms": [
-          "runtime",
-          "state",
-          "go"
+          "app_state",
+          "runtime_config",
+          "state_manager",
+          "global_state",
+          "runtime_vars",
+          "process_state",
+          "system_state",
+          "runtime_data",
+          "state_store",
+          "runtime_context"
         ],
         "symbols": [
           "RuntimeState",
@@ -732,10 +1104,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/runtime_state_test.go",
         "type": "file",
         "synonyms": [
-          "runtime",
-          "state",
-          "test",
-          "go"
+          "app_state_tests",
+          "runtime_config_tests",
+          "state_manager_tests",
+          "global_state_tests",
+          "runtime_vars_tests",
+          "process_state_tests",
+          "system_state_tests",
+          "runtime_data_tests",
+          "state_store_tests",
+          "runtime_context_tests"
         ],
         "symbols": [
           "TestSaveAndLoadRuntimeState"
@@ -745,8 +1123,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/search.go",
         "type": "file",
         "synonyms": [
-          "search",
-          "go"
+          "search_impl",
+          "search_handler",
+          "query_search",
+          "search_logic",
+          "search_service",
+          "search_engine",
+          "search_system",
+          "search_processor",
+          "search_module",
+          "search_controller"
         ],
         "symbols": [
           "passesTypeFilter",
@@ -763,9 +1149,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/search_summary.go",
         "type": "file",
         "synonyms": [
-          "search",
-          "summary",
-          "go"
+          "search_results",
+          "search_output",
+          "search_data",
+          "summary_search",
+          "search_stats",
+          "search_metrics",
+          "search_report",
+          "search_log",
+          "search_index",
+          "search_cache"
         ],
         "symbols": [
           "printDirectorySummaries",
@@ -780,10 +1173,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/search_summary_test.go",
         "type": "file",
         "synonyms": [
-          "search",
-          "summary",
-          "test",
-          "go"
+          "search_results_tests",
+          "search_output_tests",
+          "search_data_tests",
+          "summary_search_tests",
+          "search_stats_tests",
+          "search_metrics_tests",
+          "search_report_tests",
+          "search_log_tests",
+          "search_index_tests",
+          "search_cache_tests"
         ],
         "symbols": [
           "TestSummarizeDirectories",
@@ -794,9 +1193,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/search_test.go",
         "type": "file",
         "synonyms": [
-          "search",
-          "test",
-          "go"
+          "search_tests",
+          "search_impl_tests",
+          "search_handler_tests",
+          "query_search_tests",
+          "search_logic_tests",
+          "search_service_tests",
+          "search_engine_tests",
+          "search_system_tests",
+          "search_processor_tests",
+          "search_controller_tests"
         ],
         "symbols": [
           "TestContextIndexMarshalsWithRootPath",
@@ -815,8 +1221,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/signals.go",
         "type": "file",
         "synonyms": [
-          "signals",
-          "go"
+          "process_signals",
+          "signal_handlers",
+          "os_signals",
+          "sys_signals",
+          "event_signals",
+          "termination_signals",
+          "control_signals",
+          "signal_listeners",
+          "signal_termination",
+          "signal_events"
         ],
         "symbols": [
           "signalAwareContext"
@@ -826,8 +1240,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/storage.go",
         "type": "file",
         "synonyms": [
-          "storage",
-          "go"
+          "storage_impl",
+          "data_store",
+          "storage_handler",
+          "persist_store",
+          "db_storage",
+          "file_storage",
+          "memory_storage",
+          "storage_system",
+          "storage_service",
+          "storage_config"
         ],
         "symbols": [
           "SaveContextIndex",
@@ -839,9 +1261,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/storage_test.go",
         "type": "file",
         "synonyms": [
-          "storage",
-          "test",
-          "go"
+          "storage_tests",
+          "data_store_tests",
+          "storage_handler_tests",
+          "persist_store_tests",
+          "db_storage_tests",
+          "file_storage_tests",
+          "memory_storage_tests",
+          "storage_system_tests",
+          "storage_service_tests",
+          "storage_config_tests"
         ],
         "symbols": [
           "TestSaveAndLoadContextIndex"
@@ -851,8 +1280,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/symbols.go",
         "type": "file",
         "synonyms": [
-          "symbols",
-          "go"
+          "symbols_impl",
+          "symbol_defs",
+          "symbol_data",
+          "symbol_map",
+          "symbol_list",
+          "symbol_registry",
+          "symbol_store",
+          "symbol_cache",
+          "symbol_index",
+          "symbol_handler"
         ],
         "symbols": [
           "extractSymbols",
@@ -865,8 +1302,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/synonyms.go",
         "type": "file",
         "synonyms": [
-          "synonyms",
-          "go"
+          "synonyms_impl",
+          "synonym_data",
+          "synonym_map",
+          "synonym_list",
+          "synonym_registry",
+          "synonym_store",
+          "synonym_cache",
+          "synonym_index",
+          "synonym_handler",
+          "synonym_config"
         ],
         "symbols": [
           "lexicalSynonyms",
@@ -883,9 +1328,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/synonyms_test.go",
         "type": "file",
         "synonyms": [
-          "synonyms",
-          "test",
-          "go"
+          "synonyms_tests",
+          "synonym_data_tests",
+          "synonym_map_tests",
+          "synonym_list_tests",
+          "synonym_registry_tests",
+          "synonym_store_tests",
+          "synonym_cache_tests",
+          "synonym_index_tests",
+          "synonym_handler_tests",
+          "synonym_config_tests"
         ],
         "symbols": [
           "TestSanitizeSynonymsFiltersGenericAndCaps",
@@ -897,9 +1349,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/toml_test.go",
         "type": "file",
         "synonyms": [
-          "toml",
-          "test",
-          "go"
+          "toml_tests",
+          "config_tests",
+          "parser_tests",
+          "validation_tests",
+          "loading_tests",
+          "serialization_tests",
+          "schema_tests",
+          "structure_tests",
+          "format_tests",
+          "toml_unit"
         ],
         "symbols": [
           "TestConfig",
@@ -914,9 +1373,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/watch_helpers.go",
         "type": "file",
         "synonyms": [
-          "watch",
-          "helpers",
-          "go"
+          "watch_impl",
+          "watcher_helpers",
+          "file_watchers",
+          "path_watchers",
+          "event_watchers",
+          "monitor_helpers",
+          "observer_helpers",
+          "listener_helpers",
+          "sync_helpers",
+          "update_helpers"
         ],
         "symbols": [
           "logChangeSummary",
@@ -932,9 +1398,16 @@
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/watch_test.go",
         "type": "file",
         "synonyms": [
-          "watch",
-          "test",
-          "go"
+          "watch_tests",
+          "watcher_tests",
+          "file_watchers_tests",
+          "path_watchers_tests",
+          "event_watchers_tests",
+          "monitor_tests",
+          "observer_tests",
+          "listener_tests",
+          "sync_tests",
+          "update_tests"
         ],
         "symbols": [
           "TestShouldSkipInternalOutput",
