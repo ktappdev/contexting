@@ -81,8 +81,6 @@ func newSearchCommand() *cobra.Command {
 					usedMemory = true
 				} else if memoryOnly {
 					return memErr
-				} else {
-					logWarnf("Memory search unavailable, falling back to snapshot index: %v", memErr)
 				}
 			}
 			if !usedMemory {
