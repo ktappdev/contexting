@@ -118,3 +118,20 @@ func isLowSignalToken(token string) bool {
 	_, bad := lowSignalTokens[token]
 	return bad
 }
+
+// isSourceExtension strips common file extensions from query tokens
+// so "signin.astro" doesn't match every .astro file
+func isSourceExtension(token string) bool {
+	extensions := map[string]bool{
+		"astro": true, "svelte": true, "tsx": true, "ts": true,
+		"jsx": true, "js": true, "go": true, "rs": true,
+		"py": true, "rb": true, "java": true, "kt": true,
+		"swift": true, "c": true, "cpp": true, "h": true,
+		"hpp": true, "cs": true, "php": true, "vue": true,
+		"html": true, "css": true, "scss": true, "less": true,
+		"sql": true, "sh": true, "bash": true, "zsh": true,
+		"json": true, "yaml": true, "yml": true, "toml": true,
+		"md": true, "mdx": true, "dockerfile": true,
+	}
+	return extensions[strings.ToLower(token)]
+}

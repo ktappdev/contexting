@@ -224,7 +224,7 @@ func tokenize(input string) []string {
 	base := dedupeStrings(parts)
 	filteredBase := make([]string, 0, len(base))
 	for _, token := range base {
-		if isLowSignalToken(token) {
+		if isLowSignalToken(token) || isSourceExtension(token) {
 			continue
 		}
 		filteredBase = append(filteredBase, token)
