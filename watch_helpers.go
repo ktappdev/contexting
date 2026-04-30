@@ -101,8 +101,8 @@ func shouldSkipInternalOutput(eventPath string, outputPath string, cachePath str
 	return false
 }
 
-func logChangeSummary(changes map[string]fsnotify.Op) {
-	if len(changes) == 0 {
+func logChangeSummary(changes map[string]fsnotify.Op, verbose bool) {
+	if len(changes) == 0 || !verbose {
 		return
 	}
 

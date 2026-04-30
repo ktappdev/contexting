@@ -224,7 +224,7 @@ func newWatchCommand() *cobra.Command {
 						if len(changes) == 0 {
 							continue
 						}
-						logChangeSummary(changes)
+						logChangeSummary(changes, flags.Verbose)
 						result, applyErr := manager.ApplyChanges(ctx, changes)
 						if applyErr != nil {
 							if !isCanceledError(applyErr) {
@@ -234,12 +234,14 @@ func newWatchCommand() *cobra.Command {
 						}
 						emitSynonymWarning(result.SynonymError)
 						if result.Changed {
-							logInfof("In-memory index updated: %d nodes (%d files, %d directories).", result.Stats.TotalNodes, result.Stats.TotalFiles, result.Stats.TotalDirs)
+							if flags.Verbose {
+								logInfof("In-memory index updated: %d nodes (%d files, %d directories).", result.Stats.TotalNodes, result.Stats.TotalFiles, result.Stats.TotalDirs)
+							}
 							if persistMode == PersistChange {
 								flushed, flushErr := manager.FlushIfDirty()
 								if flushErr != nil {
 									logErrorf("Change-triggered flush failed: %v", flushErr)
-								} else if flushed {
+								} else if flushed && flags.Verbose {
 									logInfof("Saved snapshot after change to %s", outputPath)
 								}
 							}
@@ -262,19 +264,21 @@ func newWatchCommand() *cobra.Command {
 				case <-ctx.Done():
 					remaining := drainPending()
 					if len(remaining) > 0 {
-						logChangeSummary(remaining)
+						logChangeSummary(remaining, flags.Verbose)
 						result, applyErr := manager.ApplyChanges(context.Background(), remaining)
 						if applyErr != nil {
 							logErrorf("Final apply failed: %v", applyErr)
 						} else {
 							emitSynonymWarning(result.SynonymError)
 							if result.Changed {
-								logInfof("In-memory index updated: %d nodes (%d files, %d directories).", result.Stats.TotalNodes, result.Stats.TotalFiles, result.Stats.TotalDirs)
+								if flags.Verbose {
+									logInfof("In-memory index updated: %d nodes (%d files, %d directories).", result.Stats.TotalNodes, result.Stats.TotalFiles, result.Stats.TotalDirs)
+								}
 								if persistMode == PersistChange {
 									flushed, flushErr := manager.FlushIfDirty()
 									if flushErr != nil {
 										logErrorf("Final change-triggered flush failed: %v", flushErr)
-									} else if flushed {
+									} else if flushed && flags.Verbose {
 										logInfof("Saved snapshot after final change to %s", outputPath)
 									}
 								}
@@ -357,7 +361,7 @@ func newWatchCommand() *cobra.Command {
 	cmd.Flags().IntVar(&flags.SynonymsPerName, "synonyms", defaultSynonyms, "Desired synonyms per name")
 	cmd.Flags().StringVar(&flags.SynonymCache, "synonym-cache", ".contexting_synonyms_cache.json", "Path to persistent synonym cache JSON")
 	cmd.Flags().StringSliceVar(&flags.ExtraIgnores, "ignore", nil, "Additional ignore entries (name or relative path)")
-	cmd.Flags().BoolVarP(&flags.Verbose, "verbose", "v", true, "Enable verbose logging")
+	cmd.Flags().BoolVarP(&flags.Verbose, "verbose", "v", false, "Enable verbose logging")
 	cmd.Flags().DurationVar(&debounce, "debounce", defaultDebounce, "Debounce interval for coalescing fs events")
 	cmd.Flags().BoolVar(&llmOnWatch, "llm-on-watch", true, "Enable live LLM synonym generation during watch (on by default)")
 	cmd.Flags().StringVar(&persist, "persist", string(PersistShutdown), "Persistence mode: shutdown|interval|change")

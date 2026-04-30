@@ -80,33 +80,66 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 		fmt.Printf("  %d names to process (%d cached, %d new)\n", len(names), len(names)-len(missing), len(missing))
 	}
 
-	// Parallel execution of synonym generation and symbol extraction
-	var wg sync.WaitGroup
+	// Check batch count in main goroutine so interactive prompt works
+	runSynonyms := true
 	var synonymErr error
-	var symbolCount int
-
-	wg.Add(2)
-
-	// Goroutine A: Synonym generation
-	go func() {
-		defer wg.Done()
+	if opts.APIKey != "" && len(missing) > 0 {
 		batchSize := opts.MaxBatchSize
 		if batchSize <= 0 {
 			batchSize = opts.BatchSize
 		}
-		if opts.APIKey != "" && len(missing) > 0 {
-			generated, err := GenerateSynonymsForNamesWithContext(opts.Ctx, missing, opts.APIKey, batchSize, opts.Model, opts.Endpoint, opts.Temperature, opts.MaxTokens, opts.SynonymsPerName, opts.ParallelRequests)
-			if err != nil {
-				synonymErr = err
+		if batchSize <= 0 {
+			if len(missing) <= 60 {
+				batchSize = len(missing)
 			} else {
-				for name, values := range generated {
-					combined[name] = sanitizeSynonyms(values, opts.SynonymsPerName)
+				numBatches := (len(missing) + 59) / 60
+				batchSize = (len(missing) + numBatches - 1) / numBatches
+			}
+		}
+		totalBatches := (len(missing) + batchSize - 1) / batchSize
+		if totalBatches > 9 {
+			logWarnf("Project has %d unique names requiring %d batches (>9). This project may be too large for reliable synonym generation.", len(missing), totalBatches)
+			if isInteractiveTerminal() {
+				continueAnyway, err := askYesNo("Continue anyway? [y/N] ", false)
+				if err != nil {
+					return nil, fmt.Errorf("prompt failed: %w", err)
+				}
+				if !continueAnyway {
+					runSynonyms = false
+					synonymErr = fmt.Errorf("synonym generation aborted: %d batches exceeds threshold", totalBatches)
 				}
 			}
 		}
-	}()
+	}
+
+	// Parallel execution of synonym generation and symbol extraction
+	var wg sync.WaitGroup
+	var symbolCount int
+
+	// Goroutine A: Synonym generation
+	if runSynonyms {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			batchSize := opts.MaxBatchSize
+			if batchSize <= 0 {
+				batchSize = opts.BatchSize
+			}
+			if opts.APIKey != "" && len(missing) > 0 {
+				generated, err := GenerateSynonymsForNamesWithContext(opts.Ctx, missing, opts.APIKey, batchSize, opts.Model, opts.Endpoint, opts.Temperature, opts.MaxTokens, opts.SynonymsPerName, opts.ParallelRequests)
+				if err != nil {
+					synonymErr = err
+				} else {
+					for name, values := range generated {
+						combined[name] = sanitizeSynonyms(values, opts.SynonymsPerName)
+					}
+				}
+			}
+		}()
+	}
 
 	// Goroutine B: Symbol extraction
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		count := 0

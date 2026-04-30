@@ -34,7 +34,7 @@ func TestEnsureStarterConfigPromptAutoCreate(t *testing.T) {
 	tmpDir := t.TempDir()
 	path := filepath.Join(tmpDir, "context.toml")
 
-	if err := ensureStarterConfigPrompt(path, true); err != nil {
+	if _, err := ensureStarterConfigPrompt(path, true); err != nil {
 		t.Fatalf("ensureStarterConfigPrompt auto-create failed: %v", err)
 	}
 

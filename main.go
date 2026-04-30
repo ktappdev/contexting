@@ -4,7 +4,7 @@ import (
 	"os"
 )
 
-var version = "dev"
+var version = "0.0.1"
 
 func main() {
 	if err := NewRootCommand().Execute(); err != nil {

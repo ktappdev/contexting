@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -29,6 +31,29 @@ func newInitCommand() *cobra.Command {
 			}
 			applyCommonConfig(cmd, &flags, cfg.Common)
 			flags.normalize()
+
+			// If config was just created, pause so user can edit settings before indexing
+			if configJustCreated {
+				fmt.Println()
+				fmt.Printf("Config created at %s. You can customize settings before indexing begins:\n", configPath)
+				fmt.Println("  - synonyms: number of synonyms per name (default: 10)")
+				fmt.Println("  - batch_size: names per LLM request (default: auto)")
+				fmt.Println("  - llm_model: LLM model for synonym generation")
+				fmt.Println("  - ignore: paths to exclude from indexing")
+				fmt.Println()
+				if isInteractiveTerminal() {
+					fmt.Print("Edit context.toml now, then press Enter to continue... ")
+					reader := bufio.NewReader(os.Stdin)
+					_, _ = reader.ReadString('\n')
+				}
+				// Re-read config so any edits are picked up
+				cfg, err = LoadContextingConfig(absConfigPath)
+				if err != nil {
+					return err
+				}
+				applyCommonConfig(cmd, &flags, cfg.Common)
+				flags.normalize()
+			}
 
 			rootPath := "."
 			if len(args) == 1 {

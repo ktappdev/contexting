@@ -8,37 +8,37 @@ import (
 	"strings"
 )
 
-func ensureStarterConfigPrompt(path string, autoCreate bool) error {
+func ensureStarterConfigPrompt(path string, autoCreate bool) (bool, error) {
 	if path == "" {
-		return nil
+		return false, nil
 	}
 	if _, err := os.Stat(path); err == nil {
-		return nil
+		return false, nil
 	} else if !os.IsNotExist(err) {
-		return fmt.Errorf("check config path %s: %w", path, err)
+		return false, fmt.Errorf("check config path %s: %w", path, err)
 	}
 
 	if autoCreate {
-		return writeStarterConfig(path, false)
+		return true, writeStarterConfig(path, false)
 	}
 
 	if !isInteractiveTerminal() {
-		return nil
+		return false, nil
 	}
 
 	ok, err := askYesNo(fmt.Sprintf("Config file %q not found. Create starter config now? [Y/n]: ", path), true)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if !ok {
-		return nil
+		return false, nil
 	}
 
 	if err := writeStarterConfig(path, false); err != nil {
-		return err
+		return false, err
 	}
 	logInfof("Created starter config at %s", path)
-	return nil
+	return true, nil
 }
 
 func writeStarterConfig(path string, force bool) error {

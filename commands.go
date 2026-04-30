@@ -5,6 +5,7 @@ import "github.com/spf13/cobra"
 var configPath string
 var noConfigPrompt bool
 var createConfig bool
+var configJustCreated bool
 
 func NewRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
@@ -20,7 +21,9 @@ func NewRootCommand() *cobra.Command {
 			if noConfigPrompt {
 				return nil
 			}
-			return ensureStarterConfigPrompt(configPath, createConfig)
+			created, err := ensureStarterConfigPrompt(configPath, createConfig)
+			configJustCreated = created
+			return err
 		},
 	}
 	rootCmd.PersistentFlags().StringVar(&configPath, "config", "context.toml", "Path to contexting TOML config")
