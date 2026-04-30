@@ -19,6 +19,19 @@ export OPENROUTER_API_KEY="sk-or-v1-..."
 
 First run creates a `context.toml` config file. Edit it, then press Enter to continue. Subsequent runs use the saved config.
 
+## LLM flexibility
+
+Synonyms are optional. Contexting works without an LLM — you get symbols and path matching, just no synonym expansion. With an LLM, search gets a significant boost since synonyms bridge the gap between how code is named and how developers talk about it.
+
+The default uses OpenRouter with `meta-llama/llama-3.1-8b-instruct` — fast, nearly free (~$0.0004 per 60 names). But any OpenAI-compatible API works:
+
+- **OpenRouter** (default) — access to dozens of models, free tier available
+- **Local** — point `endpoint` at any local server (Ollama, llama.cpp, vLLM)
+- **OpenAI / Anthropic** — set `provider`, `endpoint`, and `api_key`
+- **No LLM** — skip the `[llm]` section entirely or set `api_key = ""`
+
+Adjust `batch_size`, `parallel_requests`, and `synonyms_min`/`synonyms_max` to trade off speed vs. coverage for your model.
+
 ## How it works
 
 ### Index construction

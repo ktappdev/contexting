@@ -130,7 +130,7 @@ func newSearchCommand() *cobra.Command {
 
 	cmd.Flags().StringVar(&rootPath, "root", "", "Project root path (defaults to current working directory)")
 	cmd.Flags().StringVarP(&indexPath, "index", "i", "context.json", "Path to context JSON")
-	cmd.Flags().IntVarP(&opts.Limit, "limit", "n", 5, "Maximum number of matches")
+	cmd.Flags().IntVarP(&opts.Limit, "limit", "n", 10, "Maximum number of matches")
 	cmd.Flags().IntVar(&opts.MinScore, "min-score", 1, "Minimum score required to return a match")
 	cmd.Flags().StringVar(&opts.TypeFilter, "type", "all", "Filter result type: all|files|dirs")
 	cmd.Flags().BoolVar(&dirSummary, "dir-summary", false, "Summarize top matching directories with rationale and drill-down hits")
