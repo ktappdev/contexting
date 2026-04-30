@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -16,6 +17,13 @@ func syncWatchDirectories(watcher *fsnotify.Watcher, root string, ignored map[st
 
 	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				logWarnf("Skipping inaccessible path: %s", path)
+				if d != nil && d.IsDir() {
+					return filepath.SkipDir
+				}
+				return nil
+			}
 			return err
 		}
 		if !d.IsDir() {
@@ -33,6 +41,10 @@ func syncWatchDirectories(watcher *fsnotify.Watcher, root string, ignored map[st
 		seen[path] = struct{}{}
 		if _, exists := watched[path]; !exists {
 			if err := watcher.Add(path); err != nil {
+				if errors.Is(err, os.ErrNotExist) {
+					logWarnf("Skipping broken symlink: %s", path)
+					return filepath.SkipDir
+				}
 				return fmt.Errorf("add watch %s: %w", path, err)
 			}
 			watched[path] = struct{}{}

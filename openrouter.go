@@ -184,6 +184,18 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 	}
 
 	totalBatches := (len(names) + batchSize - 1) / batchSize
+	if totalBatches > 9 {
+		logWarnf("Project has %d unique names requiring %d batches (>9). This project may be too large for reliable synonym generation.", len(names), totalBatches)
+		if isInteractiveTerminal() {
+			continueAnyway, err := askYesNo("Continue anyway? [y/N] ", false)
+			if err != nil {
+				return nil, fmt.Errorf("prompt failed: %w", err)
+			}
+			if !continueAnyway {
+				return nil, fmt.Errorf("synonym generation aborted: %d batches exceeds threshold", totalBatches)
+			}
+		}
+	}
 	fmt.Printf("  Synonyms: %d names in %d batches (parallel=%d)\n", len(names), totalBatches, parallelLimit)
 
 	result := make(SynonymResponse)

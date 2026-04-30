@@ -1,11 +1,11 @@
 # Contexting
 
-Contexting keeps a live map of your codebase so agents can reason about paths without hunting through the filesystem manually. It builds a tree of every folder and file, attaches synonyms, and exposes ranked hints plus health tooling.
+Contexting keeps a live map of your codebase so agents can reason about paths without hunting through the filesystem manually. It builds a tree of every folder and file, extracts code symbols (functions, classes, types, variables), attaches LLM-generated synonyms, and exposes ranked hints plus health tooling.
 
 ## Key features
-- `init`: create a fresh `context.json` snapshot with optional OpenRouter synonyms
+- `init`: create a fresh `context.json` snapshot with extracted code symbols and optional OpenRouter synonyms
 - `watch`: keep an in-memory index updated while the process runs and write snapshots only on graceful shutdown
-- `search-hints`: query the index for ranked paths with explainable scores
+- `search-hints`: query the index for ranked paths with explainable scores (synonyms and symbols both contribute to scoring)
 - `eval`: benchmark hit@k/MRR for agent queries
 - `doctor`: inspect config/index/cache health and get fixes
 
@@ -97,13 +97,13 @@ contexting config init --output context.toml
 ```
 
 ## Data flow
-1. `init` or load `context.json` → builds a tree with synonyms
+1. `init` or load `context.json` → builds a tree with symbols and synonyms
 2. `watch` keeps that tree in RAM; events mutate only memory
 3. Snapshot is flushed on graceful shutdown
 4. `search-hints` and `eval` load the latest JSON or call the CLI for agent flows
 
 ## File formats
-- `context.json`: root path, timestamp, tree with `full_path`, `type`, `synonyms`, and `children`
+- `context.json`: root path, timestamp, tree with `full_path`, `type`, `symbols`, `synonyms`, and `children`
 - `.contexting_synonyms_cache.json`: basename → synonyms cache for reuse
 - `context.toml`: config-driven defaults (see `context.toml.example`)
   - `watch.search_log`, `watch.search_log_query_max`

@@ -8,9 +8,10 @@ var createConfig bool
 
 func NewRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:   "contexting",
-		Short: "Index codebases with synonym hints for AI workflows",
-		Long:  "Contexting builds a filesystem index and optional LLM-generated synonyms for improved code search context.",
+		Use:     "contexting",
+		Version: version,
+		Short: "Index codebases with code symbols and LLM-generated synonyms for AI context",
+		Long:  "Contexting builds a filesystem index of code symbols (functions, classes, types, variables) and optional LLM-generated synonyms for improved code search context. Supports Go, Python, JavaScript, TypeScript, Rust, and Ruby.",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			// Skip auto-prompt for help/config management flows.
 			if cmd.Name() == "help" || cmd.Name() == "config" || cmd.Parent() != nil && cmd.Parent().Name() == "config" {
