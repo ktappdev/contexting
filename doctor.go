@@ -119,7 +119,7 @@ func RunDoctor(opts DoctorOptions) DoctorReport {
 func checkIndexFile(report *DoctorReport, indexPath string) {
 	if _, err := os.Stat(indexPath); err != nil {
 		if os.IsNotExist(err) {
-			report.add(DoctorCheck{Name: "index.exists", Status: DoctorWarn, Message: "Index file not found: " + indexPath, Suggestion: "Run `contexting init` to generate context.json."})
+			report.add(DoctorCheck{Name: "index.exists", Status: DoctorWarn, Message: "Index file not found: " + indexPath, Suggestion: "Run `contexting init` to generate the index."})
 			return
 		}
 		report.add(DoctorCheck{Name: "index.exists", Status: DoctorFail, Message: err.Error(), Suggestion: "Check file permissions and path."})
@@ -162,7 +162,12 @@ func checkAPIKey(report *DoctorReport) {
 }
 
 func checkWriteAccess(report *DoctorReport, root string) {
-	tmp, err := os.CreateTemp(root, ".contexting-doctor-*.tmp")
+	ctxDir := filepath.Join(root, ".ctx")
+	if err := os.MkdirAll(ctxDir, 0o755); err != nil {
+		report.add(DoctorCheck{Name: "root.write", Status: DoctorFail, Message: err.Error(), Suggestion: "Ensure write permission on project root."})
+		return
+	}
+	tmp, err := os.CreateTemp(ctxDir, ".doctor-*.tmp")
 	if err != nil {
 		report.add(DoctorCheck{Name: "root.write", Status: DoctorFail, Message: err.Error(), Suggestion: "Ensure write permission on project root."})
 		return

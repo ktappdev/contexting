@@ -26,7 +26,7 @@ func NewRootCommand() *cobra.Command {
 			return err
 		},
 	}
-	rootCmd.PersistentFlags().StringVar(&configPath, "config", "context.toml", "Path to contexting TOML config")
+	rootCmd.PersistentFlags().StringVar(&configPath, "config", ".ctx/ctx_config.toml", "Path to contexting TOML config")
 	rootCmd.PersistentFlags().BoolVar(&noConfigPrompt, "no-config-prompt", false, "Disable interactive starter config prompt when config is missing")
 	rootCmd.PersistentFlags().BoolVar(&createConfig, "create-config", false, "Auto-create starter config when missing (non-interactive)")
 

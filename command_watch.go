@@ -91,7 +91,7 @@ func newWatchCommand() *cobra.Command {
 			}
 			outputPath := resolveProjectPath(absRoot, flags.OutputPath)
 			cachePath := resolveProjectPath(absRoot, flags.SynonymCache)
-			runtimeFile := resolveProjectPath(absRoot, ".contexting_runtime.json")
+			runtimeFile := resolveProjectPath(absRoot, ".ctx/ctx_runtime.json")
 
 			ignored, err := BuildIgnoreMapForRoot(absRoot, flags.ExtraIgnores)
 			if err != nil {
@@ -353,14 +353,14 @@ func newWatchCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&flags.OutputPath, "output", "o", "context.json", "Output JSON path")
+	cmd.Flags().StringVarP(&flags.OutputPath, "output", "o", ".ctx/ctx_index.json", "Output JSON path")
 	cmd.Flags().StringVar(&flags.Model, "llm-model", "", "LLM model used for synonym generation")
 	cmd.Flags().StringVar(&flags.APIKey, "api-key", "", "LLM API key (falls back to config api_key_env, LLM_API_KEY, OPENROUTER_API_KEY)")
 	cmd.Flags().StringVar(&flags.Endpoint, "llm-endpoint", "", "LLM API endpoint URL")
 	cmd.Flags().IntVar(&flags.BatchSize, "batch-size", 0, "Names per LLM request (0 = send all, legacy option)")
 	cmd.Flags().IntVar(&maxBatchSize, "max-batch-size", 0, "Maximum names per LLM request (0 = send all at once, default)")
 	cmd.Flags().IntVar(&flags.SynonymsPerName, "synonyms", defaultSynonyms, "Desired synonyms per name")
-	cmd.Flags().StringVar(&flags.SynonymCache, "synonym-cache", ".contexting_synonyms_cache.json", "Path to persistent synonym cache JSON")
+	cmd.Flags().StringVar(&flags.SynonymCache, "synonym-cache", ".ctx/ctx_cache.json", "Path to persistent synonym cache JSON")
 	cmd.Flags().StringSliceVar(&flags.ExtraIgnores, "ignore", nil, "Additional ignore entries (name or relative path)")
 	cmd.Flags().BoolVarP(&flags.Verbose, "verbose", "v", false, "Enable verbose logging")
 	cmd.Flags().DurationVar(&debounce, "debounce", defaultDebounce, "Debounce interval for coalescing fs events")

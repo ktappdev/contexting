@@ -5,7 +5,7 @@
 - Batch size: 60
 - Synonyms per name: 4
 - Runs: 5
-- Source: /Users/kentaylor/developer/vault/vaultgy/context.json
+- Source: /Users/kentaylor/developer/vault/vaultgy/ctx_index.json
 
 ### Summary
 

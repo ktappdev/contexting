@@ -17,7 +17,7 @@ Set an API key for synonym generation (optional but recommended):
 export OPENROUTER_API_KEY="sk-or-v1-..."
 ```
 
-First run creates a `context.toml` config file. Edit it, then press Enter to continue. Subsequent runs use the saved config.
+First run creates a `.ctx/ctx_config.toml` config file. Edit it, then press Enter to continue. Subsequent runs use the saved config.
 
 ## LLM flexibility
 
@@ -36,7 +36,7 @@ Adjust `batch_size`, `parallel_requests`, and `synonyms_min`/`synonyms_max` to t
 
 ### Index construction
 
-`contexting init` walks the filesystem tree and builds `context.json` — a single recursive JSON tree where every entry has `full_path`, `type`, optional `symbols`, optional `synonyms`, and nested `children` for directories.
+`contexting init` walks the filesystem tree and builds `.ctx/ctx_index.json` — a single recursive JSON tree where every entry has `full_path`, `type`, optional `symbols`, optional `synonyms`, and nested `children` for directories.
 
 **Symbols:** Every source file gets scanned with language-specific extractors that pull out exported symbols — functions, types, variables, classes, constants. These become a `symbols` array on the file node.
 
@@ -70,17 +70,17 @@ Results are ranked by total score. Low-signal short/common words are filtered fr
 
 ### Watch mode
 
-`contexting watch` runs as a daemon, maintaining the index in memory. It watches for filesystem changes via debounced events (750ms default), re-extracts symbols for modified files, and serves a `.contexting_runtime.json` that `search-hints --memory` reads for live results. The on-disk snapshot is flushed every 45s (`persist_interval`) and on graceful shutdown. This gives sub-second updates during active development.
+`contexting watch` runs as a daemon, maintaining the index in memory. It watches for filesystem changes via debounced events (750ms default), re-extracts symbols for modified files, and serves a `.ctx/ctx_runtime.json` that `search-hints --memory` reads for live results. The on-disk snapshot is flushed every 45s (`persist_interval`) and on graceful shutdown. This gives sub-second updates during active development.
 
 ## Commands
 
 ### `contexting init`
 
-Create a full snapshot in `context.json` with extracted symbols and optional synonyms.
+Create a full snapshot in `.ctx/ctx_index.json` with extracted symbols and optional synonyms.
 
 ```bash
 contexting init .
-contexting init . --output context.json --synonym-cache .contexting_synonyms_cache.json
+contexting init . --output .ctx/ctx_index.json --synonym-cache .ctx/ctx_cache.json
 ```
 
 Key flags:
@@ -89,7 +89,7 @@ Key flags:
 - `-v, --verbose` — show symbol extraction progress and batch completion
 - Always rebuilds the entire tree; use when you need a clean snapshot
 
-On first run, creates a starter `context.toml` and pauses so you can edit it.
+On first run, creates a starter `.ctx/ctx_config.toml` and pauses so you can edit it.
 
 ### `contexting sync`
 
@@ -115,7 +115,7 @@ Key flags:
 - `--search-log-query-max` (default 120) — truncate logged queries
 - `--persist` (default "shutdown") — when to flush: `shutdown`, `interval`, `never`
 - `--persist-interval` (default "45s") — flush interval when persist=interval
-- Starts a local memory-search endpoint and writes `.contexting_runtime.json`
+- Starts a local memory-search endpoint and writes `.ctx/ctx_runtime.json`
 - Events applied via a single worker; logs show changed files per cycle
 
 ### `contexting search-hints`
@@ -133,17 +133,17 @@ Flags:
 - `--explain`, `--show-tokens`, `--json`
 - `--memory` (default true) — query live watch index first, fall back to snapshot
 - `--memory-only` — fail if live memory unavailable
-- `--runtime-file` — path to runtime discovery file (default `.contexting_runtime.json`)
+- `--runtime-file` — path to runtime discovery file (default `.ctx/ctx_runtime.json`)
 
 ### `contexting eval`
 
 Benchmark Hit@1/3/5 + MRR from manual query cases.
 
 ```bash
-contexting eval --cases eval_cases.json --json
+contexting eval --cases ctx_cases.json --json
 ```
 
-Input format:
+Input format (see `.ctx/ctx_cases.json` for the full schema):
 ```json
 [
   {"query": "auth middleware", "expect_any": ["internal/auth/middleware.go"]}
@@ -160,20 +160,20 @@ contexting doctor --json
 
 ### `contexting config init`
 
-Create or overwrite `context.toml`:
+Create or overwrite `.ctx/ctx_config.toml`:
 
 ```bash
-contexting config init --output context.toml
+contexting config init --output .ctx/ctx_config.toml
 ```
 
 ## Configuration
 
-`context.toml` drives all defaults. CLI flags override config, which overrides hard-coded defaults.
+`.ctx/ctx_config.toml` drives all defaults. CLI flags override config, which overrides hard-coded defaults.
 
 ```toml
 [common]
-output = "context.json"
-synonym_cache = ".contexting_synonyms_cache.json"
+output = ".ctx/ctx_index.json"
+synonym_cache = ".ctx/ctx_cache.json"
 llm_model = "meta-llama/llama-3.1-8b-instruct"
 batch_size = 15              # names per LLM request
 synonyms_min = 4             # min synonyms per name
@@ -208,19 +208,19 @@ Contexting respects `.gitignore` by default. Additional ignores come from:
 ## Data flow
 
 ```
-init → walk filesystem → extract symbols → (LLM: generate synonyms) → context.json
+init → walk filesystem → extract symbols → (LLM: generate synonyms) → .ctx/ctx_index.json
                                                                     ↓
-watch → load context.json → keep in RAM → filesystem events → mutate in-memory
+watch → load .ctx/ctx_index.json → keep in RAM → filesystem events → mutate in-memory
                                                                     ↓
-search-hints → load context.json (or query live memory) → score tokens → ranked results
+search-hints → load .ctx/ctx_index.json (or query live memory) → score tokens → ranked results
 ```
 
 ## File formats
 
-- **`context.json`** — root path, timestamp, tree with `full_path`, `type`, `symbols`, `synonyms`, `children`
-- **`.contexting_synonyms_cache.json`** — basename → synonyms cache for reuse across runs
-- **`context.toml`** — config-driven defaults
-- **`.contexting_runtime.json`** — live watch discovery for memory search
+- **`.ctx/ctx_index.json`** — root path, timestamp, tree with `full_path`, `type`, `symbols`, `synonyms`, `children`
+- **`.ctx/ctx_cache.json`** — basename → synonyms cache for reuse across runs
+- **`.ctx/ctx_config.toml`** — config-driven defaults
+- **`.ctx/ctx_runtime.json`** — live watch discovery for memory search
 
 ## Project size guard
 
@@ -235,7 +235,7 @@ go test ./...
 ## Troubleshooting
 
 - `contexting doctor --json` for diagnostics
-- If `context.json` is stale, restart watch or run `contexting init`
+- If `.ctx/ctx_index.json` is stale, restart watch or run `contexting init`
 - If you changed ignore rules, run `contexting init` or restart `watch` to rebuild
 - Synonym generation requires `OPENROUTER_API_KEY` or `--api-key`. Disable with `--llm-on-watch=false` or `watch.llm = false`
 - Watch mode must be stopped gracefully (Ctrl+C) to flush the snapshot

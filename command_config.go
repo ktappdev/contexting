@@ -5,7 +5,7 @@ import "github.com/spf13/cobra"
 func newConfigCommand() *cobra.Command {
 	cfgCmd := &cobra.Command{
 		Use:   "config",
-		Short: "Manage context.toml configuration",
+		Short: "Manage .ctx/ctx_config.toml configuration",
 	}
 	cfgCmd.AddCommand(newConfigInitCommand())
 	return cfgCmd
@@ -17,7 +17,7 @@ func newConfigInitCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "init",
-		Short: "Create starter context.toml",
+		Short: "Create starter .ctx/ctx_config.toml",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			target := outPath
 			if target == "" {

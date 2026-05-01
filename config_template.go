@@ -1,8 +1,8 @@
 package main
 
 const starterConfigTemplate = `[common]
-output = "context.json"
-synonym_cache = ".contexting_synonyms_cache.json"
+output = ".ctx/ctx_index.json"
+synonym_cache = ".ctx/ctx_cache.json"
 llm_model = "meta-llama/llama-3.1-8b-instruct"  # any OpenAI-compatible model name
 batch_size = 15             # names per batch; 15 works well for 8B models
 synonyms_min = 4            # min synonyms per name
@@ -39,7 +39,7 @@ search_log_query_max = 120 # Matches defaultSearchLogQueryMax in memory_search_s
 max_batch_size = 0
 
 [search]
-index = "context.json"
+index = "ctx_index.json"
 limit = 5
 min_score = 1
 type = "all"
@@ -47,14 +47,14 @@ dir_summary = false
 dir_limit = 5
 drill_limit = 3
 memory = true
-runtime_file = ".contexting_runtime.json"
+runtime_file = "ctx_runtime.json"
 explain = false
 json = false
 show_tokens = false
 
 [eval]
-index = "context.json"
-cases = "eval_cases.json"
+index = "ctx_index.json"
+cases = "ctx_cases.json"
 limit = 5
 min_score = 1
 type = "all"

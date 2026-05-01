@@ -76,11 +76,11 @@ show_tokens = true
 func TestApplyCommonConfigRespectsCLIOverride(t *testing.T) {
 	cmd := &cobra.Command{Use: "test"}
 	flags := CommonFlags{}
-	cmd.Flags().StringVarP(&flags.OutputPath, "output", "o", "context.json", "")
+	cmd.Flags().StringVarP(&flags.OutputPath, "output", "o", ".ctx/ctx_index.json", "")
 	cmd.Flags().IntVar(&flags.BatchSize, "batch-size", 8, "")
 	cmd.Flags().StringSliceVar(&flags.ExtraIgnores, "ignore", nil, "")
 	cmd.Flags().BoolVarP(&flags.Verbose, "verbose", "v", false, "")
-	cmd.Flags().StringVar(&flags.SynonymCache, "synonym-cache", "cache.json", "")
+	cmd.Flags().StringVar(&flags.SynonymCache, "synonym-cache", ".ctx/ctx_cache.json", "")
 	cmd.Flags().StringVar(&flags.Model, "llm-model", defaultModel, "")
 	cmd.Flags().StringVar(&flags.APIKey, "api-key", "", "")
 	cmd.Flags().IntVar(&flags.SynonymsPerName, "synonyms", 4, "")

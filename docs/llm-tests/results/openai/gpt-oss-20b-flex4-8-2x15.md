@@ -3,7 +3,7 @@
 - Endpoint: https://api.groq.com/openai/v1/chat/completions
 - Config: 2x15 parallel | 4-8 (flex) synonyms
 - Runs: 5
-- Source: /Users/kentaylor/developer/vault/vaultgy/context.json
+- Source: /Users/kentaylor/developer/vault/vaultgy/ctx_index.json
 
 ## Summary
 

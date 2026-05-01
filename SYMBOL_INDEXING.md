@@ -108,7 +108,7 @@ type Node struct {
 }
 ```
 
-Symbols are stored in `context.json` just like synonyms — no re-parsing on every search.
+Symbols are stored in `ctx_index.json` just like synonyms — no re-parsing on every search.
 
 ### Indexing Integration
 
@@ -116,7 +116,7 @@ In the indexer, after a file node is created:
 
 1. Check if the file extension has a known parser
 2. If yes, extract symbols and attach to the node
-3. Store in `context.json`
+3. Store in `ctx_index.json`
 
 On `watch`, when a file changes:
 - Re-extract symbols for that file (fast, no LLM needed)
@@ -179,7 +179,7 @@ This is what makes `"JWT validation"` find `validateJWTToken`.
 
 ### Step 2 — Data model
 - Add `Symbols []string` to `Node` in `indexer.go`
-- Backward compatible: old `context.json` files without `symbols` still load fine (field is omitempty)
+- Backward compatible: old `ctx_index.json` files without `symbols` still load fine (field is omitempty)
 
 ### Step 3 — Indexing integration
 - Call `extractSymbols` during tree build in `indexer.go`

@@ -17,8 +17,8 @@ func TestIndexManagerApplyAndFlush(t *testing.T) {
 
 	mgr := NewIndexManager(IndexManagerOptions{
 		RootPath:        tmpDir,
-		OutputPath:      filepath.Join(tmpDir, "context.json"),
-		CachePath:       filepath.Join(tmpDir, ".contexting_synonyms_cache.json"),
+		OutputPath:      filepath.Join(tmpDir, ".ctx", "ctx_index.json"),
+		CachePath:       filepath.Join(tmpDir, ".ctx", "ctx_cache.json"),
 		IgnoredPaths:    BuildIgnoreMap(nil),
 		Model:           defaultModel,
 		BatchSize:       8,
@@ -87,8 +87,8 @@ func TestBootstrapStaleSnapshot(t *testing.T) {
 
 	mgr := NewIndexManager(IndexManagerOptions{
 		RootPath:        tmpDir,
-		OutputPath:      filepath.Join(tmpDir, "context.json"),
-		CachePath:       filepath.Join(tmpDir, ".contexting_synonyms_cache.json"),
+		OutputPath:      filepath.Join(tmpDir, ".ctx", "ctx_index.json"),
+		CachePath:       filepath.Join(tmpDir, ".ctx", "ctx_cache.json"),
 		IgnoredPaths:    BuildIgnoreMap(nil),
 		Model:           defaultModel,
 		BatchSize:       8,
@@ -128,8 +128,8 @@ func TestBootstrapStaleSnapshot(t *testing.T) {
 	// Step 3: Bootstrap again — should detect changes via diff
 	mgr2 := NewIndexManager(IndexManagerOptions{
 		RootPath:        tmpDir,
-		OutputPath:      filepath.Join(tmpDir, "context.json"),
-		CachePath:       filepath.Join(tmpDir, ".contexting_synonyms_cache.json"),
+		OutputPath:      filepath.Join(tmpDir, ".ctx", "ctx_index.json"),
+		CachePath:       filepath.Join(tmpDir, ".ctx", "ctx_cache.json"),
 		IgnoredPaths:    BuildIgnoreMap(nil),
 		Model:           defaultModel,
 		BatchSize:       8,

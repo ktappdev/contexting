@@ -8,7 +8,7 @@ import (
 
 func TestSaveAndLoadContextIndex(t *testing.T) {
 	tmpDir := t.TempDir()
-	output := filepath.Join(tmpDir, "nested", "context.json")
+	output := filepath.Join(tmpDir, "nested", ".ctx", "ctx_index.json")
 
 	index := &ContextIndex{
 		RootPath:    "/tmp/project",

@@ -98,6 +98,9 @@ func shouldSkipInternalOutput(eventPath string, outputPath string, cachePath str
 	if matched, _ := filepath.Match(".tmp-*.json", base); matched {
 		return true
 	}
+	// Doctor temp files (.ctx/.doctor-*.tmp) are created and immediately removed,
+	// so they never persist long enough to trigger watch events.
+	// Additionally, .ctx/ is a hidden directory and is ignored by default.
 	return false
 }
 

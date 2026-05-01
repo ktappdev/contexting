@@ -65,8 +65,8 @@ contexting version  # → 0.0.2
 | Convention | Details |
 |------------|---------|
 | CLI framework | [github.com/spf13/cobra](https://github.com/spf13/cobra) |
-| Config format | TOML (`context.toml`) |
-| Output format | JSON (`context.json`) |
+| Config format | TOML (`.ctx/ctx_config.toml`) |
+| Output format | JSON (`.ctx/ctx_index.json`) |
 | Atomic writes | Temp file + rename (see `io_atomic.go`) |
 | No file locking | Between processes (init vs watch can conflict) |
 
@@ -90,7 +90,7 @@ Default ignores: `.venv`, `site-packages`, `__pycache__`, `node_modules`, `.env*
 
 1. **Never assume file locking** — `init` and `watch` can conflict
 2. **Atomic writes only** — use temp+rename pattern in `io_atomic.go`
-3. **Config precedence** — CLI flags > `context.toml` > hardcoded defaults
+3. **Config precedence** — CLI flags > `.ctx/ctx_config.toml` > hardcoded defaults
 4. **Config paths** — Relative paths resolve from config file location
 5. **No log levels** — `logInfof`/`logWarnf`/`logErrorf` always print; use stderr for warnings/errors
 6. **Watch behavior** — Snapshot persistence is shutdown-only (in-memory updates during runtime, flush on graceful shutdown)

@@ -1,6 +1,6 @@
 [common]
-output = "context.json"
-synonym_cache = ".contexting_synonyms_cache.json"
+output = ".ctx/ctx_index.json"
+synonym_cache = ".ctx/ctx_cache.json"
 llm_model = "qwen3.5-4b"
 batch_size = 0
 synonyms = 10
@@ -36,7 +36,7 @@ search_log_query_max = 120
 max_batch_size = 0
 
 [search]
-index = "context.json"
+index = "ctx_index.json"
 limit = 5
 min_score = 1
 type = "all"
@@ -44,14 +44,14 @@ dir_summary = false
 dir_limit = 5
 drill_limit = 3
 memory = true
-runtime_file = ".contexting_runtime.json"
+runtime_file = "ctx_runtime.json"
 explain = false
 json = false
 show_tokens = false
 
 [eval]
-index = "context.json"
-cases = "eval_cases.json"
+index = "ctx_index.json"
+cases = "ctx_cases.json"
 limit = 5
 min_score = 1
 type = "all"

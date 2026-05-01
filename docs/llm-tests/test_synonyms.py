@@ -22,8 +22,8 @@ import time
 import concurrent.futures
 
 DEFAULT_ENDPOINT = "https://llama.kentaylor.dev/v1/chat/completions"
-DEFAULT_CONTEXT_JSON = os.path.expanduser(
-    "/Users/kentaylor/developer/vault/vaultgy/context.json"
+DEFAULT_INDEX_JSON = os.path.expanduser(
+    "/Users/kentaylor/developer/vault/vaultgy/ctx_index.json"
 )
 
 SYSTEM_PROMPT_FIXED = (
@@ -174,7 +174,7 @@ def main():
     parser.add_argument("--runs", type=int, default=5, help="Number of test runs")
     parser.add_argument("--endpoint", default=DEFAULT_ENDPOINT, help="LLM API endpoint")
     parser.add_argument("--api-key", default="", help="API key (empty for local)")
-    parser.add_argument("--context-json", default=DEFAULT_CONTEXT_JSON, help="Path to context.json")
+    parser.add_argument("--context-json", default=DEFAULT_INDEX_JSON, help="Path to ctx_index.json")
     parser.add_argument("--timeout", type=int, default=180, help="Per-request timeout (seconds)")
     parser.add_argument("--no-reasoning", action="store_true", help="Disable reasoning/thinking tokens (OpenRouter)")
     parser.add_argument("--output", help="Output markdown file (auto-generated if omitted)")

@@ -32,7 +32,7 @@ func (c *CommonFlags) normalize() {
 		c.SynonymsMin = c.SynonymsMax
 	}
 	if c.SynonymCache == "" {
-		c.SynonymCache = ".contexting_synonyms_cache.json"
+		c.SynonymCache = ".ctx/ctx_cache.json"
 	}
 }
 

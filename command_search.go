@@ -66,7 +66,7 @@ func newSearchCommand() *cobra.Command {
 				indexPath = resolveConfigPath(configPath, indexPath)
 			}
 			if runtimeFile == "" {
-				runtimeFile = resolveProjectPath(filepath.Dir(indexPath), ".contexting_runtime.json")
+				runtimeFile = resolveProjectPath(filepath.Dir(indexPath), "ctx_runtime.json")
 			} else if !cmd.Flags().Changed("runtime-file") {
 				runtimeFile = resolveConfigPath(configPath, runtimeFile)
 			}
@@ -129,7 +129,7 @@ func newSearchCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&rootPath, "root", "", "Project root path (defaults to current working directory)")
-	cmd.Flags().StringVarP(&indexPath, "index", "i", "context.json", "Path to context JSON")
+	cmd.Flags().StringVarP(&indexPath, "index", "i", ".ctx/ctx_index.json", "Path to context JSON")
 	cmd.Flags().IntVarP(&opts.Limit, "limit", "n", 10, "Maximum number of matches")
 	cmd.Flags().IntVar(&opts.MinScore, "min-score", 1, "Minimum score required to return a match")
 	cmd.Flags().StringVar(&opts.TypeFilter, "type", "all", "Filter result type: all|files|dirs")

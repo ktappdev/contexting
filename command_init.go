@@ -42,7 +42,7 @@ func newInitCommand() *cobra.Command {
 				fmt.Println("  - ignore: paths to exclude from indexing")
 				fmt.Println()
 				if isInteractiveTerminal() {
-					fmt.Print("Edit context.toml now, then press Enter to continue... ")
+					fmt.Print("Edit .ctx/ctx_config.toml now, then press Enter to continue... ")
 					reader := bufio.NewReader(os.Stdin)
 					_, _ = reader.ReadString('\n')
 				}
@@ -132,7 +132,7 @@ func newInitCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&flags.OutputPath, "output", "o", "context.json", "Output JSON path")
+	cmd.Flags().StringVarP(&flags.OutputPath, "output", "o", ".ctx/ctx_index.json", "Output JSON path")
 	cmd.Flags().StringVar(&flags.Model, "llm-model", "", "LLM model used for synonym generation")
 	cmd.Flags().StringVar(&flags.APIKey, "api-key", "", "LLM API key (falls back to config api_key_env, LLM_API_KEY, OPENROUTER_API_KEY)")
 	cmd.Flags().StringVar(&flags.Endpoint, "llm-endpoint", "", "LLM API endpoint URL")
@@ -140,7 +140,7 @@ func newInitCommand() *cobra.Command {
 	cmd.Flags().IntVar(&flags.SynonymsPerName, "synonyms", defaultSynonyms, "Synonyms per name (fallback for min/max)")
 	cmd.Flags().IntVar(&flags.SynonymsMin, "synonyms-min", 0, "Min synonyms per name (0 = use synonyms value)")
 	cmd.Flags().IntVar(&flags.SynonymsMax, "synonyms-max", 0, "Max synonyms per name (0 = use synonyms value)")
-	cmd.Flags().StringVar(&flags.SynonymCache, "synonym-cache", ".contexting_synonyms_cache.json", "Path to persistent synonym cache JSON")
+	cmd.Flags().StringVar(&flags.SynonymCache, "synonym-cache", ".ctx/ctx_cache.json", "Path to persistent synonym cache JSON")
 	cmd.Flags().StringSliceVar(&flags.ExtraIgnores, "ignore", nil, "Additional ignore entries (name or relative path)")
 	cmd.Flags().BoolVarP(&flags.Verbose, "verbose", "v", false, "Enable verbose logging")
 

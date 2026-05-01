@@ -382,7 +382,7 @@
             <li><a href="#architecture" class="nav-link">Architecture</a></li>
             <li><a href="#data-model" class="nav-link">Data Model</a></li>
             <li><a href="#configuration" class="nav-link">Configuration</a></li>
-            <li class="sub-nav"><a href="#config-file" class="nav-link">context.toml</a></li>
+            <li class="sub-nav"><a href="#config-file" class="nav-link">ctx_config.toml</a></li>
             <li class="sub-nav"><a href="#llm-config" class="nav-link">LLM Config</a></li>
             <li class="sub-nav"><a href="#cli-flags" class="nav-link">CLI Flags</a></li>
         </ul>
@@ -405,7 +405,7 @@
         <div class="nav-section">
             <div class="nav-section-title">CLI Commands</div>
             <ul>
-                <li><a href="#cmd-init" class="nav-link">init / build</a></li>
+                <li><a href="#cmd-init" class="nav-link">init</a></li>
                 <li><a href="#cmd-watch" class="nav-link">watch</a></li>
                 <li><a href="#cmd-search" class="nav-link">search</a></li>
                 <li><a href="#cmd-eval" class="nav-link">eval</a></li>
@@ -512,7 +512,7 @@
 │  5. AssignSynonymsToTree()                                               │
 │     └─→ Attach synonyms to nodes                                        │
 │                                                                          │
-│  6. Save context.json                                                    │
+│  6. Save ctx_index.json                                                 │
 │     └─→ Tree + Synonyms + Symbols                                       │
 │                                                                          │
 └─────────────────────────────────────────────────────────────────────────┘
@@ -662,19 +662,19 @@
         <section id="configuration">
             <h2>Configuration</h2>
             <p>
-                The system is configured through <code class="inline-code">context.toml</code> plus CLI flags.
-                Config is loaded from <code class="inline-code">.context/context.toml</code> by default.
+                The system is configured through <code class="inline-code">ctx_config.toml</code> plus CLI flags.
+                Config is loaded from <code class="inline-code">.ctx/ctx_config.toml</code> by default.
                 Run <code class="inline-code">contexting config init</code> to generate a starter file.
             </p>
 
-            <h3 id="config-file">context.toml</h3>
+            <h3 id="config-file">ctx_config.toml</h3>
             <p>All config sections with defaults and descriptions:</p>
 
-            <pre><code><span class="cmt"># context.toml — top-level config file</span>
+            <pre><code><span class="cmt"># ctx_config.toml — top-level config file</span>
 
 [common]
-output = "context.json"                    <span class="cmt"># Index output path</span>
-synonym_cache = ".contexting_synonyms_cache.json"
+output = ".ctx/ctx_index.json"              <span class="cmt"># Index output path</span>
+synonym_cache = ".ctx/ctx_cache.json"
 llm_model = "openai/gpt-oss-safeguard-20b"  <span class="cmt"># Default LLM model (overridden by [llm])</span>
 batch_size = 0                              <span class="cmt"># 0 = send all names per request</span>
 synonyms = 10                               <span class="cmt"># Desired synonyms per name</span>
@@ -704,7 +704,7 @@ search_log_query_max = 120
 max_batch_size = 0
 
 [search]
-index = "context.json"
+index = "ctx_index.json"
 limit = 5
 min_score = 1
 type = "all"
@@ -712,14 +712,14 @@ dir_summary = false
 dir_limit = 5
 drill_limit = 3
 memory = true
-runtime_file = ".contexting_runtime.json"
+runtime_file = "ctx_runtime.json"
 explain = false
 json = false
 show_tokens = false
 
 [eval]
-index = "context.json"
-cases = "eval_cases.json"
+index = "ctx_index.json"
+cases = "ctx_cases.json"
 limit = 5
 min_score = 1
 type = "all"
@@ -751,7 +751,7 @@ json = false</code></pre>
                     <td><code class="inline-code">endpoint = "https://openrouter.ai/api/v1/chat/completions"</code>, <code class="inline-code">model = "openai/gpt-oss-safeguard-20b"</code></td>
                 </tr>
                 <tr>
-                    <td><code class="inline-code">[llm]</code> section in context.toml</td>
+                    <td><code class="inline-code">[llm]</code> section in ctx_config.toml</td>
                     <td><code class="inline-code">model = "anthropic/claude-3-opus"</code></td>
                 </tr>
                 <tr>
@@ -887,12 +887,12 @@ api_key_env = "OPENAI_API_KEY"</code></pre>
                 <div class="callout-title">Backward Compatibility</div>
                 <p style="margin: 0;">
                     The <code class="inline-code">symbols</code> field uses <code class="inline-code">omitempty</code>. 
-                    Old <code class="inline-code">context.json</code> files without symbols load fine (field defaults to nil).
+                    Old <code class="inline-code">ctx_index.json</code> files without symbols load fine (field defaults to nil).
                     New files include symbols when present.
                 </p>
             </div>
 
-            <h3>Example context.json</h3>
+            <h3>Example ctx_index.json</h3>
             <pre><code>{
   "root_path": "/Users/dev/project",
   "generated_at": "2025-01-15T10:30:00Z",
@@ -1517,7 +1517,7 @@ Result: {
 
             <h3>Memory Usage</h3>
             <p>
-                Symbol storage adds ~100-500 bytes per file to <code class="inline-code">context.json</code>.
+                Symbol storage adds ~100-500 bytes per file to <code class="inline-code">ctx_index.json</code>.
                 For 1000 files: ~100-500KB additional. Negligible for modern systems.
             </p>
         </section>
@@ -1626,14 +1626,14 @@ defaultIgnores = [
             <ul>
                 <li><strong>Cause:</strong> Repository has >10,000 files after applying ignore patterns</li>
                 <li><strong>Fix:</strong> Add more patterns to <code class="inline-code">.gitignore</code> or use <code class="inline-code">--ignore</code> flag</li>
-                <li><strong>Example:</strong> <code class="inline-code">contexting build --ignore "generated" --ignore "*.min.js"</code></li>
+                <li><strong>Example:</strong> <code class="inline-code">contexting init --ignore "generated" --ignore "*.min.js"</code></li>
                 <li><strong>Override:</strong> Edit <code class="inline-code">MaxFileCount</code> in <code class="inline-code">node.go:26</code> (not recommended)</li>
             </ul>
 
             <h4>Symbols not appearing in search results</h4>
             <ul>
-                <li><strong>Check:</strong> Run <code class="inline-code">contexting build</code> and verify console shows "✓ Extracted symbols from N files"</li>
-                <li><strong>Check:</strong> Inspect <code class="inline-code">context.json</code> — do file nodes have <code class="inline-code">"symbols"</code> field?</li>
+                <li><strong>Check:</strong> Run <code class="inline-code">contexting init</code> and verify console shows "✓ Extracted symbols from N files"</li>
+                <li><strong>Check:</strong> Inspect <code class="inline-code">ctx_index.json</code> — do file nodes have <code class="inline-code">"symbols"</code> field?</li>
                 <li><strong>Check:</strong> Is the file extension supported? (Go, Python, JS/TS, Rust, Ruby)</li>
                 <li><strong>Check:</strong> Are symbols top-level? Nested functions/classes not extracted.</li>
             </ul>
@@ -1656,18 +1656,18 @@ defaultIgnores = [
             <ul>
                 <li><strong>Check:</strong> Is watch mode running? <code class="inline-code">contexting watch</code></li>
                 <li><strong>Check:</strong> File path — is it within the indexed root?</li>
-                <li><strong>Check:</strong> Ignored paths — is the file/directory in .contextignore?</li>
+                <li><strong>Check:</strong> Ignored paths — is the file/directory matched by ignore patterns in config or .gitignore?</li>
             </ul>
 
             <h3>Debug Commands</h3>
             <pre><code># Rebuild index with verbose output
-contexting build --verbose
+contexting init --verbose
 
 # Search with debug breakdown
-contexting search "JWT validation" --debug
+contexting search-hints "JWT validation" --explain
 
-# Inspect context.json
-cat .context/context.json | jq '.tree.children["http_client.go"].symbols'
+# Inspect ctx_index.json
+cat .ctx/ctx_index.json | jq '.tree.children["http_client.go"].symbols'
 
 # Check index stats
 contexting stats</code></pre>
@@ -1675,7 +1675,7 @@ contexting stats</code></pre>
             <h3>Performance Profiling</h3>
             <pre><code># Enable Go profiling
 export CONTEXTING_PROFILE=1
-contexting build
+contexting init
 
 # View profile
 go tool pprof http://localhost:6060/debug/pprof/profile</code></pre>
@@ -1684,7 +1684,7 @@ go tool pprof http://localhost:6060/debug/pprof/profile</code></pre>
         <section id="cmd-init">
             <h2>CLI Commands</h2>
 
-            <h3>init / build</h3>
+            <h3>init</h3>
             <p>Build the search index. Scans the file tree, extracts symbols, generates LLM synonyms.</p>
             <pre><code><span class="cmt"># Basic usage</span>
 contexting init
@@ -1711,37 +1711,37 @@ contexting watch --llm=false</code></pre>
                 <p style="margin: 0;">
                     <code class="inline-code">watch</code> writes index on <code class="inline-code">shutdown</code> (default),
                     periodic <code class="inline-code">interval</code>, or on every <code class="inline-code">change</code>.
-                    Configure via <code class="inline-code">watch.persist</code> in context.toml.
+                    Configure via <code class="inline-code">watch.persist</code> in ctx_config.toml.
                 </p>
             </div>
 
             <h3 id="cmd-search">search</h3>
             <p>Query the index with scoring breakdown and debug support.</p>
             <pre><code><span class="cmt"># Basic search</span>
-contexting search "JWT validation"
+contexting search-hints "JWT validation"
 
 <span class="cmt"># Score breakdown</span>
-contexting search "auth middleware" --explain
+contexting search-hints "auth middleware" --explain
 
 <span class="cmt"># Filter by type</span>
-contexting search "util" --type files
+contexting search-hints "util" --type files
 
 <span class="cmt"># JSON output</span>
-contexting search "rate limit" --json
+contexting search-hints "rate limit" --json
 
 <span class="cmt"># Search across projects</span>
-contexting search "parser" --root /path/to/project</code></pre>
+contexting search-hints "parser" --root /path/to/project</code></pre>
 
             <h3 id="cmd-eval">eval</h3>
             <p>Evaluate search quality against a set of expected query → path cases. Useful for regression testing and tuning.</p>
             <pre><code><span class="cmt"># Run eval against cases file</span>
-contexting eval --cases eval_cases.json
+contexting eval --cases ctx_cases.json
 
 <span class="cmt"># With score breakdown per case</span>
-contexting eval --cases eval_cases.json --explain
+contexting eval --cases ctx_cases.json --explain
 
 <span class="cmt"># JSON report</span>
-contexting eval --cases eval_cases.json --json</code></pre>
+contexting eval --cases ctx_cases.json --json</code></pre>
 
             <h4>Eval Cases Format</h4>
             <pre><code>[
@@ -1765,17 +1765,17 @@ contexting doctor
 contexting doctor --json
 
 <span class="cmt"># Override paths</span>
-contexting doctor --root /path/to/project --index my_context.json</code></pre>
+contexting doctor --root /path/to/project --index ctx_index.json</code></pre>
 
             <p>Checks performed: config file exists and valid, index file exists and parsable, root path is valid, synonym cache is readable, write access to project directory.</p>
 
             <h3 id="cmd-config">config</h3>
-            <p>Manage context.toml configuration files.</p>
+            <p>Manage ctx_config.toml configuration files.</p>
             <pre><code><span class="cmt"># Generate starter config</span>
 contexting config init
 
 <span class="cmt"># Write to specific path</span>
-contexting config init --output /path/to/context.toml
+contexting config init --output /path/to/ctx_config.toml
 
 <span class="cmt"># Overwrite existing</span>
 contexting config init --force</code></pre>
