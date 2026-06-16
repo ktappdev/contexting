@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"sync"
 	"time"
@@ -89,7 +90,15 @@ func newWatchCommand() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("resolve watch path: %w", err)
 			}
+			if _, statErr := os.Stat(absConfigPath); os.IsNotExist(statErr) {
+				if !cmd.Flags().Changed("config") {
+					return fmt.Errorf("config file not found at %s; run contexting from the project root directory", absConfigPath)
+				}
+			}
 			outputPath := resolveProjectPath(absRoot, flags.OutputPath)
+			if _, statErr := os.Stat(outputPath); os.IsNotExist(statErr) {
+				return fmt.Errorf("no index found at %s; run 'contexting init' from the project root first", outputPath)
+			}
 			cachePath := resolveProjectPath(absRoot, flags.SynonymCache)
 			runtimeFile := resolveProjectPath(absRoot, ".ctx/ctx_runtime.json")
 

@@ -15,7 +15,7 @@ func NewRootCommand() *cobra.Command {
 		Long:  "Contexting builds a filesystem index of code symbols (functions, classes, types, variables) and optional LLM-generated synonyms for improved code search context. Supports Go, Python, JavaScript, TypeScript, Rust, and Ruby.",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			// Skip auto-prompt for help/config management flows.
-			if cmd.Name() == "help" || cmd.Name() == "config" || cmd.Parent() != nil && cmd.Parent().Name() == "config" {
+			if cmd.Name() == "help" || cmd.Name() == "config" || cmd.Name() == "clean" || cmd.Parent() != nil && cmd.Parent().Name() == "config" {
 				return nil
 			}
 			if noConfigPrompt {
@@ -37,6 +37,7 @@ func NewRootCommand() *cobra.Command {
 	rootCmd.AddCommand(newDoctorCommand())
 	rootCmd.AddCommand(newConfigCommand())
 	rootCmd.AddCommand(newSyncCommand())
+	rootCmd.AddCommand(newCleanCommand())
 
 	return rootCmd
 }

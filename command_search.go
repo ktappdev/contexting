@@ -26,7 +26,15 @@ func newSearchCommand() *cobra.Command {
 		Short: "Find top matching paths from context JSON",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := LoadContextingConfig(configPath)
+			var absConfigPath string
+		if configPath != "" {
+			var cfgErr error
+			absConfigPath, cfgErr = filepath.Abs(configPath)
+			if cfgErr != nil {
+				return fmt.Errorf("resolve config path: %w", cfgErr)
+			}
+		}
+		cfg, err := LoadContextingConfig(absConfigPath)
 			if err != nil {
 				return err
 			}
@@ -63,12 +71,12 @@ func newSearchCommand() *cobra.Command {
 			}
 			applyStringFlag(cmd, "runtime-file", &runtimeFile, cfg.Search.RuntimeFile)
 			if !cmd.Flags().Changed("index") {
-				indexPath = resolveConfigPath(configPath, indexPath)
+				indexPath = resolveConfigPath(absConfigPath, indexPath)
 			}
 			if runtimeFile == "" {
 				runtimeFile = resolveProjectPath(filepath.Dir(indexPath), "ctx_runtime.json")
 			} else if !cmd.Flags().Changed("runtime-file") {
-				runtimeFile = resolveConfigPath(configPath, runtimeFile)
+				runtimeFile = resolveConfigPath(absConfigPath, runtimeFile)
 			}
 
 			query := args[0]

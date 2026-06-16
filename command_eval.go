@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 )
@@ -16,7 +17,15 @@ func newEvalCommand() *cobra.Command {
 		Use:   "eval",
 		Short: "Evaluate search quality against expected query/path cases",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := LoadContextingConfig(configPath)
+			var absConfigPath string
+		if configPath != "" {
+			var cfgErr error
+			absConfigPath, cfgErr = filepath.Abs(configPath)
+			if cfgErr != nil {
+				return fmt.Errorf("resolve config path: %w", cfgErr)
+			}
+		}
+		cfg, err := LoadContextingConfig(absConfigPath)
 			if err != nil {
 				return err
 			}
@@ -32,10 +41,10 @@ func newEvalCommand() *cobra.Command {
 				applyBoolFlag(cmd, "json", &jsonOut, *cfg.Eval.JSON)
 			}
 			if !cmd.Flags().Changed("index") {
-				indexPath = resolveConfigPath(configPath, indexPath)
+				indexPath = resolveConfigPath(absConfigPath, indexPath)
 			}
 			if !cmd.Flags().Changed("cases") {
-				casesPath = resolveConfigPath(configPath, casesPath)
+				casesPath = resolveConfigPath(absConfigPath, casesPath)
 			}
 
 			if casesPath == "" {

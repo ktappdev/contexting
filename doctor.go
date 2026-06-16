@@ -103,7 +103,10 @@ func RunDoctor(opts DoctorOptions) DoctorReport {
 	if cachePath == "" {
 		cachePath = common.SynonymCache
 	}
-	indexPath = resolveProjectPath(absRoot, indexPath)
+	indexPath = resolveConfigPath(opts.ConfigPath, indexPath)
+	if resolved, absErr := filepath.Abs(indexPath); absErr == nil {
+		indexPath = resolved
+	}
 	cachePath = resolveProjectPath(absRoot, cachePath)
 
 	checkIndexFile(&report, indexPath)
