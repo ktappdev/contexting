@@ -1,0 +1,1225 @@
+{
+  "root_path": "/Users/kentaylor/developer/llm-search-thing/contexting",
+  "generated_at": "2026-06-17T00:16:35.05614Z",
+  "model": "meta-llama/llama-3.1-8b-instruct",
+  "tree": {
+    "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting",
+    "type": "directory",
+    "children": {
+      "AGENTS.md": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/AGENTS.md",
+        "type": "file",
+        "synonyms": [
+          "agents",
+          "md"
+        ]
+      },
+      "Makefile": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/Makefile",
+        "type": "file",
+        "synonyms": [
+          "makefile"
+        ]
+      },
+      "README.md": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/README.md",
+        "type": "file",
+        "synonyms": [
+          "readme",
+          "md"
+        ]
+      },
+      "SYMBOL_INDEXING.md": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/SYMBOL_INDEXING.md",
+        "type": "file",
+        "synonyms": [
+          "symbol",
+          "indexing",
+          "md"
+        ]
+      },
+      "agent_demo.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/agent_demo.go",
+        "type": "file",
+        "synonyms": [
+          "agent",
+          "demo",
+          "go"
+        ],
+        "symbols": [
+          "printSummaryResults",
+          "printSearchResults"
+        ]
+      },
+      "cache.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/cache.go",
+        "type": "file",
+        "synonyms": [
+          "cache",
+          "go"
+        ],
+        "symbols": [
+          "LoadSynonymCache",
+          "SaveSynonymCache"
+        ]
+      },
+      "cache_test.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/cache_test.go",
+        "type": "file",
+        "synonyms": [
+          "cache",
+          "test",
+          "go"
+        ],
+        "symbols": [
+          "TestLoadAndSaveSynonymCache"
+        ]
+      },
+      "command_clean.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/command_clean.go",
+        "type": "file",
+        "synonyms": [
+          "command",
+          "clean",
+          "go"
+        ],
+        "symbols": [
+          "newCleanCommand"
+        ]
+      },
+      "command_config.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/command_config.go",
+        "type": "file",
+        "synonyms": [
+          "command",
+          "config",
+          "go"
+        ],
+        "symbols": [
+          "newConfigCommand",
+          "newConfigInitCommand"
+        ]
+      },
+      "command_doctor.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/command_doctor.go",
+        "type": "file",
+        "synonyms": [
+          "command",
+          "doctor",
+          "go"
+        ],
+        "symbols": [
+          "newDoctorCommand",
+          "printDoctorReport"
+        ]
+      },
+      "command_eval.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/command_eval.go",
+        "type": "file",
+        "synonyms": [
+          "command",
+          "eval",
+          "go"
+        ],
+        "symbols": [
+          "newEvalCommand"
+        ]
+      },
+      "command_init.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/command_init.go",
+        "type": "file",
+        "synonyms": [
+          "command",
+          "init",
+          "go"
+        ],
+        "symbols": [
+          "newInitCommand"
+        ]
+      },
+      "command_search.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/command_search.go",
+        "type": "file",
+        "synonyms": [
+          "command",
+          "search",
+          "go"
+        ],
+        "symbols": [
+          "newSearchCommand"
+        ]
+      },
+      "command_shared.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/command_shared.go",
+        "type": "file",
+        "synonyms": [
+          "command",
+          "shared",
+          "go"
+        ],
+        "symbols": [
+          "maskAPIKey",
+          "emitSynonymWarning",
+          "CommonFlags",
+          "resolveAPIKey",
+          "resolveLLMConfig"
+        ]
+      },
+      "command_status.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/command_status.go",
+        "type": "file",
+        "synonyms": [
+          "command",
+          "status",
+          "go"
+        ],
+        "symbols": [
+          "StatusReport",
+          "newStatusCommand",
+          "isProcessAlive",
+          "printStatusReport"
+        ]
+      },
+      "command_sync.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/command_sync.go",
+        "type": "file",
+        "synonyms": [
+          "command",
+          "sync",
+          "go"
+        ],
+        "symbols": [
+          "newSyncCommand"
+        ]
+      },
+      "command_watch.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/command_watch.go",
+        "type": "file",
+        "synonyms": [
+          "command",
+          "watch",
+          "go"
+        ],
+        "symbols": [
+          "newWatchCommand",
+          "defaultDebounce",
+          "defaultPersistInterval"
+        ]
+      },
+      "commands.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/commands.go",
+        "type": "file",
+        "synonyms": [
+          "commands",
+          "go"
+        ],
+        "symbols": [
+          "configPath",
+          "noConfigPrompt",
+          "createConfig",
+          "configJustCreated",
+          "NewRootCommand"
+        ]
+      },
+      "config.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/config.go",
+        "type": "file",
+        "synonyms": [
+          "config",
+          "go"
+        ],
+        "symbols": [
+          "EvalConfig",
+          "LLMConfig",
+          "LoadContextingConfig",
+          "ContextingConfig",
+          "CommonConfig",
+          "InitConfig",
+          "WatchConfig",
+          "SearchConfig"
+        ]
+      },
+      "config_apply.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/config_apply.go",
+        "type": "file",
+        "synonyms": [
+          "config",
+          "apply",
+          "go"
+        ],
+        "symbols": [
+          "applyCommonConfig",
+          "applyStringFlag",
+          "applyIntFlag",
+          "applyBoolFlag",
+          "applyStringSliceFlag"
+        ]
+      },
+      "config_bootstrap.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/config_bootstrap.go",
+        "type": "file",
+        "synonyms": [
+          "config",
+          "bootstrap",
+          "go"
+        ],
+        "symbols": [
+          "ensureStarterConfigPrompt",
+          "writeStarterConfig",
+          "askYesNo",
+          "isInteractiveTerminal"
+        ]
+      },
+      "config_bootstrap_test.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/config_bootstrap_test.go",
+        "type": "file",
+        "synonyms": [
+          "config",
+          "bootstrap",
+          "test",
+          "go"
+        ],
+        "symbols": [
+          "TestWriteStarterConfig",
+          "TestEnsureStarterConfigPromptAutoCreate"
+        ]
+      },
+      "config_template.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/config_template.go",
+        "type": "file",
+        "synonyms": [
+          "config",
+          "template",
+          "go"
+        ],
+        "symbols": [
+          "starterConfigTemplate"
+        ]
+      },
+      "config_test.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/config_test.go",
+        "type": "file",
+        "synonyms": [
+          "config",
+          "test",
+          "go"
+        ],
+        "symbols": [
+          "TestLoadContextingConfig",
+          "TestApplyCommonConfigRespectsCLIOverride",
+          "TestWatchDebounceDuration",
+          "TestWatchPersistIntervalDuration"
+        ]
+      },
+      "context.json": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/context.json",
+        "type": "file",
+        "synonyms": [
+          "context",
+          "json"
+        ]
+      },
+      "context.toml": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/context.toml",
+        "type": "file",
+        "synonyms": [
+          "context",
+          "toml"
+        ]
+      },
+      "context.toml.example": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/context.toml.example",
+        "type": "file",
+        "synonyms": [
+          "context",
+          "toml",
+          "example"
+        ]
+      },
+      "docs": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs",
+        "type": "directory",
+        "synonyms": [
+          "docs"
+        ],
+        "children": {
+          "DEVELOPER_MANUAL.html": {
+            "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/DEVELOPER_MANUAL.html",
+            "type": "file",
+            "synonyms": [
+              "developer",
+              "manual",
+              "html"
+            ]
+          },
+          "llm-tests": {
+            "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/llm-tests",
+            "type": "directory",
+            "synonyms": [
+              "llm",
+              "tests"
+            ],
+            "children": {
+              "README.md": {
+                "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/llm-tests/README.md",
+                "type": "file",
+                "synonyms": [
+                  "readme",
+                  "md"
+                ]
+              },
+              "results": {
+                "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/llm-tests/results",
+                "type": "directory",
+                "synonyms": [
+                  "results"
+                ],
+                "children": {
+                  "meta-llama": {
+                    "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/llm-tests/results/meta-llama",
+                    "type": "directory",
+                    "synonyms": [
+                      "meta",
+                      "llama"
+                    ],
+                    "children": {
+                      "llama-3.1-8b-instruct-flex4-8-4x15.md": {
+                        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/llm-tests/results/meta-llama/llama-3.1-8b-instruct-flex4-8-4x15.md",
+                        "type": "file",
+                        "synonyms": [
+                          "llama",
+                          "8b",
+                          "instruct",
+                          "flex4"
+                        ]
+                      }
+                    }
+                  },
+                  "mistralai": {
+                    "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/llm-tests/results/mistralai",
+                    "type": "directory",
+                    "synonyms": [
+                      "mistralai"
+                    ],
+                    "children": {
+                      "mistral-nemo-flex4-8-4x15.md": {
+                        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/llm-tests/results/mistralai/mistral-nemo-flex4-8-4x15.md",
+                        "type": "file",
+                        "synonyms": [
+                          "mistral",
+                          "nemo",
+                          "flex4",
+                          "4x15"
+                        ]
+                      }
+                    }
+                  },
+                  "openai": {
+                    "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/llm-tests/results/openai",
+                    "type": "directory",
+                    "synonyms": [
+                      "openai"
+                    ],
+                    "children": {
+                      "gpt-oss-20b-flex4-8-2x15.md": {
+                        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/llm-tests/results/openai/gpt-oss-20b-flex4-8-2x15.md",
+                        "type": "file",
+                        "synonyms": [
+                          "gpt",
+                          "oss",
+                          "20b",
+                          "flex4"
+                        ]
+                      },
+                      "gpt-oss-20b-flex4-8-4x15.md": {
+                        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/llm-tests/results/openai/gpt-oss-20b-flex4-8-4x15.md",
+                        "type": "file",
+                        "synonyms": [
+                          "gpt",
+                          "oss",
+                          "20b",
+                          "flex4"
+                        ]
+                      },
+                      "gpt-oss-20b-flex4-8.md": {
+                        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/llm-tests/results/openai/gpt-oss-20b-flex4-8.md",
+                        "type": "file",
+                        "synonyms": [
+                          "gpt",
+                          "oss",
+                          "20b",
+                          "flex4"
+                        ]
+                      }
+                    }
+                  },
+                  "qwen": {
+                    "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/llm-tests/results/qwen",
+                    "type": "directory",
+                    "synonyms": [
+                      "qwen"
+                    ],
+                    "children": {
+                      "qwen3-32b-flex4-8-2x15.md": {
+                        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/llm-tests/results/qwen/qwen3-32b-flex4-8-2x15.md",
+                        "type": "file",
+                        "synonyms": [
+                          "qwen3",
+                          "32b",
+                          "flex4",
+                          "2x15"
+                        ]
+                      },
+                      "qwen3-32b-flex4-8-4x15.md": {
+                        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/llm-tests/results/qwen/qwen3-32b-flex4-8-4x15.md",
+                        "type": "file",
+                        "synonyms": [
+                          "qwen3",
+                          "32b",
+                          "flex4",
+                          "4x15"
+                        ]
+                      }
+                    }
+                  },
+                  "qwen3.5-0.8b-flex4-8-4x15.md": {
+                    "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/llm-tests/results/qwen3.5-0.8b-flex4-8-4x15.md",
+                    "type": "file",
+                    "synonyms": [
+                      "qwen3",
+                      "8b",
+                      "flex4",
+                      "4x15"
+                    ]
+                  },
+                  "qwen3.5-0.8b.md": {
+                    "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/llm-tests/results/qwen3.5-0.8b.md",
+                    "type": "file",
+                    "synonyms": [
+                      "qwen3",
+                      "8b",
+                      "md"
+                    ]
+                  },
+                  "qwen3.5-2b.md": {
+                    "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/llm-tests/results/qwen3.5-2b.md",
+                    "type": "file",
+                    "synonyms": [
+                      "qwen3",
+                      "2b",
+                      "md"
+                    ]
+                  },
+                  "qwen3.5-4b.md": {
+                    "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/llm-tests/results/qwen3.5-4b.md",
+                    "type": "file",
+                    "synonyms": [
+                      "qwen3",
+                      "4b",
+                      "md"
+                    ]
+                  }
+                }
+              },
+              "test_synonyms.py": {
+                "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/llm-tests/test_synonyms.py",
+                "type": "file",
+                "synonyms": [
+                  "test",
+                  "synonyms",
+                  "py"
+                ],
+                "symbols": [
+                  "collect_names",
+                  "load_names",
+                  "fetch_batch",
+                  "run_parallel",
+                  "main"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "doctor.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/doctor.go",
+        "type": "file",
+        "synonyms": [
+          "doctor",
+          "go"
+        ],
+        "symbols": [
+          "DoctorOptions",
+          "checkIndexFile",
+          "defaultCommonFlags",
+          "DoctorPass",
+          "DoctorWarn",
+          "DoctorReport",
+          "RunDoctor",
+          "checkCacheFile",
+          "checkAPIKey",
+          "checkWriteAccess",
+          "applyCommonConfigNoCLI",
+          "DoctorStatus",
+          "DoctorFail",
+          "DoctorCheck"
+        ]
+      },
+      "doctor_test.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/doctor_test.go",
+        "type": "file",
+        "synonyms": [
+          "doctor",
+          "test",
+          "go"
+        ],
+        "symbols": [
+          "TestRunDoctorHealthy",
+          "TestRunDoctorFindsFailures"
+        ]
+      },
+      "errors.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/errors.go",
+        "type": "file",
+        "synonyms": [
+          "errors",
+          "go"
+        ],
+        "symbols": [
+          "isCanceledError"
+        ]
+      },
+      "eval.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/eval.go",
+        "type": "file",
+        "synonyms": [
+          "eval",
+          "go"
+        ],
+        "symbols": [
+          "EvalSummary",
+          "EvalResult",
+          "LoadEvalCases",
+          "EvaluateSearch",
+          "firstMatchRank",
+          "normalizeEvalPath",
+          "EvalCase"
+        ]
+      },
+      "eval_report.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/eval_report.go",
+        "type": "file",
+        "synonyms": [
+          "eval",
+          "report",
+          "go"
+        ],
+        "symbols": [
+          "printEvalSummary",
+          "printFailedCases",
+          "resultsToJSONEval"
+        ]
+      },
+      "eval_test.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/eval_test.go",
+        "type": "file",
+        "synonyms": [
+          "eval",
+          "test",
+          "go"
+        ],
+        "symbols": [
+          "TestEvaluateSearchMetrics",
+          "TestFirstMatchRank"
+        ]
+      },
+      "gitignore.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/gitignore.go",
+        "type": "file",
+        "synonyms": [
+          "gitignore",
+          "go"
+        ],
+        "symbols": [
+          "starterGitignoreEntries",
+          "EnsureAndLoadGitignore",
+          "createStarterGitignore",
+          "LoadGitignorePatterns"
+        ]
+      },
+      "gitignore_test.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/gitignore_test.go",
+        "type": "file",
+        "synonyms": [
+          "gitignore",
+          "test",
+          "go"
+        ],
+        "symbols": [
+          "TestShouldIgnorePathWithWildcard",
+          "TestEnsureAndLoadGitignoreCreatesStarter",
+          "TestLoadGitignorePatternsIgnoresCommentsAndNegation"
+        ]
+      },
+      "go.mod": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/go.mod",
+        "type": "file",
+        "synonyms": [
+          "go",
+          "mod"
+        ]
+      },
+      "go.sum": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/go.sum",
+        "type": "file",
+        "synonyms": [
+          "go",
+          "sum"
+        ]
+      },
+      "ignore.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/ignore.go",
+        "type": "file",
+        "synonyms": [
+          "ignore",
+          "go"
+        ],
+        "symbols": [
+          "dotWhitelistKey",
+          "defaultDotWhitelist",
+          "BuildDotWhitelist",
+          "EmbedDotWhitelist",
+          "shouldIgnorePath",
+          "defaultIgnores",
+          "BuildIgnoreMap",
+          "BuildIgnoreMapForRoot",
+          "normalizeIgnorePattern",
+          "isDotPath"
+        ]
+      },
+      "index_manager.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/index_manager.go",
+        "type": "file",
+        "synonyms": [
+          "index",
+          "manager",
+          "go"
+        ],
+        "symbols": [
+          "IndexManager",
+          "NewIndexManager",
+          "fsEntry",
+          "collectFilesystemState",
+          "collectSnapshotPaths",
+          "PersistChange",
+          "IndexManagerOptions",
+          "ApplyResult",
+          "WatchPersistMode",
+          "PersistShutdown",
+          "PersistInterval"
+        ]
+      },
+      "index_manager_test.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/index_manager_test.go",
+        "type": "file",
+        "synonyms": [
+          "index",
+          "manager",
+          "test",
+          "go"
+        ],
+        "symbols": [
+          "TestIndexManagerApplyAndFlush",
+          "TestBootstrapStaleSnapshot"
+        ]
+      },
+      "indexer.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/indexer.go",
+        "type": "file",
+        "synonyms": [
+          "indexer",
+          "go"
+        ],
+        "symbols": [
+          "BuildOptions",
+          "BuildResult",
+          "BuildIndex",
+          "missingNames",
+          "cloneSynonymMap"
+        ]
+      },
+      "indexer_test.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/indexer_test.go",
+        "type": "file",
+        "synonyms": [
+          "indexer",
+          "test",
+          "go"
+        ],
+        "symbols": [
+          "TestBuildIndexUsesCacheAndLexicalSynonyms"
+        ]
+      },
+      "io_atomic.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/io_atomic.go",
+        "type": "file",
+        "synonyms": [
+          "io",
+          "atomic",
+          "go"
+        ],
+        "symbols": [
+          "writeFileAtomic"
+        ]
+      },
+      "logger.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/logger.go",
+        "type": "file",
+        "synonyms": [
+          "logger",
+          "go"
+        ],
+        "symbols": [
+          "logTimeFormat",
+          "logInfof",
+          "logWarnf",
+          "logErrorf",
+          "logf"
+        ]
+      },
+      "main.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/main.go",
+        "type": "file",
+        "synonyms": [
+          "main",
+          "go"
+        ],
+        "symbols": [
+          "version",
+          "main"
+        ]
+      },
+      "main_test.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/main_test.go",
+        "type": "file",
+        "synonyms": [
+          "main",
+          "test",
+          "go"
+        ],
+        "symbols": [
+          "TestRootCommandHasExpectedSubcommands"
+        ]
+      },
+      "memory_search_client.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/memory_search_client.go",
+        "type": "file",
+        "synonyms": [
+          "memory",
+          "search",
+          "client",
+          "go"
+        ],
+        "symbols": [
+          "defaultClientTimeout",
+          "QueryMemorySearch"
+        ]
+      },
+      "memory_search_server.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/memory_search_server.go",
+        "type": "file",
+        "synonyms": [
+          "memory",
+          "search",
+          "server",
+          "go"
+        ],
+        "symbols": [
+          "defaultSearchLogQueryMax",
+          "memorySearchResponse",
+          "startMemorySearchServer",
+          "formatSearchLogQuery",
+          "defaultReadHeaderTimeout",
+          "defaultShutdownTimeout",
+          "memorySearchServer",
+          "MemorySearchLogOptions",
+          "memorySearchRequest"
+        ]
+      },
+      "memory_search_server_test.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/memory_search_server_test.go",
+        "type": "file",
+        "synonyms": [
+          "memory",
+          "search",
+          "server",
+          "test"
+        ],
+        "symbols": [
+          "TestFormatSearchLogQuery"
+        ]
+      },
+      "node.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/node.go",
+        "type": "file",
+        "synonyms": [
+          "node",
+          "go"
+        ],
+        "symbols": [
+          "CollectNamesForLLM",
+          "ComputeStats",
+          "dedupeStrings",
+          "MaxFileCount",
+          "AssignSynonymsToTree",
+          "walkTree",
+          "Node",
+          "IndexStats",
+          "BuildTree"
+        ]
+      },
+      "node_mutation.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/node_mutation.go",
+        "type": "file",
+        "synonyms": [
+          "node",
+          "mutation",
+          "go"
+        ],
+        "symbols": [
+          "upsertNodeByRelPath",
+          "buildNodeSynonyms",
+          "splitRelPath",
+          "isExistingDirectory",
+          "stringSlicesEqual",
+          "removeNodeByRelPath"
+        ]
+      },
+      "node_test.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/node_test.go",
+        "type": "file",
+        "synonyms": [
+          "node",
+          "test",
+          "go"
+        ],
+        "symbols": [
+          "TestComputeStats",
+          "mustMkdir",
+          "mustWriteFile",
+          "TestBuildTreeNestedAndIgnore",
+          "TestCollectNamesForLLMUnique",
+          "TestAssignSynonymsToTree"
+        ]
+      },
+      "openrouter.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/openrouter.go",
+        "type": "file",
+        "synonyms": [
+          "openrouter",
+          "go"
+        ],
+        "symbols": [
+          "GenerateSynonymsBatch",
+          "GenerateSynonymsBatchWithContext",
+          "GenerateSynonymsForNamesWithContext",
+          "sanitizeJSON",
+          "defaultModel",
+          "defaultSynonyms",
+          "defaultEndpoint",
+          "Message",
+          "GetAPIKey",
+          "defaultHTTPTimeout",
+          "GenerateSynonymsForNames",
+          "OpenRouterRequest",
+          "OpenRouterResponse",
+          "Choice",
+          "SynonymResponse"
+        ]
+      },
+      "openrouter_test.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/openrouter_test.go",
+        "type": "file",
+        "synonyms": [
+          "openrouter",
+          "test",
+          "go"
+        ],
+        "symbols": [
+          "TestGenerateSynonymsBatchValidation",
+          "TestGenerateSynonymsForNamesHandlesEmptyList",
+          "TestOpenRouterConstants",
+          "TestGetAPIKey"
+        ]
+      },
+      "paths.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/paths.go",
+        "type": "file",
+        "synonyms": [
+          "paths",
+          "go"
+        ],
+        "symbols": [
+          "resolveConfigPath",
+          "resolveProjectPath"
+        ]
+      },
+      "paths_test.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/paths_test.go",
+        "type": "file",
+        "synonyms": [
+          "paths",
+          "test",
+          "go"
+        ],
+        "symbols": [
+          "TestResolveProjectPath_AbsolutePath",
+          "TestResolveProjectPath_EmptyProjectRoot",
+          "TestResolveProjectPath_RelativePath",
+          "TestResolveConfigPath_AbsolutePath",
+          "TestResolveConfigPath_EmptyConfigFile",
+          "TestResolveConfigPath_ConfigNotInDotCtx",
+          "TestResolveConfigPath_ConfigInDotCtx_NoPrefix",
+          "TestResolveConfigPath_ConfigInDotCtx_UnixPrefix",
+          "TestResolveConfigPath_ConfigInDotCtx_JustDotCtx",
+          "TestResolveConfigPath_ConfigInDotCtx_NestedDotCtx",
+          "TestResolveProjectPath_EmptyPath",
+          "TestResolveConfigPath_EmptyPath",
+          "TestResolveConfigPath_ConfigInDotCtx_BackslashPrefix",
+          "TestResolveConfigPath_ConfigInDotCtx_MixedSeparators"
+        ]
+      },
+      "runtime_state.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/runtime_state.go",
+        "type": "file",
+        "synonyms": [
+          "runtime",
+          "state",
+          "go"
+        ],
+        "symbols": [
+          "RuntimeState",
+          "SaveRuntimeState",
+          "LoadRuntimeState"
+        ]
+      },
+      "runtime_state_test.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/runtime_state_test.go",
+        "type": "file",
+        "synonyms": [
+          "runtime",
+          "state",
+          "test",
+          "go"
+        ],
+        "symbols": [
+          "TestSaveAndLoadRuntimeState"
+        ]
+      },
+      "search.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/search.go",
+        "type": "file",
+        "synonyms": [
+          "search",
+          "go"
+        ],
+        "symbols": [
+          "SearchResponse",
+          "SearchOptions",
+          "SearchHints",
+          "SearchHintsWithOptions",
+          "passesTypeFilter",
+          "tokenize",
+          "SearchResult",
+          "hasSegmentPrefix",
+          "resultsToJSON",
+          "searchResponseToJSON"
+        ]
+      },
+      "search_summary.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/search_summary.go",
+        "type": "file",
+        "synonyms": [
+          "search",
+          "summary",
+          "go"
+        ],
+        "symbols": [
+          "DirectorySummary",
+          "SummarizeDirectories",
+          "directoryForResultPath",
+          "tokenFromMatch",
+          "printDirectorySummaries",
+          "directorySummariesToJSON"
+        ]
+      },
+      "search_summary_test.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/search_summary_test.go",
+        "type": "file",
+        "synonyms": [
+          "search",
+          "summary",
+          "test",
+          "go"
+        ],
+        "symbols": [
+          "TestSummarizeDirectories",
+          "TestSummarizeDirectoriesDrillLimit"
+        ]
+      },
+      "search_test.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/search_test.go",
+        "type": "file",
+        "synonyms": [
+          "search",
+          "test",
+          "go"
+        ],
+        "symbols": [
+          "TestSearchHintsTypeFilter",
+          "TestTokenizeFiltersLowSignalWords",
+          "TestContextIndexMarshalsWithRootPath",
+          "TestSearchHintsNoTokens",
+          "TestSearchCommandValidatesIndexRootPath",
+          "TestSearchCommandValidatesRuntimeRootPath",
+          "TestQueryMemorySearchRejectsMismatchedRoot",
+          "contains",
+          "findSubstring",
+          "TestSearchHintsReturnsStrongMatches"
+        ]
+      },
+      "signals.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/signals.go",
+        "type": "file",
+        "synonyms": [
+          "signals",
+          "go"
+        ],
+        "symbols": [
+          "signalAwareContext"
+        ]
+      },
+      "storage.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/storage.go",
+        "type": "file",
+        "synonyms": [
+          "storage",
+          "go"
+        ],
+        "symbols": [
+          "ContextIndex",
+          "SaveContextIndex",
+          "LoadContextIndex"
+        ]
+      },
+      "storage_test.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/storage_test.go",
+        "type": "file",
+        "synonyms": [
+          "storage",
+          "test",
+          "go"
+        ],
+        "symbols": [
+          "TestSaveAndLoadContextIndex"
+        ]
+      },
+      "symbols.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/symbols.go",
+        "type": "file",
+        "synonyms": [
+          "symbols",
+          "go"
+        ],
+        "symbols": [
+          "extractByRegex",
+          "tokenizeIdentifier",
+          "extractSymbols",
+          "extractGoSymbols"
+        ]
+      },
+      "synonyms.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/synonyms.go",
+        "type": "file",
+        "synonyms": [
+          "synonyms",
+          "go"
+        ],
+        "symbols": [
+          "camelBoundary",
+          "genericSynonymStopwords",
+          "lowSignalTokens",
+          "sanitizeSynonyms",
+          "splitNonAlnum",
+          "lexicalSynonyms",
+          "splitIdentifierTokens",
+          "isLowSignalToken",
+          "isSourceExtension"
+        ]
+      },
+      "synonyms_test.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/synonyms_test.go",
+        "type": "file",
+        "synonyms": [
+          "synonyms",
+          "test",
+          "go"
+        ],
+        "symbols": [
+          "TestLexicalSynonymsSplitsIdentifiers",
+          "TestSanitizeSynonymsFiltersGenericAndCaps",
+          "TestSanitizeSynonymsDropsAllLowSignalPhrase"
+        ]
+      },
+      "toml_test.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/toml_test.go",
+        "type": "file",
+        "synonyms": [
+          "toml",
+          "test",
+          "go"
+        ],
+        "symbols": [
+          "TestConfig",
+          "TestTOMLDecode",
+          "TestTOMLDecodeFromFile",
+          "TestTOMLEncode",
+          "TestTOMLDecodeEmpty",
+          "TestTOMLDecodeInvalid"
+        ]
+      },
+      "watch_helpers.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/watch_helpers.go",
+        "type": "file",
+        "synonyms": [
+          "watch",
+          "helpers",
+          "go"
+        ],
+        "symbols": [
+          "summarizeOp",
+          "parsePersistMode",
+          "tickerChan",
+          "syncWatchDirectories",
+          "shouldSkipEvent",
+          "isInsideProject",
+          "shouldSkipInternalOutput",
+          "logChangeSummary"
+        ]
+      },
+      "watch_test.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/watch_test.go",
+        "type": "file",
+        "synonyms": [
+          "watch",
+          "test",
+          "go"
+        ],
+        "symbols": [
+          "TestShouldSkipInternalOutput",
+          "TestParsePersistMode"
+        ]
+      }
+    }
+  }
+}

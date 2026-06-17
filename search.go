@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 )
 
 type SearchResult struct {
@@ -13,6 +14,13 @@ type SearchResult struct {
 	Score     int      `json:"score"`
 	Matches   []string `json:"matches"`
 	Breakdown []string `json:"breakdown,omitempty"`
+}
+
+type SearchResponse struct {
+	Source           string         `json:"source"`
+	IndexGeneratedAt *time.Time     `json:"index_generated_at,omitempty"`
+	Fallback         *bool          `json:"fallback,omitempty"`
+	Results          []SearchResult `json:"results"`
 }
 
 type SearchOptions struct {
@@ -253,6 +261,14 @@ func tokenize(input string) []string {
 
 func resultsToJSON(results []SearchResult) (string, error) {
 	bytes, err := json.MarshalIndent(results, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
+}
+
+func searchResponseToJSON(resp SearchResponse) (string, error) {
+	bytes, err := json.MarshalIndent(resp, "", "  ")
 	if err != nil {
 		return "", err
 	}

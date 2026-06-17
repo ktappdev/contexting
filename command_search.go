@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -20,6 +21,7 @@ func newSearchCommand() *cobra.Command {
 	var showTokens bool
 	var useMemory bool
 	var memoryOnly bool
+	var summary bool
 
 	cmd := &cobra.Command{
 		Use:   "search-hints [query]",
@@ -27,14 +29,14 @@ func newSearchCommand() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var absConfigPath string
-		if configPath != "" {
-			var cfgErr error
-			absConfigPath, cfgErr = filepath.Abs(configPath)
-			if cfgErr != nil {
-				return fmt.Errorf("resolve config path: %w", cfgErr)
+			if configPath != "" {
+				var cfgErr error
+				absConfigPath, cfgErr = filepath.Abs(configPath)
+				if cfgErr != nil {
+					return fmt.Errorf("resolve config path: %w", cfgErr)
+				}
 			}
-		}
-		cfg, err := LoadContextingConfig(absConfigPath)
+			cfg, err := LoadContextingConfig(absConfigPath)
 			if err != nil {
 				return err
 			}
@@ -81,12 +83,21 @@ func newSearchCommand() *cobra.Command {
 
 			query := args[0]
 			results := make([]SearchResult, 0)
+			var source string
+			var indexGeneratedAt *time.Time
+			var fallback *bool
 			usedMemory := false
 			if useMemory {
-				memoryResults, memErr := QueryMemorySearch(runtimeFile, query, opts, absRoot)
+				memResp, memErr := QueryMemorySearch(runtimeFile, query, opts, absRoot)
 				if memErr == nil {
-					results = memoryResults
+					results = memResp.Results
 					usedMemory = true
+					source = "memory"
+					if !memResp.GeneratedAt.IsZero() {
+						indexGeneratedAt = &memResp.GeneratedAt
+					}
+					f := false
+					fallback = &f
 				} else if memoryOnly {
 					return memErr
 				}
@@ -94,18 +105,39 @@ func newSearchCommand() *cobra.Command {
 			if !usedMemory {
 				index, err := LoadContextIndex(indexPath)
 				if err != nil {
-					return err
+					if useMemory {
+						source = "none"
+						f := true
+						fallback = &f
+					}
+					results = []SearchResult{}
+				} else {
+					if index.RootPath == "" {
+						return fmt.Errorf("index missing root_path: regenerate index by running 'contexting watch' or 'contexting init' in the project directory")
+					}
+					if index.RootPath != absRoot {
+						return fmt.Errorf("index root path mismatch: expected %s, got %s. Use --root to specify the project directory or run from the project root", absRoot, index.RootPath)
+					}
+					results = SearchHintsWithOptions(index, query, opts)
+					source = "snapshot"
+					if !index.GeneratedAt.IsZero() {
+						indexGeneratedAt = &index.GeneratedAt
+					}
+					if useMemory {
+						f := true
+						fallback = &f
+					}
 				}
-				if index.RootPath == "" {
-					return fmt.Errorf("index missing root_path: regenerate index by running 'contexting watch' or 'contexting init' in the project directory")
-				}
-				if index.RootPath != absRoot {
-					return fmt.Errorf("index root path mismatch: expected %s, got %s. Use --root to specify the project directory or run from the project root", absRoot, index.RootPath)
-				}
-				results = SearchHintsWithOptions(index, query, opts)
 			}
 			if showTokens {
 				fmt.Printf("Tokens: %v\n", tokenize(query))
+			}
+
+			if summary {
+				for i := range results {
+					results[i].Matches = nil
+					results[i].Breakdown = nil
+				}
 			}
 
 			if dirSummary {
@@ -123,11 +155,22 @@ func newSearchCommand() *cobra.Command {
 			}
 
 			if jsonOut {
-				jsonStr, err := resultsToJSON(results)
+				resp := SearchResponse{
+					Source:           source,
+					IndexGeneratedAt: indexGeneratedAt,
+					Fallback:         fallback,
+					Results:          results,
+				}
+				jsonStr, err := searchResponseToJSON(resp)
 				if err != nil {
 					return err
 				}
 				fmt.Println(jsonStr)
+				return nil
+			}
+
+			if summary {
+				printSummaryResults(results)
 				return nil
 			}
 
@@ -150,6 +193,7 @@ func newSearchCommand() *cobra.Command {
 	cmd.Flags().StringVar(&runtimeFile, "runtime-file", "", "Path to runtime memory-search state file (defaults near index path)")
 	cmd.Flags().BoolVar(&jsonOut, "json", false, "Print search results as JSON")
 	cmd.Flags().BoolVar(&showTokens, "show-tokens", false, "Print normalized query tokens before results")
+	cmd.Flags().BoolVar(&summary, "summary", false, "Minimal output: path, type, score only")
 
 	return cmd
 }

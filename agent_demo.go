@@ -15,3 +15,13 @@ func printSearchResults(results []SearchResult) {
 		}
 	}
 }
+
+func printSummaryResults(results []SearchResult) {
+	if len(results) == 0 {
+		fmt.Println("No matches found")
+		return
+	}
+	for _, result := range results {
+		fmt.Printf("%s (%s) score=%d\n", result.Path, result.Type, result.Score)
+	}
+}

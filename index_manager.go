@@ -438,6 +438,15 @@ func (m *IndexManager) RootPath() string {
 	return m.rootPath
 }
 
+func (m *IndexManager) IndexGeneratedAt() time.Time {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.index == nil {
+		return time.Time{}
+	}
+	return m.index.GeneratedAt
+}
+
 func (m *IndexManager) activeAPIKey() string {
 	if !m.useLLM {
 		return ""

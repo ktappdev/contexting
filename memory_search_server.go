@@ -34,7 +34,8 @@ type memorySearchRequest struct {
 }
 
 type memorySearchResponse struct {
-	Results []SearchResult `json:"results"`
+	Results     []SearchResult `json:"results"`
+	GeneratedAt time.Time      `json:"generated_at"`
 }
 
 func startMemorySearchServer(ctx context.Context, manager *IndexManager, runtimeFile string, logOpts MemorySearchLogOptions) (*memorySearchServer, error) {
@@ -75,7 +76,7 @@ func startMemorySearchServer(ctx context.Context, manager *IndexManager, runtime
 			logInfof("Search query \"%s\" -> %d results in %dms", formatSearchLogQuery(req.Query, logOpts.QueryMax), len(results), time.Since(start).Milliseconds())
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(memorySearchResponse{Results: results})
+		_ = json.NewEncoder(w).Encode(memorySearchResponse{Results: results, GeneratedAt: manager.IndexGeneratedAt()})
 	})
 
 	httpServer := &http.Server{
