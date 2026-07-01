@@ -120,6 +120,15 @@ func SearchHintsWithOptions(index *ContextIndex, query string, opts SearchOption
 			}
 		}
 
+		// Exact basename match — query is the filename (with or without extension)
+		stemLower := strings.ToLower(strings.TrimSuffix(baseNameLower, filepath.Ext(baseNameLower)))
+		queryLower := strings.ToLower(query)
+		if queryLower == baseNameLower || queryLower == stemLower {
+			score += 15
+			matches = append(matches, "exact-basename:"+baseNameLower)
+			breakdown = append(breakdown, "exact basename +15: "+baseNameLower)
+		}
+
 		// Symbol scoring
 		for _, sym := range node.Symbols {
 			symLower := strings.ToLower(sym)
@@ -175,6 +184,24 @@ func SearchHintsWithOptions(index *ContextIndex, query string, opts SearchOption
 		return results[i].Path < results[j].Path
 	})
 
+	// Apply confidence gap heuristic to reduce noise
+	if len(results) > 3 {
+		cutoff := len(results)
+		for i := 1; i < len(results); i++ {
+			// If score drops by more than half from previous result, cut here
+			if results[i-1].Score > 0 && results[i].Score > 0 && results[i].Score*2 < results[i-1].Score {
+				cutoff = i
+				break
+			}
+		}
+		// Don't cut below 3 results if scores are still positive
+		if cutoff < 3 && len(results) >= 3 && results[2].Score > 0 {
+			cutoff = 3
+		}
+		if cutoff < len(results) {
+			results = results[:cutoff]
+		}
+	}
 	if len(results) > opts.Limit {
 		results = results[:opts.Limit]
 	}

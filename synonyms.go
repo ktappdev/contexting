@@ -86,7 +86,7 @@ func lexicalSynonyms(name string) []string {
 	partsNoExt := splitIdentifierTokens(nameNoExt)
 
 	combined := append(parts, partsNoExt...)
-	return sanitizeSynonyms(combined, 8)
+	return sanitizeSynonyms(combined, defaultSynonymsMax)
 }
 
 func splitIdentifierTokens(input string) []string {

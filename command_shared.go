@@ -26,7 +26,7 @@ func (c *CommonFlags) normalize() {
 		c.SynonymsMin = c.SynonymsPerName
 	}
 	if c.SynonymsMax <= 0 {
-		c.SynonymsMax = c.SynonymsPerName
+		c.SynonymsMax = defaultSynonymsMax
 	}
 	if c.SynonymsMin > c.SynonymsMax {
 		c.SynonymsMin = c.SynonymsMax
@@ -83,6 +83,9 @@ func resolveLLMConfig(flags CommonFlags, llmCfg LLMConfig) (endpoint, model, api
 		apiKey = os.Getenv("OPENROUTER_API_KEY")
 	}
 	temperature = llmCfg.Temperature
+	if temperature == 0 {
+		temperature = 0.9
+	}
 	maxTokens = llmCfg.MaxTokens
 	return
 }

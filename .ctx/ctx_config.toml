@@ -1,6 +1,4 @@
-package main
-
-const starterConfigTemplate = `[common]
+[common]
 output = ".ctx/ctx_index.json"
 synonym_cache = ".ctx/ctx_cache.json"
 llm_model = "deepseek/deepseek-v4-flash"  # any OpenAI-compatible model name
@@ -69,4 +67,3 @@ min_score = 1
 engines = ["contexting", "find", "grep", "combined"]
 grep_max_bytes = 1048576
 json = false
-`

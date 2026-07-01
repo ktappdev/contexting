@@ -2,6 +2,10 @@
 
 This file is for developers and AI agents working on the codebase. For user-facing documentation, see README.md.
 
+## Description
+
+**Contexting** is a Go CLI that pre-computes a rich index of a codebase so AI agents (and humans) can locate files via ranked search hints. It walks the filesystem once, extracts code symbols (functions/classes/types) statically, generates LLM synonyms for filenames, and persists a JSON tree at `.ctx/ctx_index.json`. A live `watch` mode keeps an in-memory copy fresh and serves search queries over a localhost HTTP endpoint, bypassing disk I/O for sub-second results.
+
 ## Building & Installing
 
 | Command | Description |

@@ -14,6 +14,7 @@ type ContextingConfig struct {
 	Watch  WatchConfig  `toml:"watch"`
 	Search SearchConfig `toml:"search"`
 	Eval   EvalConfig   `toml:"eval"`
+	Bench  BenchConfig  `toml:"bench"`
 	LLM    LLMConfig    `toml:"llm"`
 }
 
@@ -69,6 +70,17 @@ type EvalConfig struct {
 	TypeFilter string `toml:"type"`
 	Explain    *bool  `toml:"explain"`
 	JSON       *bool  `toml:"json"`
+}
+
+type BenchConfig struct {
+	RootPath     string   `toml:"root"`
+	IndexPath    string   `toml:"index"`
+	CasesPath    string   `toml:"cases"`
+	Limit        int      `toml:"limit"`
+	MinScore     int      `toml:"min_score"`
+	Engines      []string `toml:"engines"`
+	GrepMaxBytes int      `toml:"grep_max_bytes"`
+	JSON         *bool    `toml:"json"`
 }
 
 type LLMConfig struct {

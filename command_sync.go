@@ -67,7 +67,6 @@ func newSyncCommand() *cobra.Command {
 			fmt.Printf("Scanning index... %d names found\n", len(allNames))
 
 			// Determine which names need synonyms
-			synonymsPerName := flags.SynonymsPerName
 			synonymsMin := flags.SynonymsMin
 			synonymsMax := flags.SynonymsMax
 			var needsSynonyms []string
@@ -94,18 +93,36 @@ func newSyncCommand() *cobra.Command {
 			ctx, stop := signalAwareContext()
 			defer stop()
 
-			generated, err := GenerateSynonymsForNamesWithContext(ctx, targets, llmKey, cfg.Watch.MaxBatchSize, llmModel, llmEndpoint, llmTemp, llmMaxTokens, synonymsMin, synonymsMax, cfg.LLM.ParallelRequests)
+			// Build symbols map for targets
+			symbolsMap := make(map[string][]string)
+			walkTree(index.Tree, func(node *Node) {
+				if node.Type != "file" {
+					return
+				}
+				name := filepath.Base(node.FullPath)
+				if len(node.Symbols) > 0 {
+					symbolsMap[name] = node.Symbols
+				} else {
+					// Extract symbols if missing
+					if syms, err := extractSymbols(node.FullPath); err == nil && len(syms) > 0 {
+						node.Symbols = syms
+						symbolsMap[name] = syms
+					}
+				}
+			})
+
+			generated, err := GenerateSynonymsForNamesWithContext(ctx, targets, llmKey, cfg.Watch.MaxBatchSize, llmModel, llmEndpoint, llmTemp, llmMaxTokens, synonymsMin, synonymsMax, cfg.LLM.ParallelRequests, symbolsMap)
 			if err != nil {
 				return fmt.Errorf("generate synonyms: %w", err)
 			}
 
 			// Update cache with new synonyms
 			for name, syns := range generated {
-				cache[name] = sanitizeSynonyms(syns, synonymsPerName)
+				cache[name] = sanitizeSynonyms(syns, synonymsMax)
 			}
 
 			// Update tree nodes with new synonyms
-			AssignSynonymsToTree(index.Tree, cache, synonymsPerName)
+			AssignSynonymsToTree(index.Tree, cache, synonymsMax)
 
 			// Flush updated cache and index
 			if err := SaveSynonymCache(cachePath, cache); err != nil {

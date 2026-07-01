@@ -1,1 +1,962 @@
-{}
+{
+  "001_bench_report_2026-07-01_0310.md": [
+    "performance report",
+    "benchmark results",
+    "speed analysis",
+    "performance metrics",
+    "load test report",
+    "system performance evaluation",
+    "runtime data",
+    "test outcomes",
+    "efficiency report",
+    "throughput summary",
+    "latency report",
+    "performance testing document"
+  ],
+  "AGENTS.md": [
+    "agents documentation",
+    "agents guide",
+    "agent architecture",
+    "agent setup",
+    "robot documentation",
+    "autonomous agents",
+    "ai agents",
+    "agent system"
+  ],
+  "DEVELOPER_MANUAL.html": [
+    "developer guide",
+    "dev manual",
+    "contribution guide",
+    "development documentation",
+    "developer handbook",
+    "api documentation",
+    "internal docs",
+    "coding guidelines"
+  ],
+  "Makefile": [
+    "build file",
+    "makefile build",
+    "compilation script",
+    "build configuration",
+    "make targets",
+    "build system",
+    "gnu make",
+    "project build"
+  ],
+  "README.md": [
+    "readme",
+    "project description",
+    "introduction",
+    "getting started",
+    "overview",
+    "project readme",
+    "documentation",
+    "main doc"
+  ],
+  "SYMBOL_INDEXING.md": [
+    "symbol indexing",
+    "indexing documentation",
+    "symbols guide",
+    "index process",
+    "search indexing",
+    "code symbols",
+    "indexing strategy",
+    "symbol resolution"
+  ],
+  "agent_demo.go": [
+    "agent example",
+    "demo code",
+    "agent test",
+    "agent playground",
+    "sample agent",
+    "agent demonstration",
+    "agent tutorial",
+    "prototype"
+  ],
+  "bench_cases.json": [
+    "benchmark cases",
+    "test cases for benchmarks",
+    "benchmark data",
+    "performance test cases",
+    "benchmark scenarios",
+    "test data",
+    "benchmark config",
+    "cases file"
+  ],
+  "bench_engine.go": [
+    "benchmark engine",
+    "performance testing engine",
+    "benchmarking framework",
+    "benchmark runner",
+    "test engine",
+    "perf test engine",
+    "benchmark core",
+    "engine for benchmarks"
+  ],
+  "bench_guide.md": [
+    "benchmark guide",
+    "performance testing guide",
+    "how to benchmark",
+    "benchmarking instructions",
+    "perf guide",
+    "benchmark documentation",
+    "testing guide",
+    "benchmark tutorial"
+  ],
+  "bench_report.go": [
+    "benchmark report",
+    "reporting",
+    "performance report",
+    "results output",
+    "summary generation",
+    "report generator",
+    "benchmark output",
+    "reporting logic"
+  ],
+  "bench_results": [
+    "benchmark results",
+    "performance metrics",
+    "test output",
+    "speed data",
+    "evaluation results",
+    "profiling output",
+    "timing data",
+    "comparative analysis"
+  ],
+  "bench_test.go": [
+    "benchmark tests",
+    "performance tests",
+    "test benchmarks",
+    "benchmarking tests",
+    "bench tests",
+    "perf tests",
+    "test file",
+    "benchmark unit tests"
+  ],
+  "cache.go": [
+    "caching",
+    "cache implementation",
+    "in-memory cache",
+    "lookup cache",
+    "cache store",
+    "caching mechanism",
+    "memoization",
+    "cache logic"
+  ],
+  "cache_test.go": [
+    "cache tests",
+    "testing cache",
+    "cache unit tests",
+    "cache validation",
+    "cache test cases",
+    "cache testing",
+    "test cache",
+    "cache spec"
+  ],
+  "cases_v2_test.go": [
+    "v2 tests",
+    "cases version 2 tests",
+    "test cases v2",
+    "version 2 test file",
+    "updated test cases",
+    "cases v2 testing",
+    "test suite v2",
+    "regression tests v2"
+  ],
+  "command_bench.go": [
+    "command benchmarks",
+    "bench commands",
+    "command performance",
+    "cli benchmarks",
+    "command testing",
+    "command profiling",
+    "command perf",
+    "cmd bench"
+  ],
+  "command_clean.go": [
+    "remove",
+    "delete",
+    "purge",
+    "clear",
+    "reset",
+    "cleanup",
+    "erase",
+    "wipe",
+    "truncate",
+    "flush"
+  ],
+  "command_config.go": [
+    "settings",
+    "preferences",
+    "options",
+    "configuration",
+    "setup",
+    "parameters",
+    "properties",
+    "env"
+  ],
+  "command_doctor.go": [
+    "diagnose",
+    "check",
+    "health",
+    "verify",
+    "validate",
+    "troubleshoot",
+    "repair",
+    "fix",
+    "status"
+  ],
+  "command_eval.go": [
+    "evaluate",
+    "execute",
+    "run",
+    "analyze",
+    "compute",
+    "assess",
+    "test",
+    "benchmark",
+    "measure",
+    "process"
+  ],
+  "command_init.go": [
+    "initialize",
+    "setup",
+    "create",
+    "bootstrap",
+    "start",
+    "configure",
+    "install",
+    "generate",
+    "scaffold"
+  ],
+  "command_search.go": [
+    "find",
+    "query",
+    "lookup",
+    "seek",
+    "search",
+    "discover",
+    "locate",
+    "retrieve",
+    "scan",
+    "explore"
+  ],
+  "command_shared.go": [
+    "common",
+    "shared",
+    "utils",
+    "helpers",
+    "base",
+    "generic",
+    "reusable",
+    "library",
+    "support",
+    "foundation"
+  ],
+  "command_status.go": [
+    "state",
+    "info",
+    "health",
+    "check",
+    "report",
+    "view",
+    "inspect",
+    "show",
+    "display",
+    "current"
+  ],
+  "command_sync.go": [
+    "synchronize",
+    "update",
+    "sync",
+    "refresh",
+    "pull",
+    "push",
+    "mirror",
+    "replicate",
+    "copy",
+    "transfer"
+  ],
+  "command_watch.go": [
+    "monitor",
+    "observe",
+    "track",
+    "follow",
+    "watch",
+    "listen",
+    "poll",
+    "detect",
+    "supervise",
+    "surveil"
+  ],
+  "commands.go": [
+    "cli",
+    "command",
+    "dispatch",
+    "router",
+    "handler",
+    "registry",
+    "cobra",
+    "app",
+    "root",
+    "entry"
+  ],
+  "config.go": [
+    "settings",
+    "options",
+    "preferences",
+    "configuration",
+    "params",
+    "env",
+    "properties",
+    "setup",
+    "init",
+    "defaults"
+  ],
+  "config_apply.go": [
+    "apply",
+    "set",
+    "activate",
+    "deploy",
+    "load",
+    "run",
+    "execute",
+    "enable",
+    "configure",
+    "install"
+  ],
+  "config_bootstrap.go": [
+    "initialize",
+    "setup",
+    "first run",
+    "generate",
+    "create defaults",
+    "scaffold",
+    "quickstart",
+    "init config",
+    "default settings",
+    "initial setup"
+  ],
+  "config_bootstrap_test.go": [
+    "test bootstrap",
+    "config init test",
+    "setup test",
+    "default config test",
+    "first run test",
+    "generation test",
+    "validate init",
+    "check bootstrap",
+    "test defaults",
+    "unit test bootstrap"
+  ],
+  "config_template.go": [
+    "configuration template",
+    "example config",
+    "config file skeleton",
+    "default settings",
+    "config blueprint",
+    "template variables",
+    "config structure",
+    "config generator"
+  ],
+  "config_test.go": [
+    "configuration tests",
+    "config unit tests",
+    "config validation tests",
+    "config integration tests",
+    "test config loading",
+    "config spec tests",
+    "config parsing tests"
+  ],
+  "context.json": [
+    "context config",
+    "json context",
+    "context data",
+    "context file",
+    "context settings",
+    "context definition"
+  ],
+  "context.toml": [
+    "toml context",
+    "context config",
+    "context file",
+    "context settings",
+    "context definition",
+    "context toml config"
+  ],
+  "context.toml.example": [
+    "example context",
+    "sample context",
+    "context template",
+    "context demo",
+    "context example file",
+    "context toml sample"
+  ],
+  "contexting-query-guide.md": [
+    "query guide",
+    "context query docs",
+    "query documentation",
+    "how to query",
+    "querying context",
+    "guide to context queries",
+    "query instructions"
+  ],
+  "contexting_feedback.md": [
+    "context feedback",
+    "context review",
+    "context evaluation",
+    "context critique",
+    "context assessment",
+    "context quality feedback",
+    "user feedback on context",
+    "context improvement suggestions",
+    "context annotation feedback",
+    "context correction feedback",
+    "context validation",
+    "context check"
+  ],
+  "docs": [
+    "documentation",
+    "manual",
+    "guides",
+    "help",
+    "reference",
+    "docs folder",
+    "documentation files"
+  ],
+  "doctor.go": [
+    "health check",
+    "diagnostics",
+    "system check",
+    "status check",
+    "doctor command",
+    "validation",
+    "health monitor"
+  ],
+  "doctor_test.go": [
+    "health check tests",
+    "diagnostics tests",
+    "doctor tests",
+    "system check tests",
+    "validation tests",
+    "doctor unit tests"
+  ],
+  "errors.go": [
+    "error handling",
+    "error types",
+    "error definitions",
+    "error codes",
+    "error messages",
+    "error utilities"
+  ],
+  "eval.go": [
+    "evaluation",
+    "evaluate",
+    "scoring",
+    "assessment",
+    "eval function",
+    "evaluation logic"
+  ],
+  "eval_report.go": [
+    "evaluation report",
+    "report generation",
+    "eval results",
+    "scoring report",
+    "assessment report",
+    "eval output"
+  ],
+  "eval_test.go": [
+    "eval tests",
+    "evaluation tests",
+    "scoring tests",
+    "eval unit tests",
+    "assessment tests",
+    "eval integration tests"
+  ],
+  "gitignore.go": [
+    ".gitignore generation",
+    "git ignore rules",
+    "ignore file",
+    "gitignore creator",
+    "gitignore patterns",
+    "git ignore list"
+  ],
+  "gitignore_test.go": [
+    "gitignore tests",
+    ".gitignore tests",
+    "ignore file tests",
+    "gitignore unit tests",
+    "gitignore validation tests"
+  ],
+  "go.mod": [
+    "module definition",
+    "dependencies",
+    "go module file",
+    "versioning",
+    "dependency management",
+    "package requirements"
+  ],
+  "go.sum": [
+    "checksums",
+    "dependency hashes",
+    "integrity",
+    "module verification",
+    "dependency lock",
+    "hash file"
+  ],
+  "gpt-oss-20b-flex4-8-2x15.md": [
+    "model results",
+    "benchmark",
+    "experiment",
+    "evaluation output",
+    "performance data",
+    "llm output"
+  ],
+  "gpt-oss-20b-flex4-8-4x15.md": [
+    "model results",
+    "benchmark",
+    "experiment",
+    "evaluation output",
+    "performance data",
+    "llm output"
+  ],
+  "gpt-oss-20b-flex4-8.md": [
+    "model results",
+    "benchmark",
+    "experiment",
+    "evaluation output",
+    "performance data",
+    "llm output"
+  ],
+  "ignore.go": [
+    "skip patterns",
+    "exclude",
+    "filter",
+    "deny list",
+    "ignore rules",
+    "file exclusion"
+  ],
+  "index_manager.go": [
+    "index management",
+    "inverted index",
+    "search index",
+    "indexing logic",
+    "index control",
+    "index state"
+  ],
+  "index_manager_test.go": [
+    "index manager tests",
+    "unit tests",
+    "index management testing",
+    "test coverage",
+    "index validation"
+  ],
+  "indexer.go": [
+    "indexing",
+    "document indexing",
+    "build index",
+    "index creation",
+    "indexer logic",
+    "index builder"
+  ],
+  "indexer_test.go": [
+    "indexer tests",
+    "unit tests",
+    "indexing testing",
+    "test coverage",
+    "index validation"
+  ],
+  "io_atomic.go": [
+    "atomic file operations",
+    "safe writes",
+    "file i/o",
+    "concurrent file access",
+    "atomic writes",
+    "file integrity"
+  ],
+  "llama-3.1-8b-instruct-flex4-8-4x15.md": [
+    "model results",
+    "benchmark",
+    "experiment",
+    "evaluation output",
+    "performance data",
+    "llm output"
+  ],
+  "llm-tests": [
+    "llm experiments",
+    "model tests",
+    "ai evaluation",
+    "language model benchmarks",
+    "test suite",
+    "evaluation scripts"
+  ],
+  "logger.go": [
+    "logging",
+    "log output",
+    "debug messages",
+    "log configuration",
+    "log levels",
+    "log writer"
+  ],
+  "main.go": [
+    "entry point",
+    "program start",
+    "main function",
+    "application launch",
+    "core logic",
+    "main module"
+  ],
+  "main_test.go": [
+    "test",
+    "unit test",
+    "integration test",
+    "test runner",
+    "test suite",
+    "verification",
+    "validation",
+    "testing",
+    "test cases",
+    "go test"
+  ],
+  "memory_search_client.go": [
+    "memory client",
+    "search client",
+    "retrieval client",
+    "query client",
+    "client interface",
+    "memory lookup",
+    "database client",
+    "search service",
+    "client stub"
+  ],
+  "memory_search_server.go": [
+    "memory server",
+    "search server",
+    "retrieval server",
+    "query server",
+    "server implementation",
+    "memory service",
+    "search backend",
+    "database server",
+    "inference server"
+  ],
+  "memory_search_server_test.go": [
+    "server test",
+    "integration test",
+    "server validation",
+    "search server test",
+    "memory server test",
+    "endpoint test",
+    "service test"
+  ],
+  "meta-llama": [
+    "llama",
+    "meta ai",
+    "large language model",
+    "llm",
+    "meta model",
+    "llama model",
+    "ai model",
+    "transformer",
+    "meta"
+  ],
+  "mistral-nemo-flex4-8-4x15.md": [
+    "mistral nemo",
+    "model card",
+    "model documentation",
+    "flex model",
+    "4x15",
+    "model specs",
+    "architecture notes"
+  ],
+  "mistralai": [
+    "mistral",
+    "ai company",
+    "mistral model",
+    "llm provider",
+    "language model",
+    "mistral api",
+    "mistral models"
+  ],
+  "node.go": [
+    "node",
+    "tree node",
+    "vertex",
+    "element",
+    "data node",
+    "graph node",
+    "linked list node",
+    "container"
+  ],
+  "node_mutation.go": [
+    "node update",
+    "node modify",
+    "node change",
+    "edit node",
+    "node transformation",
+    "node mutation",
+    "alter node",
+    "node manipulation"
+  ],
+  "node_test.go": [
+    "node test",
+    "unit test",
+    "node validation",
+    "node testing",
+    "test cases",
+    "node verification"
+  ],
+  "openai": [
+    "openai",
+    "gpt",
+    "chatgpt",
+    "language model",
+    "ai api",
+    "llm",
+    "openai api",
+    "ai provider"
+  ],
+  "openrouter.go": [
+    "llm router",
+    "api gateway",
+    "model router",
+    "proxy",
+    "load balancer",
+    "routing service",
+    "llm proxy",
+    "open router"
+  ],
+  "openrouter_test.go": [
+    "router test",
+    "integration test",
+    "api test",
+    "openrouter test",
+    "routing test",
+    "gateway test"
+  ],
+  "paths.go": [
+    "file path",
+    "path",
+    "path handling",
+    "path utilities",
+    "file system path",
+    "path manipulation",
+    "path resolution",
+    "absolute path",
+    "relative path",
+    "path parsing"
+  ],
+  "paths_test.go": [
+    "path test",
+    "unit test",
+    "path validation",
+    "path testing",
+    "path tests"
+  ],
+  "qwen": [
+    "qwen models",
+    "qwen ai",
+    "qwen llm",
+    "qwen language model",
+    "qwen repository",
+    "qwen project",
+    "qwen variants"
+  ],
+  "qwen3-32b-flex4-8-2x15.md": [
+    "model spec",
+    "model config",
+    "model parameters",
+    "architecture",
+    "variant documentation",
+    "deployment config",
+    "32b model detail"
+  ],
+  "qwen3-32b-flex4-8-4x15.md": [
+    "another variant spec",
+    "model config file",
+    "4x15 variant",
+    "alternative model",
+    "model description",
+    "variant 2 doc"
+  ],
+  "qwen3.5-0.8b-flex4-8-4x15.md": [
+    "0.8b model spec",
+    "small model config",
+    "flex variant",
+    "lightweight model",
+    "model spec small",
+    "fast model doc"
+  ],
+  "qwen3.5-0.8b.md": [
+    "base model",
+    "0.8b base",
+    "model card",
+    "model summary",
+    "model readme",
+    "default config",
+    "small model readme"
+  ],
+  "qwen3.5-2b.md": [
+    "2b model",
+    "medium model",
+    "model spec 2b",
+    "model description",
+    "config file",
+    "model parameters",
+    "2b variant doc"
+  ],
+  "qwen3.5-4b.md": [
+    "4b model",
+    "larger model",
+    "model spec 4b",
+    "model description",
+    "config",
+    "parameters",
+    "4b variant doc"
+  ],
+  "results": [
+    "output",
+    "benchmarks",
+    "evaluation results",
+    "test outputs",
+    "performance data",
+    "metrics",
+    "logs"
+  ],
+  "runtime_state.go": [
+    "runtime management",
+    "state handling",
+    "app state",
+    "current state",
+    "runtime variables",
+    "live state",
+    "execution context",
+    "state manager"
+  ],
+  "runtime_state_test.go": [
+    "unit test",
+    "state test",
+    "runtime tests",
+    "test coverage",
+    "verification",
+    "testing runtime",
+    "state unit tests"
+  ],
+  "search.go": [
+    "query",
+    "find",
+    "lookup",
+    "search function",
+    "search logic",
+    "information retrieval",
+    "search engine",
+    "search implementation"
+  ],
+  "search_summary.go": [
+    "search results summary",
+    "result aggregation",
+    "search output",
+    "summary logic",
+    "search metrics",
+    "search report",
+    "summary function"
+  ],
+  "search_summary_test.go": [
+    "search summary test",
+    "unit test",
+    "test search output",
+    "verification tests",
+    "summary coverage",
+    "testing summary"
+  ],
+  "search_test.go": [
+    "search test",
+    "query tests",
+    "search unit tests",
+    "test search logic",
+    "search verification",
+    "testing search"
+  ],
+  "signals.go": [
+    "signal handler",
+    "os signals",
+    "interrupt",
+    "shutdown",
+    "graceful exit",
+    "event listener",
+    "signal processing",
+    "termination handling"
+  ],
+  "storage.go": [
+    "persistence",
+    "data store",
+    "disk i/o",
+    "save/load",
+    "file operations",
+    "database",
+    "repository",
+    "backing store"
+  ],
+  "storage_test.go": [
+    "storage tests",
+    "persistence testing",
+    "data store validation",
+    "save/load tests",
+    "file i/o tests"
+  ],
+  "symbols.go": [
+    "tokens",
+    "identifiers",
+    "symbol table",
+    "labels",
+    "names",
+    "signatures",
+    "representations"
+  ],
+  "synonyms.go": [
+    "thesaurus",
+    "word replacement",
+    "alternatives",
+    "similar words",
+    "lexical lookup",
+    "semantic mapping",
+    "paraphrase"
+  ],
+  "synonyms_test.go": [
+    "synonyms tests",
+    "thesaurus testing",
+    "word replacement tests",
+    "synonym validation",
+    "alternatives tests"
+  ],
+  "test_synonyms.py": [
+    "python synonyms test",
+    "integration test",
+    "synonyms script",
+    "test harness",
+    "synonyms checker"
+  ],
+  "toml_test.go": [
+    "toml parser tests",
+    "configuration tests",
+    "toml validation",
+    "config file tests",
+    "format testing"
+  ],
+  "watch_helpers.go": [
+    "file watcher",
+    "filesystem monitor",
+    "event listener",
+    "change detection",
+    "fsnotify helpers",
+    "directory observer",
+    "watch utilities"
+  ],
+  "watch_test.go": [
+    "watch tests",
+    "file monitoring tests",
+    "event watcher tests",
+    "filesystem event tests",
+    "observer tests"
+  ]
+}

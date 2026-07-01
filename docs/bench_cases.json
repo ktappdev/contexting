@@ -1,0 +1,350 @@
+{
+  "version": 2,
+  "categories": {
+    "path-intent": {
+      "description": "Find file by describing path/location purpose. Tests fuzzy path matching.",
+      "cases": [
+        {
+          "query": "where is the search scoring logic",
+          "expect_any": ["search.go"],
+          "description": "Search scoring logic is in the file literally named search.go",
+          "find_pattern": "search.go",
+          "grep_pattern": "SearchHints|SearchResult"
+        },
+        {
+          "query": "file that handles the http endpoint for live search",
+          "expect_any": ["memory_search_server.go"],
+          "description": "Memory search server implements the HTTP endpoint in watch mode",
+          "find_pattern": "memory_search_server.go",
+          "grep_pattern": "http.Listen|ServeMux"
+        },
+        {
+          "query": "where symbol extraction is implemented",
+          "expect_any": ["symbols.go"],
+          "description": "symbols.go extracts code symbols from multiple languages",
+          "find_pattern": "symbols.go",
+          "grep_pattern": "extractSymbols|extractGoSymbols"
+        },
+        {
+          "query": "configuration template generation",
+          "expect_any": ["config_template.go"],
+          "description": "TOML config template generation lives in config_template.go",
+          "find_pattern": "config_template.go",
+          "grep_pattern": "configTemplate|GenerateConfigTemplate"
+        },
+        {
+          "query": "doctor command that checks project health",
+          "expect_any": ["doctor.go"],
+          "description": "Doctor command and health checks are in doctor.go",
+          "find_pattern": "doctor.go",
+          "grep_pattern": "RunDoctor|DoctorReport"
+        },
+        {
+          "query": "where the eval scoring metrics are calculated",
+          "expect_any": ["eval.go"],
+          "description": "Eval metrics like MRR and hit@k are computed in eval.go",
+          "find_pattern": "eval.go",
+          "grep_pattern": "EvaluateSearch|firstMatchRank"
+        },
+        {
+          "query": "runtime state persistence for watch mode",
+          "expect_any": ["runtime_state.go"],
+          "description": "Watch runtime state is saved and loaded in runtime_state.go",
+          "find_pattern": "runtime_state.go",
+          "grep_pattern": "RuntimeState|SaveRuntimeState"
+        },
+        {
+          "query": "atomic file write helper",
+          "expect_any": ["io_atomic.go"],
+          "description": "Atomic writes via temp+rename are in io_atomic.go",
+          "find_pattern": "io_atomic.go",
+          "grep_pattern": "WriteFileAtomic|atomic"
+        }
+      ]
+    },
+    "symbol-lookup": {
+      "description": "Find file by function/type name. Tests symbol extraction.",
+      "cases": [
+        {
+          "query": "BuildIndex function",
+          "expect_any": ["indexer.go"],
+          "description": "BuildIndex orchestrates tree building and LLM synonym generation",
+          "find_pattern": "indexer.go",
+          "grep_pattern": "func BuildIndex"
+        },
+        {
+          "query": "SearchHintsWithOptions",
+          "expect_any": ["search.go"],
+          "description": "SearchHintsWithOptions is the main search function",
+          "find_pattern": "search.go",
+          "grep_pattern": "func SearchHintsWithOptions"
+        },
+        {
+          "query": "GenerateSynonymsBatchWithContext",
+          "expect_any": ["openrouter.go"],
+          "description": "LLM synonym batch generation with context support",
+          "find_pattern": "openrouter.go",
+          "grep_pattern": "func GenerateSynonymsBatchWithContext"
+        },
+        {
+          "query": "type Node struct",
+          "expect_any": ["node.go"],
+          "description": "Node struct is the core data model in node.go",
+          "find_pattern": "node.go",
+          "grep_pattern": "type Node struct"
+        },
+        {
+          "query": "BuildIgnoreMap",
+          "expect_any": ["ignore.go"],
+          "description": "BuildIgnoreMap constructs the ignore map from defaults and extras",
+          "find_pattern": "ignore.go",
+          "grep_pattern": "func BuildIgnoreMap"
+        },
+        {
+          "query": "RunDoctor",
+          "expect_any": ["doctor.go"],
+          "description": "RunDoctor executes health checks and returns a report",
+          "find_pattern": "doctor.go",
+          "grep_pattern": "func RunDoctor"
+        },
+        {
+          "query": "SummarizeDirectories",
+          "expect_any": ["search_summary.go"],
+          "description": "SummarizeDirectories groups search results by directory",
+          "find_pattern": "search_summary.go",
+          "grep_pattern": "func SummarizeDirectories"
+        }
+      ]
+    },
+    "concept-synonym": {
+      "description": "Conceptual queries where code uses different terminology. Tests LLM synonym expansion.",
+      "cases": [
+        {
+          "query": "how to make the initial project setup",
+          "expect_any": ["command_init.go"],
+          "description": "init command is synonymous with project setup",
+          "find_pattern": "command_init.go",
+          "grep_pattern": "init command|Init"
+        },
+        {
+          "query": "code that finds synonyms for file names",
+          "expect_any": ["openrouter.go"],
+          "description": "openrouter.go uses LLM to generate synonyms for file names",
+          "find_pattern": "openrouter.go",
+          "grep_pattern": "GenerateSynonymsForNames|synonym"
+        },
+        {
+          "query": "where ignored files are filtered out",
+          "expect_any": ["ignore.go"],
+          "description": "ignore.go filters paths based on default and config ignore rules",
+          "find_pattern": "ignore.go",
+          "grep_pattern": "shouldIgnorePath|BuildIgnoreMap"
+        },
+        {
+          "query": "live code search server",
+          "expect_any": ["memory_search_server.go"],
+          "description": "memory_search_server.go provides live search during watch",
+          "find_pattern": "memory_search_server.go",
+          "grep_pattern": "memorySearch|ServeHTTP"
+        },
+        {
+          "query": "configuration startup wizard",
+          "expect_any": ["config_bootstrap.go"],
+          "description": "config_bootstrap.go creates the starter config interactively",
+          "find_pattern": "config_bootstrap.go",
+          "grep_pattern": "WriteStarterConfig|bootstrap"
+        },
+        {
+          "query": "how search results are ranked",
+          "expect_any": ["search.go"],
+          "description": "search.go scores tokens against paths, synonyms, and symbols",
+          "find_pattern": "search.go",
+          "grep_pattern": "score|tokenize"
+        },
+        {
+          "query": "benchmark comparison between engines",
+          "expect_any": ["bench_engine.go"],
+          "description": "bench_engine.go implements find, grep, and contexting search engines",
+          "find_pattern": "bench_engine.go",
+          "grep_pattern": "SearchEngine|EngineResult"
+        },
+        {
+          "query": "cleaning or removing the generated index",
+          "expect_any": ["command_clean.go"],
+          "description": "clean command removes the generated index",
+          "find_pattern": "command_clean.go",
+          "grep_pattern": "clean command|Clean"
+        }
+      ]
+    },
+    "exact-file": {
+      "description": "Exact filename lookup. Baseline — all tools should nail this.",
+      "cases": [
+        {
+          "query": "commands.go",
+          "expect_any": ["commands.go"],
+          "description": "Exact match for commands.go",
+          "find_pattern": "commands.go",
+          "grep_pattern": "commands"
+        },
+        {
+          "query": "storage.go",
+          "expect_any": ["storage.go"],
+          "description": "Exact match for storage.go",
+          "find_pattern": "storage.go",
+          "grep_pattern": "ContextIndex"
+        },
+        {
+          "query": "main.go",
+          "expect_any": ["main.go"],
+          "description": "Exact match for main.go",
+          "find_pattern": "main.go",
+          "grep_pattern": "func main"
+        },
+        {
+          "query": "config.go",
+          "expect_any": ["config.go"],
+          "description": "Exact match for config.go",
+          "find_pattern": "config.go",
+          "grep_pattern": "ContextingConfig"
+        },
+        {
+          "query": "logger.go",
+          "expect_any": ["logger.go"],
+          "description": "Exact match for logger.go",
+          "find_pattern": "logger.go",
+          "grep_pattern": "logInfof|logErrorf"
+        },
+        {
+          "query": "errors.go",
+          "expect_any": ["errors.go"],
+          "description": "Exact match for errors.go",
+          "find_pattern": "errors.go",
+          "grep_pattern": "type.*Error"
+        },
+        {
+          "query": "signals.go",
+          "expect_any": ["signals.go"],
+          "description": "Exact match for signals.go",
+          "find_pattern": "signals.go",
+          "grep_pattern": "signal|Notify"
+        },
+        {
+          "query": "node_mutation.go",
+          "expect_any": ["node_mutation.go"],
+          "description": "Exact match for node_mutation.go",
+          "find_pattern": "node_mutation.go",
+          "grep_pattern": "UpsertNode|RemoveNode"
+        }
+      ]
+    },
+    "narrow-scope": {
+      "description": "Queries requiring noise filtering. Tests precision.",
+      "cases": [
+        {
+          "query": "status command that reports index health",
+          "expect_any": ["command_status.go"],
+          "description": "command_status.go reports status, not doctor.go or eval.go",
+          "find_pattern": "command_status.go",
+          "grep_pattern": "StatusReport|RunStatus"
+        },
+        {
+          "query": "eval report formatting not the eval scoring",
+          "expect_any": ["eval_report.go"],
+          "description": "eval_report.go formats results, while eval.go scores them",
+          "find_pattern": "eval_report.go",
+          "grep_pattern": "EvalReport|FormatEval"
+        },
+        {
+          "query": "search summary formatting",
+          "expect_any": ["search_summary.go"],
+          "description": "search_summary.go formats grouped search results, distinct from search.go",
+          "find_pattern": "search_summary.go",
+          "grep_pattern": "DirectorySummary|SummarizeDirectories"
+        },
+        {
+          "query": "bench report formatting",
+          "expect_any": ["bench_report.go"],
+          "description": "bench_report.go formats benchmark reports, not bench_engine.go",
+          "find_pattern": "bench_report.go",
+          "grep_pattern": "BenchOutput|BenchReport"
+        },
+        {
+          "query": "watch mode index manager",
+          "expect_any": ["index_manager.go"],
+          "description": "index_manager.go manages the in-memory index during watch, not command_watch.go",
+          "find_pattern": "index_manager.go",
+          "grep_pattern": "IndexManager|ApplyChange"
+        },
+        {
+          "query": "shared flags used by multiple commands",
+          "expect_any": ["command_shared.go"],
+          "description": "command_shared.go defines CommonFlags used across commands",
+          "find_pattern": "command_shared.go",
+          "grep_pattern": "CommonFlags"
+        },
+        {
+          "query": "TOML configuration loader",
+          "expect_any": ["config.go"],
+          "description": "config.go loads TOML config, distinct from config_bootstrap.go",
+          "find_pattern": "config.go",
+          "grep_pattern": "LoadContextingConfig"
+        }
+      ]
+    },
+    "vague-intent": {
+      "description": "Conceptual queries with no obvious keyword match. Tests conceptual search.",
+      "cases": [
+        {
+          "query": "how does this tool know what files to skip",
+          "expect_any": ["ignore.go"],
+          "description": "Conceptual query about ignore logic",
+          "find_pattern": "ignore.go",
+          "grep_pattern": "shouldIgnorePath|ignore"
+        },
+        {
+          "query": "entry point when the program starts",
+          "expect_any": ["main.go"],
+          "description": "Conceptual query for the CLI entry point",
+          "find_pattern": "main.go",
+          "grep_pattern": "func main"
+        },
+        {
+          "query": "how the tool decides which results come first",
+          "expect_any": ["search.go"],
+          "description": "Conceptual query about ranking logic",
+          "find_pattern": "search.go",
+          "grep_pattern": "score|SearchHintsWithOptions"
+        },
+        {
+          "query": "persistent storage for the precomputed index",
+          "expect_any": ["storage.go"],
+          "description": "Conceptual query about saving/loading the index",
+          "find_pattern": "storage.go",
+          "grep_pattern": "SaveContextIndex|LoadContextIndex"
+        },
+        {
+          "query": "where the command definitions are registered",
+          "expect_any": ["commands.go"],
+          "description": "Conceptual query for command registration",
+          "find_pattern": "commands.go",
+          "grep_pattern": "NewRootCommand|AddCommand"
+        },
+        {
+          "query": "how the index is updated when files change",
+          "expect_any": ["node_mutation.go"],
+          "description": "Conceptual query about in-place index updates",
+          "find_pattern": "node_mutation.go",
+          "grep_pattern": "UpsertNode|RemoveNode"
+        },
+        {
+          "query": "where the LLM integration lives",
+          "expect_any": ["openrouter.go"],
+          "description": "Conceptual query for LLM synonym generation integration",
+          "find_pattern": "openrouter.go",
+          "grep_pattern": "OpenRouter|GenerateSynonyms"
+        }
+      ]
+    }
+  }
+}

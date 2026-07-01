@@ -52,6 +52,7 @@ func NewRootCommand() *cobra.Command {
 	rootCmd.AddCommand(newWatchCommand())
 	rootCmd.AddCommand(newSearchCommand())
 	rootCmd.AddCommand(newEvalCommand())
+	rootCmd.AddCommand(newBenchCommand())
 	rootCmd.AddCommand(newDoctorCommand())
 	rootCmd.AddCommand(newConfigCommand())
 	rootCmd.AddCommand(newSyncCommand())

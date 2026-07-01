@@ -139,6 +139,8 @@ func newWatchCommand() *cobra.Command {
 				Model:           llmModel,
 				BatchSize:       flags.BatchSize,
 				SynonymsPerName: flags.SynonymsPerName,
+				SynonymsMin:     flags.SynonymsMin,
+				SynonymsMax:     flags.SynonymsMax,
 				APIKey:          llmKey,
 				UseLLM:          llmOnWatch,
 				MaxBatchSize:    maxBatchSize,
@@ -369,6 +371,8 @@ func newWatchCommand() *cobra.Command {
 	cmd.Flags().IntVar(&flags.BatchSize, "batch-size", 0, "Names per LLM request (0 = send all, legacy option)")
 	cmd.Flags().IntVar(&maxBatchSize, "max-batch-size", 0, "Maximum names per LLM request (0 = send all at once, default)")
 	cmd.Flags().IntVar(&flags.SynonymsPerName, "synonyms", defaultSynonyms, "Desired synonyms per name")
+	cmd.Flags().IntVar(&flags.SynonymsMin, "synonyms-min", 0, "Min synonyms per name (0 = use synonyms value)")
+	cmd.Flags().IntVar(&flags.SynonymsMax, "synonyms-max", 0, "Max synonyms per name (0 = use synonyms value)")
 	cmd.Flags().StringVar(&flags.SynonymCache, "synonym-cache", ".ctx/ctx_cache.json", "Path to persistent synonym cache JSON")
 	cmd.Flags().StringSliceVar(&flags.ExtraIgnores, "ignore", nil, "Additional ignore entries (name or relative path)")
 	cmd.Flags().BoolVarP(&flags.Verbose, "verbose", "v", false, "Enable verbose logging")

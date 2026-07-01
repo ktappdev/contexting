@@ -15,8 +15,9 @@ import (
 )
 
 const (
-	defaultModel           = "meta-llama/llama-3.1-8b-instruct"
-	defaultSynonyms        = 4
+	defaultModel           = "deepseek/deepseek-v4-flash"
+	defaultSynonyms        = 5
+	defaultSynonymsMax     = 12
 	defaultHTTPTimeout     = 45 * time.Second // HTTP client timeout for API requests
 )
 
@@ -55,10 +56,10 @@ func GetAPIKey() (string, error) {
 }
 
 func GenerateSynonymsBatch(names []string, apiKey string, model string, endpoint string, temperature float64, maxTokens int, synonymsPerName int) (SynonymResponse, error) {
-	return GenerateSynonymsBatchWithContext(context.Background(), names, apiKey, model, endpoint, temperature, maxTokens, synonymsPerName, synonymsPerName)
+	return GenerateSynonymsBatchWithContext(context.Background(), names, apiKey, model, endpoint, temperature, maxTokens, synonymsPerName, synonymsPerName, nil)
 }
 
-func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKey string, model string, endpoint string, temperature float64, maxTokens int, synonymsMin int, synonymsMax int) (SynonymResponse, error) {
+func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKey string, model string, endpoint string, temperature float64, maxTokens int, synonymsMin int, synonymsMax int, symbols map[string][]string) (SynonymResponse, error) {
 
 	if len(names) == 0 {
 		return make(SynonymResponse), nil
@@ -70,18 +71,48 @@ func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKe
 		endpoint = defaultEndpoint
 	}
 	if synonymsMax <= 0 {
-		synonymsMax = defaultSynonyms
+		synonymsMax = defaultSynonymsMax
 	}
 	if synonymsMin <= 0 {
 		synonymsMin = synonymsMax
 	}
 
 	systemPrompt := fmt.Sprintf(
-		"You are a helpful assistant. For each folder or file name in the list, generate %d to %d plausible alternative words or short phrases a developer might use when searching for that file in a codebase. Aim for as many as you can, but at least %d and no more than %d. Return ONLY a valid JSON object where each key is an exact filename from the input list and each value is an array of synonym strings. Example: {\"auth.go\": [\"login\", \"authentication\", \"session\"]}. No markdown, no prose, no extra text.",
+		"You are a code search expert. Given source code file and folder names from a software project, generate %d to %d conceptual synonyms for each — words a developer might type when searching for that file WITHOUT knowing its exact name.\n\n"+
+			"Think about WHAT THE FILE DOES, not just what it's called. Include:\n"+
+			"- Functional purpose (what the code handles)\n"+
+			"- Related concepts (terms developers associate with this functionality)\n"+
+			"- Alternative vocabulary (different words for the same concept)\n"+
+			"- Action verbs (what a developer would DO with this code — e.g. \"authenticate\", \"filter\", \"parse\", \"validate\")\n\n"+
+			"The input includes code symbols for each file (in brackets). Use these symbols to understand what the code actually does, and generate synonyms based on the file's real purpose — not just the filename word.\n\n"+
+			"Do NOT include: word variations of the filename, misspellings, file extensions, or trivial modifications.\n"+
+			"Do NOT replace noun synonyms with verb synonyms — include BOTH nouns and verbs.\n\n"+
+			"Examples:\n"+
+			"{\"auth.go\": [\"login\", \"authentication\", \"session\", \"credentials\", \"signin\", \"access control\", \"identity\"]}\n"+
+			"{\"ignore.go\": [\"skip\", \"exclude\", \"filter\", \"block\", \"deny list\", \"whitelist\", \"blacklist\", \"ignore patterns\", \"omit\", \"suppress\"]}\n"+
+			"{\"openrouter.go\": [\"llm\", \"ai model\", \"api client\", \"chat completion\", \"language model\", \"inference\", \"synonym generation\"]}\n"+
+			"{\"index_manager.go\": [\"index\", \"cache\", \"snapshot\", \"search state\", \"live index\", \"in-memory index\", \"persistence\"]}\n"+
+			"{\"watch_helpers.go\": [\"file monitor\", \"fsnotify\", \"file changes\", \"watcher\", \"event handler\", \"live updates\", \"filesystem events\"]}\n"+
+			"{\"handler.go\": [\"process request\", \"handle\", \"serve\", \"respond\", \"route\", \"dispatch\", \"receive\", \"accept\"]}\n\n"+
+			"Return ONLY a valid JSON object where each key is an exact filename from the input list and each value is an array of synonym strings. Generate between %d and %d synonyms per name. No markdown, no prose, no extra text.",
 		synonymsMin, synonymsMax,
 		synonymsMin, synonymsMax,
 	)
-	userContent := fmt.Sprintf("File and folder names:\n%s", strings.Join(names, "\n"))
+
+	// Build user content with symbols when available
+	var lines []string
+	for _, name := range names {
+		if syns, ok := symbols[name]; ok && len(syns) > 0 {
+			// Cap symbols at 10 per file to avoid excessive token use
+			if len(syns) > 10 {
+				syns = syns[:10]
+			}
+			lines = append(lines, fmt.Sprintf("%s [symbols: %s]", name, strings.Join(syns, ", ")))
+		} else {
+			lines = append(lines, name)
+		}
+	}
+	userContent := fmt.Sprintf("File and folder names with their code symbols:\n%s", strings.Join(lines, "\n"))
 
 	reqBody := OpenRouterRequest{
 		Model: model,
@@ -158,10 +189,10 @@ func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKe
 }
 
 func GenerateSynonymsForNames(names []string, apiKey string, batchSize int, model string, endpoint string, temperature float64, maxTokens int, synonymsMin int, synonymsMax int) (SynonymResponse, error) {
-	return GenerateSynonymsForNamesWithContext(context.Background(), names, apiKey, batchSize, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax, 1)
+	return GenerateSynonymsForNamesWithContext(context.Background(), names, apiKey, batchSize, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax, 1, nil)
 }
 
-func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, apiKey string, batchSize int, model string, endpoint string, temperature float64, maxTokens int, synonymsMin int, synonymsMax int, parallelLimit int) (SynonymResponse, error) {
+func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, apiKey string, batchSize int, model string, endpoint string, temperature float64, maxTokens int, synonymsMin int, synonymsMax int, parallelLimit int, symbols map[string][]string) (SynonymResponse, error) {
 	if len(names) == 0 {
 		return make(SynonymResponse), nil
 	}
@@ -169,7 +200,7 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 		model = defaultModel
 	}
 	if synonymsMax <= 0 {
-		synonymsMax = defaultSynonyms
+		synonymsMax = defaultSynonymsMax
 	}
 	if synonymsMin <= 0 {
 		synonymsMin = synonymsMax
@@ -189,7 +220,7 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 	}
 	if batchSize >= len(names) {
 		fmt.Printf("  Synonyms: processing %d names...\n", len(names))
-		return GenerateSynonymsBatchWithContext(ctx, names, apiKey, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax)
+		return GenerateSynonymsBatchWithContext(ctx, names, apiKey, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax, symbols)
 	}
 
 	totalBatches := (len(names) + batchSize - 1) / batchSize
@@ -207,14 +238,23 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 		if end > len(names) {
 			end = len(names)
 		}
+		batchNames := names[i:end]
+
+		// Filter symbols map for this batch
+		batchSymbols := make(map[string][]string)
+		for _, name := range batchNames {
+			if syns, ok := symbols[name]; ok {
+				batchSymbols[name] = syns
+			}
+		}
 
 		wg.Add(1)
-		go func(batchNum int, batch []string) {
+		go func(batchNum int, batchNames []string, batchSymbols map[string][]string) {
 			defer wg.Done()
 			sem <- struct{}{}
 			defer func() { <-sem }()
 
-			synonyms, err := GenerateSynonymsBatchWithContext(ctx, batch, apiKey, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax)
+			synonyms, err := GenerateSynonymsBatchWithContext(ctx, batchNames, apiKey, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax, batchSymbols)
 			if err != nil {
 				fmt.Printf("  ⚠ Synonyms: batch %d/%d failed: %v\n", batchNum, totalBatches, err)
 				return
@@ -225,8 +265,8 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 			}
 			mu.Unlock()
 			atomic.AddInt32(&completed, 1)
-			fmt.Printf("  Synonyms: batch %d/%d done (%d names)\n", batchNum, totalBatches, len(batch))
-		}(batchNum, names[i:end])
+			fmt.Printf("  Synonyms: batch %d/%d done (%d names)\n", batchNum, totalBatches, len(batchNames))
+		}(batchNum, batchNames, batchSymbols)
 	}
 	wg.Wait()
 	fmt.Printf("  Synonyms: %d names processed\n", len(result))

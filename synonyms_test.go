@@ -39,3 +39,9 @@ func TestSanitizeSynonymsDropsAllLowSignalPhrase(t *testing.T) {
 		t.Fatalf("expected only high-signal synonym, got %v", out)
 	}
 }
+
+func TestDefaultSynonymsMax(t *testing.T) {
+	if defaultSynonymsMax != 12 {
+		t.Fatalf("expected defaultSynonymsMax to be 12, got %d", defaultSynonymsMax)
+	}
+}

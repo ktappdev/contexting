@@ -55,7 +55,7 @@ func newEvalCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			cases, err := LoadEvalCases(casesPath)
+			cases, err := LoadCasesAuto(casesPath)
 			if err != nil {
 				return err
 			}

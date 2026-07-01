@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
-	"sync"
 	"time"
 )
 
@@ -49,6 +48,15 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 	}
 	if opts.SynonymsPerName <= 0 {
 		opts.SynonymsPerName = defaultSynonyms
+	}
+	if opts.SynonymsMin <= 0 {
+		opts.SynonymsMin = opts.SynonymsPerName
+	}
+	if opts.SynonymsMax <= 0 {
+		opts.SynonymsMax = defaultSynonymsMax
+	}
+	if opts.SynonymsMin > opts.SynonymsMax {
+		opts.SynonymsMin = opts.SynonymsMax
 	}
 	if opts.IgnoredPaths == nil {
 		opts.IgnoredPaths = BuildIgnoreMap(nil)
@@ -115,58 +123,54 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 		}
 	}
 
-	// Parallel execution of synonym generation and symbol extraction
-	var wg sync.WaitGroup
+	// Sequential execution: extract symbols FIRST, then generate synonyms with symbols context
 	var symbolCount int
 
-	// Goroutine A: Synonym generation
-	if runSynonyms {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			batchSize := opts.MaxBatchSize
-			if batchSize <= 0 {
-				batchSize = opts.BatchSize
+	// Step 1: Extract symbols (local, fast)
+	count := 0
+	walkTree(tree, func(node *Node) {
+		if node == tree || node.Type != "file" {
+			return
+		}
+		syms, err := extractSymbols(node.FullPath)
+		if err != nil {
+			return
+		}
+		node.Symbols = syms
+		count++
+		if count%100 == 0 && opts.Verbose {
+			fmt.Printf("\r  Extracting symbols: %d/%d files...", count, stats.TotalFiles)
+		}
+	})
+	symbolCount = count
+
+	// Step 2: Build symbols map for LLM context
+	symbolsMap := make(map[string][]string)
+	walkTree(tree, func(node *Node) {
+		if node.Type == "file" && len(node.Symbols) > 0 {
+			name := filepath.Base(node.FullPath)
+			symbolsMap[name] = node.Symbols
+		}
+	})
+
+	// Step 3: Generate synonyms with symbols context
+	if runSynonyms && opts.APIKey != "" && len(missing) > 0 {
+		batchSize := opts.MaxBatchSize
+		if batchSize <= 0 {
+			batchSize = opts.BatchSize
+		}
+		generated, err := GenerateSynonymsForNamesWithContext(opts.Ctx, missing, opts.APIKey, batchSize, opts.Model, opts.Endpoint, opts.Temperature, opts.MaxTokens, opts.SynonymsMin, opts.SynonymsMax, opts.ParallelRequests, symbolsMap)
+		if err != nil {
+			synonymErr = err
+		} else {
+			for name, values := range generated {
+				combined[name] = sanitizeSynonyms(values, opts.SynonymsMax)
 			}
-			if opts.APIKey != "" && len(missing) > 0 {
-				generated, err := GenerateSynonymsForNamesWithContext(opts.Ctx, missing, opts.APIKey, batchSize, opts.Model, opts.Endpoint, opts.Temperature, opts.MaxTokens, opts.SynonymsMin, opts.SynonymsMax, opts.ParallelRequests)
-				if err != nil {
-					synonymErr = err
-				} else {
-					for name, values := range generated {
-						combined[name] = sanitizeSynonyms(values, opts.SynonymsPerName)
-					}
-				}
-			}
-		}()
+		}
 	}
 
-	// Goroutine B: Symbol extraction
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		count := 0
-		walkTree(tree, func(node *Node) {
-			if node == tree || node.Type != "file" {
-				return
-			}
-			syms, err := extractSymbols(node.FullPath)
-			if err != nil {
-				return
-			}
-			node.Symbols = syms
-			count++
-			if count%100 == 0 && opts.Verbose {
-				fmt.Printf("\r  Extracting symbols: %d/%d files...", count, stats.TotalFiles)
-			}
-		})
-		symbolCount = count
-	}()
-
-	wg.Wait()
-
 	// Assign synonyms after goroutines complete
-	AssignSynonymsToTree(tree, combined, opts.SynonymsPerName)
+	AssignSynonymsToTree(tree, combined, opts.SynonymsMax)
 
 	fmt.Printf("✓ Generated synonyms for %d names\n", len(names))
 	fmt.Printf("✓ Extracted symbols from %d files\n", symbolCount)

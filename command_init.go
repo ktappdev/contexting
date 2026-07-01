@@ -101,15 +101,15 @@ func newInitCommand() *cobra.Command {
 				Model:            llmModel,
 				BatchSize:        flags.BatchSize,
 				SynonymsPerName:  flags.SynonymsPerName,
-			SynonymsMin:      flags.SynonymsMin,
-			SynonymsMax:      flags.SynonymsMax,
+				SynonymsMin:      flags.SynonymsMin,
+				SynonymsMax:      flags.SynonymsMax,
 				SynonymCache:     cache,
 				MaxBatchSize:     cfg.Watch.MaxBatchSize,
 				Endpoint:         llmEndpoint,
 				Temperature:      llmTemp,
 				MaxTokens:        llmMaxTokens,
 				ParallelRequests: cfg.LLM.ParallelRequests,
-			Verbose:          flags.Verbose,
+				Verbose:          flags.Verbose,
 			})
 			if err != nil {
 				return err

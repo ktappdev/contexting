@@ -82,6 +82,15 @@ func NewIndexManager(opts IndexManagerOptions) *IndexManager {
 	if opts.SynonymsPerName <= 0 {
 		opts.SynonymsPerName = defaultSynonyms
 	}
+	if opts.SynonymsMin <= 0 {
+		opts.SynonymsMin = opts.SynonymsPerName
+	}
+	if opts.SynonymsMax <= 0 {
+		opts.SynonymsMax = defaultSynonymsMax
+	}
+	if opts.SynonymsMin > opts.SynonymsMax {
+		opts.SynonymsMin = opts.SynonymsMax
+	}
 	if opts.IgnoredPaths == nil {
 		opts.IgnoredPaths = BuildIgnoreMap(nil)
 	}
@@ -219,7 +228,7 @@ func (m *IndexManager) Bootstrap(ctx context.Context) (IndexStats, error) {
 					node, exists := snapPaths[relPath]
 					if !exists {
 						// New file/dir not in snapshot
-						if upsertNodeByRelPath(m.index.Tree, absRoot, relPath, entry.isDir, entry.mtime, m.cache, m.synonymsPerName) {
+						if upsertNodeByRelPath(m.index.Tree, absRoot, relPath, entry.isDir, entry.mtime, m.cache, m.synonymsMax) {
 							changesDetected = true
 							newCount++
 							if !entry.isDir {
@@ -234,7 +243,7 @@ func (m *IndexManager) Bootstrap(ctx context.Context) (IndexStats, error) {
 					// Check type mismatch (dir↔file)
 					nodeIsDir := node.Type == "directory"
 					if nodeIsDir != entry.isDir {
-						if upsertNodeByRelPath(m.index.Tree, absRoot, relPath, entry.isDir, entry.mtime, m.cache, m.synonymsPerName) {
+						if upsertNodeByRelPath(m.index.Tree, absRoot, relPath, entry.isDir, entry.mtime, m.cache, m.synonymsMax) {
 							changesDetected = true
 							modifiedCount++
 						}
@@ -242,7 +251,7 @@ func (m *IndexManager) Bootstrap(ctx context.Context) (IndexStats, error) {
 					}
 					// Check modified file (mtime changed)
 					if !entry.isDir && entry.mtime > 0 && entry.mtime != node.ModTime {
-						if upsertNodeByRelPath(m.index.Tree, absRoot, relPath, entry.isDir, entry.mtime, m.cache, m.synonymsPerName) {
+						if upsertNodeByRelPath(m.index.Tree, absRoot, relPath, entry.isDir, entry.mtime, m.cache, m.synonymsMax) {
 							changesDetected = true
 							modifiedCount++
 						}
@@ -278,7 +287,7 @@ func (m *IndexManager) Bootstrap(ctx context.Context) (IndexStats, error) {
 		APIKey:          m.activeAPIKey(),
 		Model:           m.model,
 		BatchSize:       m.batchSize,
-		SynonymsPerName: m.synonymsPerName,
+		SynonymsPerName: m.synonymsMax,
 		SynonymsMin:     m.synonymsMin,
 		SynonymsMax:     m.synonymsMax,
 		SynonymCache:    m.cache,
@@ -351,7 +360,7 @@ func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsno
 			continue
 		}
 
-		if upsertNodeByRelPath(m.index.Tree, m.rootPath, relPath, isDir, mtime, m.cache, m.synonymsPerName) {
+		if upsertNodeByRelPath(m.index.Tree, m.rootPath, relPath, isDir, mtime, m.cache, m.synonymsMax) {
 			result.Changed = true
 		}
 
@@ -373,14 +382,25 @@ func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsno
 		}
 		sort.Strings(names)
 
-		synonyms, err := GenerateSynonymsForNamesWithContext(ctx, names, m.activeAPIKey(), m.maxBatchSize, m.model, m.endpoint, m.temperature, m.maxTokens, m.synonymsMin, m.synonymsMax, 1)
+		// Build symbols map for new names
+		symbolsMap := make(map[string][]string)
+		for _, name := range names {
+			// Find the node with this basename and extract its symbols
+			walkTree(m.index.Tree, func(node *Node) {
+				if node.Type == "file" && filepath.Base(node.FullPath) == name && len(node.Symbols) > 0 {
+					symbolsMap[name] = node.Symbols
+				}
+			})
+		}
+
+		synonyms, err := GenerateSynonymsForNamesWithContext(ctx, names, m.activeAPIKey(), m.maxBatchSize, m.model, m.endpoint, m.temperature, m.maxTokens, m.synonymsMin, m.synonymsMax, 1, symbolsMap)
 		if err != nil {
 			result.SynonymError = err
 		} else {
 			for name, values := range synonyms {
-				m.cache[name] = sanitizeSynonyms(values, m.synonymsPerName)
+				m.cache[name] = sanitizeSynonyms(values, m.synonymsMax)
 			}
-			AssignSynonymsToTree(m.index.Tree, m.cache, m.synonymsPerName)
+			AssignSynonymsToTree(m.index.Tree, m.cache, m.synonymsMax)
 			result.Changed = true
 		}
 	}
