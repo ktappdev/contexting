@@ -53,10 +53,6 @@ func printBenchSummary(out BenchOutput) {
 		return
 	}
 
-	if out.IndexLoadMs > 0 {
-		fmt.Printf("Index load: %dms (one-time cost)\n\n", out.IndexLoadMs)
-	}
-
 	for i, c := range out.Cases {
 		printBenchTable(c.Query, out.Results[i])
 	}
@@ -84,6 +80,12 @@ func printBenchSummary(out BenchOutput) {
 		fmt.Println("\n=== Misses ===")
 		for _, m := range out.Misses {
 			fmt.Printf("Query: %q  Engine: %s  Expected: %s\n", m.Query, m.Engine, m.Expected)
+		}
+	}
+	for _, s := range out.Summary {
+		if s.EngineName == "grep" {
+			fmt.Println("\nNote: grep returns alphabetically sorted results, so Hit@1 is near 0% by design. Use recall to evaluate grep content matching.")
+			break
 		}
 	}
 }
@@ -239,15 +241,13 @@ func computeBenchMisses(cases []EvalCase, results [][]EngineResult) []BenchMiss 
 		if strings.TrimSpace(c.Query) == "" || len(c.ExpectAny) == 0 {
 			continue
 		}
-		for _, expected := range c.ExpectAny {
-			for _, res := range results[i] {
-				if !caseMatched(c, res) {
-					misses = append(misses, BenchMiss{
-						Query:    c.Query,
-						Engine:   res.EngineName,
-						Expected: expected,
-					})
-				}
+		for _, res := range results[i] {
+			if !caseMatched(c, res) {
+				misses = append(misses, BenchMiss{
+					Query:    c.Query,
+					Engine:   res.EngineName,
+					Expected: strings.Join(c.ExpectAny, ", "),
+				})
 			}
 		}
 	}
@@ -349,14 +349,15 @@ func printCategoryReport(cases []EvalCase, results [][]EngineResult) {
 	// Print each category
 	for _, report := range categoryReports {
 		fmt.Printf("\nCategory: %s (%d cases)\n\n", report.Category, report.CaseCount)
-		fmt.Printf("%-15s %-7s %-7s %-7s %-10s %-10s %-7s\n", "Tool", "Hit@1", "Hit@3", "Hit@5", "Avg Time", "Avg Tokens", "Noise")
-		fmt.Printf("%-15s %-7s %-7s %-7s %-10s %-10s %-7s\n", "──────────────", "───────", "───────", "───────", "──────────", "──────────", "───────")
+		fmt.Printf("%-15s %-7s %-7s %-7s %-7s %-10s %-10s %-7s\n", "Tool", "Hit@1", "Hit@3", "Hit@5", "Recall", "Avg Time", "Avg Tokens", "Noise")
+		fmt.Printf("%-15s %-7s %-7s %-7s %-7s %-10s %-10s %-7s\n", "──────────────", "───────", "───────", "───────", "───────", "──────────", "──────────", "───────")
 		for _, s := range report.Engines {
-			fmt.Printf("%-15s %-7.2f %-7.2f %-7.2f %-10s %-10d %-7.2f\n",
+			fmt.Printf("%-15s %-7.2f %-7.2f %-7.2f %-7.2f %-10s %-10d %-7.2f\n",
 				s.EngineName,
 				s.HitAt1,
 				s.HitAt3,
 				s.HitAt5,
+				s.Recall*100,
 				fmt.Sprintf("%.0fms", s.AvgTimeMs),
 				int(s.AvgTokens),
 				s.AvgNoiseRatio,
@@ -367,18 +368,25 @@ func printCategoryReport(cases []EvalCase, results [][]EngineResult) {
 	// Print overall summary
 	overallSummaries := computeEngineSummaries(cases, results)
 	fmt.Printf("\n═══ Overall (%d cases) ═══\n\n", len(cases))
-	fmt.Printf("%-15s %-7s %-7s %-7s %-10s %-10s %-7s\n", "Tool", "Hit@1", "Hit@3", "Hit@5", "Avg Time", "Avg Tokens", "Noise")
-	fmt.Printf("%-15s %-7s %-7s %-7s %-10s %-10s %-7s\n", "──────────────", "───────", "───────", "───────", "──────────", "──────────", "───────")
+	fmt.Printf("%-15s %-7s %-7s %-7s %-7s %-10s %-10s %-7s\n", "Tool", "Hit@1", "Hit@3", "Hit@5", "Recall", "Avg Time", "Avg Tokens", "Noise")
+	fmt.Printf("%-15s %-7s %-7s %-7s %-7s %-10s %-10s %-7s\n", "──────────────", "───────", "───────", "───────", "───────", "──────────", "──────────", "───────")
 	for _, s := range overallSummaries {
-		fmt.Printf("%-15s %-7.2f %-7.2f %-7.2f %-10s %-10d %-7.2f\n",
+		fmt.Printf("%-15s %-7.2f %-7.2f %-7.2f %-7.2f %-10s %-10d %-7.2f\n",
 			s.EngineName,
 			s.HitAt1,
 			s.HitAt3,
 			s.HitAt5,
+			s.Recall*100,
 			fmt.Sprintf("%.0fms", s.AvgTimeMs),
 			int(s.AvgTokens),
 			s.AvgNoiseRatio,
 		)
+	}
+	for _, s := range overallSummaries {
+		if s.EngineName == "grep" {
+			fmt.Println("\nNote: grep returns alphabetically sorted results, so Hit@1 is near 0% by design. Use recall to evaluate grep content matching.")
+			break
+		}
 	}
 }
 

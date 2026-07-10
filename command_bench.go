@@ -161,7 +161,15 @@ func newBenchCommand() *cobra.Command {
 			}
 
 			if out.IndexLoadMs >= 0 {
-				fmt.Printf("Index load: %dms (one-time cost)\n\n", out.IndexLoadMs)
+				fmt.Printf("Index load: %dms (one-time cost)\n", out.IndexLoadMs)
+			}
+			if needCtxt {
+				if index.Model != "" {
+					fmt.Printf("Index model: %s\n", index.Model)
+				} else {
+					fmt.Println("Note: No LLM synonyms in index (lexical only)")
+				}
+				fmt.Println()
 			}
 			if byCategory && hasCategories {
 				printCategoryReport(cases, out.Results)
