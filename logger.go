@@ -9,7 +9,11 @@ import (
 const logTimeFormat = "2006-01-02 15:04:05"
 
 func logInfof(format string, args ...any) {
-	logf(os.Stdout, "INFO", format, args...)
+	if logToStderr {
+		logf(os.Stderr, "INFO", format, args...)
+	} else {
+		logf(os.Stdout, "INFO", format, args...)
+	}
 }
 
 func logWarnf(format string, args ...any) {

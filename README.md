@@ -1,5 +1,7 @@
 # Contexting
 
+**The command is `ctxt` — short for Contexting.**
+
 Contexting keeps a live map of your codebase so AI agents can reason about paths without hunting through the filesystem manually. It builds a recursive JSON tree of every folder and file, extracts code symbols (functions, classes, types, variables) using language-specific extractors, attaches LLM-generated synonyms, and exposes ranked search hints plus health tooling.
 
 ## Quick start
@@ -7,9 +9,11 @@ Contexting keeps a live map of your codebase so AI agents can reason about paths
 ```bash
 go install github.com/ktappdev/contexting@latest
 cd your-repo
-contexting init .
-contexting watch .
+ctxt init .
+ctxt watch .
 ```
+
+(The `go install` line above installs a binary named `contexting`; rename it to `ctxt` or use `make install`.)
 
 Set an API key for synonym generation (optional but recommended):
 
@@ -17,13 +21,13 @@ Set an API key for synonym generation (optional but recommended):
 export OPENROUTER_API_KEY="sk-or-v1-..."
 ```
 
-First run creates a `.ctx/ctx_config.toml` config file. Edit it, then press Enter to continue. Subsequent runs use the saved config.
+First run creates a `.ctxt/ctx_config.toml` config file. Edit it, then press Enter to continue. Subsequent runs use the saved config.
 
 ## LLM flexibility
 
 Synonyms are optional. Contexting works without an LLM — you get symbols and path matching, just no synonym expansion. With an LLM, search gets a significant boost since synonyms bridge the gap between how code is named and how developers talk about it.
 
-The default uses OpenRouter with `meta-llama/llama-3.1-8b-instruct` — fast, nearly free (~$0.0004 per 60 names). But any OpenAI-compatible API works:
+The default uses OpenRouter with `deepseek/deepseek-v4-flash` — fast, nearly free (~$0.0004 per 60 names). But any OpenAI-compatible API works:
 
 - **OpenRouter** (default) — access to dozens of models, free tier available
 - **Local** — point `endpoint` at any local server (Ollama, llama.cpp, vLLM)
@@ -36,13 +40,13 @@ Adjust `batch_size`, `parallel_requests`, and `synonyms_min`/`synonyms_max` to t
 
 ### Index construction
 
-`contexting init` walks the filesystem tree and builds `.ctx/ctx_index.json` — a single recursive JSON tree where every entry has `full_path`, `type`, optional `symbols`, optional `synonyms`, and nested `children` for directories.
+`ctxt init` walks the filesystem tree and builds `.ctxt/ctx_index.json` — a single recursive JSON tree where every entry has `full_path`, `type`, optional `symbols`, optional `synonyms`, and nested `children` for directories.
 
 **Symbols:** Every source file gets scanned with language-specific extractors that pull out exported symbols — functions, types, variables, classes, constants. These become a `symbols` array on the file node.
 
-**Synonyms:** Each node (file or directory) gets 4–8 LLM-generated synonyms via batched API calls to an OpenRouter-compatible endpoint. For example, `Skeletons.tsx → ["skeletons", "loading", "placeholder", "animation"]`. Names are batched (default 15 per request, 4 parallel) and processed concurrently.
+**Synonyms:** Each node (file or directory) gets 5–12 LLM-generated synonyms via batched API calls to an OpenRouter-compatible endpoint. For example, `Skeletons.tsx → ["skeletons", "loading", "placeholder", "animation"]`. Names are batched (default 15 per request, 10 parallel) and processed concurrently. The LLM prompt now includes the file's extracted symbols (up to 10 per file) to generate more contextual synonyms — conceptual terms, action verbs, and nouns that relate to the code's purpose.
 
-**Bootstrap diff:** On subsequent runs, `init` diffs the filesystem against the existing snapshot using file modification times. Deleted files are removed, new files are added, modified files are re-extracted. No LLM calls for existing synonyms — run `contexting sync` to fill gaps.
+**Bootstrap diff:** On subsequent runs, `init` diffs the filesystem against the existing snapshot using file modification times. Deleted files are removed, new files are added, modified files are re-extracted. No LLM calls for existing synonyms — run `ctxt sync` to fill gaps.
 
 ### Search mechanics
 
@@ -52,6 +56,7 @@ When you run `search-hints "product review rating"`, the query is lowercased and
 |---------|--------|-------------|
 | exact | +12 | Token exactly matches a directory basename |
 | basename | +7 | Token matches the file's basename |
+| exact basename | +15 | Token exactly matches the full filename (with or without extension) |
 | path segment | +4 | Token matches any segment in the full path |
 | segment prefix | +5 | Token is a prefix of a path segment |
 | syn-exact | +8 | Token exactly matches a synonym |
@@ -66,21 +71,21 @@ The `--explain` flag reveals this breakdown:
 basename contains +7: skeleton + syn exact +8: loading + sym contains +5: PageSkeleton = total 148
 ```
 
-Results are ranked by total score. Low-signal short/common words are filtered from query and synonym matching to reduce noise.
+Results are ranked by total score. Low-signal short/common words are filtered from query and synonym matching to reduce noise. Results are truncated at confidence gaps — if there's a 50%+ score drop between consecutive results, lower-scoring results are omitted even if `--limit` would include them.
 
 ### Watch mode
 
-`contexting watch` runs as a daemon, maintaining the index in memory. It watches for filesystem changes via debounced events (750ms default), re-extracts symbols for modified files, and serves a `.ctx/ctx_runtime.json` that `search-hints --memory` reads for live results. The on-disk snapshot is flushed every 45s (`persist_interval`) and on graceful shutdown. This gives sub-second updates during active development.
+`ctxt watch` runs as a daemon, maintaining the index in memory. It watches for filesystem changes via debounced events (750ms default), re-extracts symbols for modified files, and serves a `.ctxt/ctx_runtime.json` that `search-hints --memory` reads for live results. The on-disk snapshot is flushed every 45s (`persist_interval`) and on graceful shutdown. This gives sub-second updates during active development.
 
 ## Commands
 
-### `contexting init`
+### `ctxt init`
 
-Create a full snapshot in `.ctx/ctx_index.json` with extracted symbols and optional synonyms.
+Create a full snapshot in `.ctxt/ctx_index.json` with extracted symbols and optional synonyms.
 
 ```bash
-contexting init .
-contexting init . --output .ctx/ctx_index.json --synonym-cache .ctx/ctx_cache.json
+ctxt init .
+ctxt init . --output .ctxt/ctx_index.json --synonym-cache .ctxt/ctx_cache.json
 ```
 
 Key flags:
@@ -89,24 +94,24 @@ Key flags:
 - `-v, --verbose` — show symbol extraction progress and batch completion
 - Always rebuilds the entire tree; use when you need a clean snapshot
 
-On first run, creates a starter `.ctx/ctx_config.toml` and pauses so you can edit it.
+On first run, creates a starter `.ctxt/ctx_config.toml` and pauses so you can edit it.
 
-### `contexting sync`
+### `ctxt sync`
 
 Targeted synonym generation — only generates synonyms for names that are missing or below `synonyms_min`. Works on the existing index without rebuilding.
 
 ```bash
-contexting sync .
+ctxt sync .
 ```
 
 Use after `init` to fill synonym gaps, or after adding new files to catch names that were missed.
 
-### `contexting watch`
+### `ctxt watch`
 
 Keep the index in memory with live filesystem updates.
 
 ```bash
-contexting watch . --debounce 750ms --verbose
+ctxt watch . --debounce 750ms --verbose
 ```
 
 Key flags:
@@ -115,16 +120,16 @@ Key flags:
 - `--search-log-query-max` (default 120) — truncate logged queries
 - `--persist` (default "shutdown") — when to flush: `shutdown`, `interval`, `never`
 - `--persist-interval` (default "45s") — flush interval when persist=interval
-- Starts a local memory-search endpoint and writes `.ctx/ctx_runtime.json`
+- Starts a local memory-search endpoint and writes `.ctxt/ctx_runtime.json`
 - Events applied via a single worker; logs show changed files per cycle
 
-### `contexting search-hints`
+### `ctxt search-hints`
 
 Query the index for ranked paths with explainable scores.
 
 ```bash
-contexting search-hints "update storage" --json
-contexting search-hints "routing auth" --dir-summary --dir-limit 5 --drill-limit 3
+ctxt search-hints "update storage" --json
+ctxt search-hints "routing auth" --dir-summary --dir-limit 5 --drill-limit 3
 ```
 
 Flags:
@@ -133,51 +138,104 @@ Flags:
 - `--explain`, `--show-tokens`, `--json`
 - `--memory` (default true) — query live watch index first, fall back to snapshot
 - `--memory-only` — fail if live memory unavailable
-- `--runtime-file` — path to runtime discovery file (default `.ctx/ctx_runtime.json`)
+- `--runtime-file` — path to runtime discovery file (default `.ctxt/ctx_runtime.json`)
 
-### `contexting eval`
+### `ctxt eval`
 
 Benchmark Hit@1/3/5 + MRR from manual query cases.
 
 ```bash
-contexting eval --cases ctx_cases.json --json
+ctxt eval --cases ctx_cases.json --json
 ```
 
-Input format (see `.ctx/ctx_cases.json` for the full schema):
+Input format (v2 with categories, backward compatible with v1):
+```json
+{
+  "version": 2,
+  "categories": {
+    "path-intent": {
+      "description": "Find file by describing path/location purpose",
+      "cases": [
+        {"query": "auth middleware", "expect_any": ["internal/auth/middleware.go"]}
+      ]
+    }
+  }
+}
+```
+
+v1 format (bare array) is also supported:
 ```json
 [
   {"query": "auth middleware", "expect_any": ["internal/auth/middleware.go"]}
 ]
 ```
 
-### `contexting doctor`
+### `ctxt bench`
+
+Benchmark ctxt against find, grep, and combined engines.
+
+```bash
+ctxt bench --cases docs/bench_cases.json --by-category
+ctxt bench --cases docs/bench_cases.json --engines ctxt,find --json
+```
+
+Flags:
+- `--cases` — path to case file (v2 format with categories)
+- `--engines` — comma-separated list: ctxt,find,grep,combined (default: all)
+- `--by-category` — group results by category
+- `--json` — output structured JSON
+- `--limit` — max results per engine (default: 10)
+- `--min-score` — minimum score threshold
+- `--root` — project root
+- `--index` — path to index file
+- `--grep-max-bytes` — max bytes for grep content search
+
+### `ctxt status`
+
+Report index health, watch state, and path information.
+
+```bash
+ctxt status
+ctxt status --json
+```
+
+### `ctxt clean`
+
+Remove the `.ctxt/` directory.
+
+```bash
+ctxt clean
+ctxt clean --dry-run
+```
+
+### `ctxt doctor`
 
 Health-check config, root, index, cache, and API key.
 
 ```bash
-contexting doctor --json
+ctxt doctor --json
 ```
 
-### `contexting config init`
+### `ctxt config init`
 
-Create or overwrite `.ctx/ctx_config.toml`:
+Create or overwrite `.ctxt/ctx_config.toml`:
 
 ```bash
-contexting config init --output .ctx/ctx_config.toml
+ctxt config init --output .ctxt/ctx_config.toml
 ```
 
 ## Configuration
 
-`.ctx/ctx_config.toml` drives all defaults. CLI flags override config, which overrides hard-coded defaults.
+`.ctxt/ctx_config.toml` drives all defaults. CLI flags override config, which overrides hard-coded defaults.
 
 ```toml
 [common]
-output = ".ctx/ctx_index.json"
-synonym_cache = ".ctx/ctx_cache.json"
-llm_model = "meta-llama/llama-3.1-8b-instruct"
+output = ".ctxt/ctx_index.json"
+synonym_cache = ".ctxt/ctx_cache.json"
+llm_model = "deepseek/deepseek-v4-flash"
 batch_size = 15              # names per LLM request
-synonyms_min = 4             # min synonyms per name
-synonyms_max = 8             # max synonyms per name
+synonyms_min = 5             # min synonyms per name
+synonyms_max = 12            # max synonyms per name
 ignore = [".git", ".venv", "site-packages", "__pycache__", "node_modules", "vendor", "dist", "migrations", "pb_migrations", "alembic", "flyway"]
 dot_whitelist = []           # extra dot files to keep (merged with built-in defaults)
 verbose = true
@@ -185,10 +243,10 @@ verbose = true
 [llm]
 provider = "openrouter"
 endpoint = "https://openrouter.ai/api/v1/chat/completions"
-model = "meta-llama/llama-3.1-8b-instruct"
+model = "deepseek/deepseek-v4-flash"
 api_key_env = "OPENROUTER_API_KEY"   # reads key from env var
-temperature = 0.3
-parallel_requests = 4        # concurrent LLM batches
+temperature = 0.9
+parallel_requests = 10       # concurrent LLM batches
 ```
 
 **LLM config resolution:** flag → config `api_key` → config `api_key_env` → `LLM_API_KEY` → `OPENROUTER_API_KEY`.
@@ -208,23 +266,24 @@ Contexting respects `.gitignore` by default. Additional ignores come from:
 ## Data flow
 
 ```
-init → walk filesystem → extract symbols → (LLM: generate synonyms) → .ctx/ctx_index.json
-                                                                    ↓
-watch → load .ctx/ctx_index.json → keep in RAM → filesystem events → mutate in-memory
-                                                                    ↓
-search-hints → load .ctx/ctx_index.json (or query live memory) → score tokens → ranked results
+init → walk filesystem → extract symbols → build symbols map → (LLM: generate synonyms WITH symbols) → .ctxt/ctx_index.json
+                                                                                              ↓
+watch → load .ctxt/ctx_index.json → keep in RAM → filesystem events → mutate in-memory
+                                                                                              ↓
+search-hints → load .ctxt/ctx_index.json (or query live memory) → score tokens → ranked results
 ```
 
 ## File formats
 
-- **`.ctx/ctx_index.json`** — root path, timestamp, tree with `full_path`, `type`, `symbols`, `synonyms`, `children`
-- **`.ctx/ctx_cache.json`** — basename → synonyms cache for reuse across runs
-- **`.ctx/ctx_config.toml`** — config-driven defaults
-- **`.ctx/ctx_runtime.json`** — live watch discovery for memory search
+- **`.ctxt/ctx_index.json`** — root path, timestamp, tree with `full_path`, `type`, `symbols`, `synonyms`, `children`
+- **`.ctxt/ctx_cache.json`** — basename → synonyms cache for reuse across runs
+- **`.ctxt/ctx_config.toml`** — config-driven defaults
+- **`.ctxt/ctx_runtime.json`** — live watch discovery for memory search
+- **Bench/eval case files** — v2 format with categories (path-intent, symbol-lookup, concept-synonym, exact-file, narrow-scope, vague-intent); v1 bare array format is backward compatible
 
 ## Project size guard
 
-Projects with more than ~9 synonym batches (>135 names at batch_size=15) trigger a warning. LLM reliability drops at scale. Use `contexting sync` for targeted generation on large projects.
+Projects with more than ~9 synonym batches (>135 names at batch_size=15) trigger a warning. LLM reliability drops at scale. Use `ctxt sync` for targeted generation on large projects.
 
 ## Testing
 
@@ -234,8 +293,8 @@ go test ./...
 
 ## Troubleshooting
 
-- `contexting doctor --json` for diagnostics
-- If `.ctx/ctx_index.json` is stale, restart watch or run `contexting init`
-- If you changed ignore rules, run `contexting init` or restart `watch` to rebuild
+- `ctxt doctor --json` for diagnostics
+- If `.ctxt/ctx_index.json` is stale, restart watch or run `ctxt init`
+- If you changed ignore rules, run `ctxt init` or restart `watch` to rebuild
 - Synonym generation requires `OPENROUTER_API_KEY` or `--api-key`. Disable with `--llm-on-watch=false` or `watch.llm = false`
 - Watch mode must be stopped gracefully (Ctrl+C) to flush the snapshot

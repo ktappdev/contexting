@@ -19,7 +19,7 @@ type SearchEngine interface {
 type EngineResult struct {
 	EngineName string   `json:"engine_name"`
 	Found      bool     `json:"found"`
-	Rank       int      `json:"rank"`       // 1-based; -1 if not found (only contexting ranks)
+	Rank       int      `json:"rank"`       // 1-based; -1 if not found (only ctxt ranks)
 	TotalHits  int      `json:"total_hits"` // number of paths returned
 	Paths      []string `json:"paths,omitempty"`
 	TimeMs     int64    `json:"time_ms"`
@@ -49,11 +49,11 @@ type EngineSummary struct {
 	AvgNoiseRatio float64 `json:"avg_noise_ratio"`
 }
 
-type contextingEngine struct{}
+type ctxtEngine struct{}
 
-func (contextingEngine) Name() string { return "contexting" }
+func (ctxtEngine) Name() string { return "ctxt" }
 
-func (contextingEngine) Search(query string, expectAny []string, index *ContextIndex, opts SearchOptions, _ int) EngineResult {
+func (ctxtEngine) Search(query string, expectAny []string, index *ContextIndex, opts SearchOptions, _ int) EngineResult {
 	start := time.Now()
 	results := SearchHintsWithOptions(index, query, opts)
 	rank := firstMatchRank(results, expectAny)
@@ -69,7 +69,7 @@ func (contextingEngine) Search(query string, expectAny []string, index *ContextI
 	chars, tokens := countTokens(paths)
 	noiseRatio := computeNoiseRatio(paths, expectAny)
 	return EngineResult{
-		EngineName: "contexting",
+		EngineName: "ctxt",
 		Found:      found,
 		Rank:       rank,
 		TotalHits:  len(results),
@@ -315,7 +315,7 @@ func hasNullByte(data []byte, limit int) bool {
 }
 
 // computeHitAtK returns Hit@1, Hit@3, Hit@5 booleans and the 1-based rank of first expected match.
-// For contexting: paths are already ranked (search results order).
+// For ctxt: paths are already ranked (search results order).
 // For find/grep/combined: paths are sorted alphabetically — rank is position in that sorted list.
 func computeHitAtK(paths []string, expectAny []string) (hit1, hit3, hit5 bool, firstRank int) {
 	normalizedExpected := make([]string, 0, len(expectAny))
@@ -379,7 +379,7 @@ func countRelevantPaths(paths []string, expectAny []string) int {
 
 // knownEngines returns the list of supported engine names in default order.
 func knownEngines() []string {
-	return []string{"contexting", "find", "grep", "combined"}
+	return []string{"ctxt", "find", "grep", "combined"}
 }
 
 // isKnownEngine reports whether name is a supported engine.
@@ -397,8 +397,8 @@ func instantiateEngines(names []string) []SearchEngine {
 	out := make([]SearchEngine, 0, len(names))
 	for _, name := range names {
 		switch name {
-		case "contexting":
-			out = append(out, contextingEngine{})
+		case "ctxt":
+			out = append(out, ctxtEngine{})
 		case "find":
 			out = append(out, findEngine{})
 		case "grep":

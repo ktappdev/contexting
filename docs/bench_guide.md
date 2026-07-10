@@ -2,11 +2,11 @@
 
 ## Overview
 
-The `contexting bench` command compares how well different search engines find files in your codebase. It runs a set of test queries through multiple engines and reports which ones succeed, how fast they are, and how much noise they return.
+The `ctxt bench` command compares how well different search engines find files in your codebase. It runs a set of test queries through multiple engines and reports which ones succeed, how fast they are, and how much noise they return.
 
 This helps you understand:
-- How contexting compares to traditional tools like `find` and `grep`
-- Which search scenarios contexting excels at
+- How ctxt compares to traditional tools like `find` and `grep`
+- Which search scenarios ctxt excels at
 - Where there might be room for improvement
 
 ## How to Run
@@ -14,37 +14,37 @@ This helps you understand:
 ### Basic benchmark
 
 ```bash
-contexting bench --cases docs/bench_cases.json
+ctxt bench --cases docs/bench_cases.json
 ```
 
-This runs all 4 engines (contexting, find, grep, combined) against the case file and prints a summary.
+This runs all 4 engines (ctxt, find, grep, combined) against the case file and prints a summary.
 
 ### Run specific engines
 
 ```bash
-contexting bench --cases docs/bench_cases.json --engines contexting,find
+ctxt bench --cases docs/bench_cases.json --engines ctxt,find
 ```
 
 ### JSON output
 
 ```bash
-contexting bench --cases docs/bench_cases.json --json
+ctxt bench --cases docs/bench_cases.json --json
 ```
 
 ### Group by category
 
 ```bash
-contexting bench --cases docs/bench_cases.json --by-category
+ctxt bench --cases docs/bench_cases.json --by-category
 ```
 
 ### Full example
 
 ```bash
-contexting bench \
+ctxt bench \
   --root . \
-  --index .ctx/ctx_index.json \
+  --index .ctxt/ctx_index.json \
   --cases docs/bench_cases.json \
-  --engines contexting,find,grep,combined \
+  --engines ctxt,find,grep,combined \
   --limit 10 \
   --by-category
 ```
@@ -53,12 +53,12 @@ contexting bench \
 
 | Engine | What it does |
 |--------|--------------|
-| **contexting** | Uses the precomputed index with symbols, synonyms, and path scoring. Ranked results. |
+| **ctxt** | Uses the precomputed index with symbols, synonyms, and path scoring. Ranked results. |
 | **find** | Walks the filesystem and matches tokens against filenames. Alphabetical results. |
 | **grep** | Walks the filesystem and matches tokens against file contents. Alphabetical results. |
 | **combined** | Union of find and grep results. Alphabetical results. |
 
-**Key difference:** contexting returns ranked results (best match first). The other engines return alphabetical lists and don't rank by relevance.
+**Key difference:** ctxt returns ranked results (best match first). The other engines return alphabetical lists and don't rank by relevance.
 
 ## Metrics Explained
 
@@ -90,7 +90,7 @@ contexting bench \
 
 **Expected file:** `search.go`
 
-**What a win looks like:** contexting returns `search.go` as the first result because it understands that "search scoring" maps to the file that contains the scoring logic.
+**What a win looks like:** ctxt returns `search.go` as the first result because it understands that "search scoring" maps to the file that contains the scoring logic.
 
 ---
 
@@ -104,7 +104,7 @@ contexting bench \
 
 **Expected file:** `indexer.go`
 
-**What a win looks like:** contexting returns `indexer.go` because it extracted the symbol `BuildIndex` during indexing and can match the query against it.
+**What a win looks like:** ctxt returns `indexer.go` because it extracted the symbol `BuildIndex` during indexing and can match the query against it.
 
 ---
 
@@ -118,7 +118,7 @@ contexting bench \
 
 **Expected file:** `command_init.go`
 
-**What a win looks like:** contexting returns `command_init.go` because LLM-generated synonyms linked "setup" to "init," even though the code never uses the word "setup."
+**What a win looks like:** ctxt returns `command_init.go` because LLM-generated synonyms linked "setup" to "init," even though the code never uses the word "setup."
 
 ---
 
@@ -132,7 +132,7 @@ contexting bench \
 
 **Expected file:** `commands.go`
 
-**What a win looks like:** All engines return `commands.go`. If contexting can't handle this, something is wrong.
+**What a win looks like:** All engines return `commands.go`. If ctxt can't handle this, something is wrong.
 
 ---
 
@@ -146,7 +146,7 @@ contexting bench \
 
 **Expected file:** `eval_report.go`
 
-**What a win looks like:** contexting returns `eval_report.go` and not `eval.go`. The tool understands the distinction between formatting and scoring.
+**What a win looks like:** ctxt returns `eval_report.go` and not `eval.go`. The tool understands the distinction between formatting and scoring.
 
 ---
 
@@ -160,7 +160,7 @@ contexting bench \
 
 **Expected file:** `ignore.go`
 
-**What a win looks like:** contexting returns `ignore.go` by connecting "what files to skip" to the concept of ignore logic, even though the query doesn't contain the word "ignore."
+**What a win looks like:** ctxt returns `ignore.go` by connecting "what files to skip" to the concept of ignore logic, even though the query doesn't contain the word "ignore."
 
 ## Case File Format
 
@@ -200,7 +200,7 @@ The case file (`docs/bench_cases.json`) uses a v2 format with categories:
 3. Run the benchmark with your file:
 
 ```bash
-contexting bench --cases your_cases.json
+ctxt bench --cases your_cases.json
 ```
 
 **Tips for good cases:**
@@ -211,25 +211,25 @@ contexting bench --cases your_cases.json
 
 ## Interpreting Results
 
-### Good results for contexting:
+### Good results for ctxt:
 - **Hit@1 > 80%** in path-intent, symbol-lookup, and concept-synonym
 - **Hit@1 = 100%** in exact-file (this should never fail)
-- **Low noise ratio** (< 0.3) — means contexting isn't returning irrelevant files
+- **Low noise ratio** (< 0.3) — means ctxt isn't returning irrelevant files
 - **Fast time** (< 50ms per query) — index lookup should be fast
 
 ### Contexting vs others:
-- **contexting vs find:** contexting should win on conceptual queries; find may win on exact filename matches
-- **contexting vs grep:** contexting should be faster and have less noise; grep may find more but with lower precision
-- **contexting vs combined:** contexting should have higher Hit@1 due to ranking; combined may have higher recall but more noise
+- **ctxt vs find:** ctxt should win on conceptual queries; find may win on exact filename matches
+- **ctxt vs grep:** ctxt should be faster and have less noise; grep may find more but with lower precision
+- **ctxt vs combined:** ctxt should have higher Hit@1 due to ranking; combined may have higher recall but more noise
 
 ### When to investigate:
 - If exact-file Hit@1 is below 100%, there's a bug
-- If contexting is slower than find/grep, check index size or I/O
+- If ctxt is slower than find/grep, check index size or I/O
 - If noise ratio is high, consider tuning min-score or improving synonym quality
 - If symbol-lookup is weak, check that symbol extraction is working for your languages
 
 ## Related Commands
 
-- `contexting init` — Build the index before running benchmarks
-- `contexting search-hints --explain` — See why a query returns specific results
-- `contexting doctor` — Check index and config health before benchmarking
+- `ctxt init` — Build the index before running benchmarks
+- `ctxt search-hints --explain` — See why a query returns specific results
+- `ctxt doctor` — Check index and config health before benchmarking

@@ -86,17 +86,17 @@ func TestBenchContextingFindsExpected(t *testing.T) {
 	out := runBench(BenchInput{
 		Index:        index,
 		Cases:        cases,
-		Engines:      instantiateEngines([]string{"contexting"}),
+		Engines:      instantiateEngines([]string{"ctxt"}),
 		Limit:        10,
 		MinScore:     1,
 		GrepMaxBytes: 1048576,
 	})
 	res := out.Results[0][0]
-	if res.EngineName != "contexting" {
-		t.Fatalf("expected contexting, got %s", res.EngineName)
+	if res.EngineName != "ctxt" {
+		t.Fatalf("expected ctxt, got %s", res.EngineName)
 	}
 	if !res.Found || res.Rank < 1 {
-		t.Errorf("expected contexting to find batch.go, got found=%v rank=%d", res.Found, res.Rank)
+		t.Errorf("expected ctxt to find batch.go, got found=%v rank=%d", res.Found, res.Rank)
 	}
 }
 
@@ -213,7 +213,7 @@ func TestBenchEmptyQueryIsFailed(t *testing.T) {
 	out := runBench(BenchInput{
 		Index:        index,
 		Cases:        cases,
-		Engines:      instantiateEngines([]string{"contexting", "find"}),
+		Engines:      instantiateEngines([]string{"ctxt", "find"}),
 		Limit:        10,
 		MinScore:     1,
 		GrepMaxBytes: 1048576,
@@ -244,7 +244,7 @@ func TestBenchJSONOutput(t *testing.T) {
 	out := runBench(BenchInput{
 		Index:        index,
 		Cases:        cases,
-		Engines:      instantiateEngines([]string{"contexting", "find", "grep", "combined"}),
+		Engines:      instantiateEngines([]string{"ctxt", "find", "grep", "combined"}),
 		Limit:        10,
 		MinScore:     1,
 		GrepMaxBytes: 1048576,
@@ -354,7 +354,7 @@ func TestEngineResultTokenCounting(t *testing.T) {
 	out := runBench(BenchInput{
 		Index:        index,
 		Cases:        cases,
-		Engines:      instantiateEngines([]string{"contexting"}),
+		Engines:      instantiateEngines([]string{"ctxt"}),
 		Limit:        10,
 		MinScore:     1,
 		GrepMaxBytes: 1048576,
@@ -380,7 +380,7 @@ func TestSummaryHitAtK(t *testing.T) {
 	out := runBench(BenchInput{
 		Index:        index,
 		Cases:        cases,
-		Engines:      instantiateEngines([]string{"contexting"}),
+		Engines:      instantiateEngines([]string{"ctxt"}),
 		Limit:        10,
 		MinScore:     1,
 		GrepMaxBytes: 1048576,
@@ -460,7 +460,7 @@ func TestSummaryNoiseRatio(t *testing.T) {
 	paths := []string{"src/a.go", "src/b.go", "src/c.go", "src/d.go"}
 	expectAny := []string{"src/a.go"}
 	results := []EngineResult{{
-		EngineName: "contexting",
+		EngineName: "ctxt",
 		Paths:      paths,
 		TotalHits:  len(paths),
 		NoiseRatio: computeNoiseRatio(paths, expectAny),
@@ -505,7 +505,7 @@ func TestPrintCategoryReport(t *testing.T) {
 	out := runBench(BenchInput{
 		Index:        index,
 		Cases:        cases,
-		Engines:      instantiateEngines([]string{"contexting"}),
+		Engines:      instantiateEngines([]string{"ctxt"}),
 		Limit:        10,
 		MinScore:     1,
 		GrepMaxBytes: 1048576,
@@ -523,7 +523,7 @@ func TestCategoryReportJSON(t *testing.T) {
 	out := runBench(BenchInput{
 		Index:        index,
 		Cases:        cases,
-		Engines:      instantiateEngines([]string{"contexting"}),
+		Engines:      instantiateEngines([]string{"ctxt"}),
 		Limit:        10,
 		MinScore:     1,
 		GrepMaxBytes: 1048576,
@@ -553,7 +553,7 @@ func TestCategoryReportFallback(t *testing.T) {
 	out := runBench(BenchInput{
 		Index:        index,
 		Cases:        cases,
-		Engines:      instantiateEngines([]string{"contexting"}),
+		Engines:      instantiateEngines([]string{"ctxt"}),
 		Limit:        10,
 		MinScore:     1,
 		GrepMaxBytes: 1048576,

@@ -6,14 +6,14 @@ import (
 )
 
 func TestResolveConfigPath_EmptyPath(t *testing.T) {
-	got := resolveConfigPath("/root/.ctx/config.toml", "")
+	got := resolveConfigPath("/root/.ctxt/config.toml", "")
 	if got != "" {
 		t.Errorf("empty path should return empty, got %q", got)
 	}
 }
 
 func TestResolveConfigPath_AbsolutePath(t *testing.T) {
-	got := resolveConfigPath("/root/.ctx/config.toml", "/abs/path")
+	got := resolveConfigPath("/root/.ctxt/config.toml", "/abs/path")
 	if got != "/abs/path" {
 		t.Errorf("absolute path should return as-is, got %q", got)
 	}
@@ -35,16 +35,16 @@ func TestResolveConfigPath_ConfigNotInDotCtx(t *testing.T) {
 }
 
 func TestResolveConfigPath_ConfigInDotCtx_NoPrefix(t *testing.T) {
-	got := resolveConfigPath("/root/.ctx/config.toml", "sub/path")
-	want := filepath.Join("/root/.ctx", "sub/path")
+	got := resolveConfigPath("/root/.ctxt/config.toml", "sub/path")
+	want := filepath.Join("/root/.ctxt", "sub/path")
 	if got != want {
 		t.Errorf("expected %q, got %q", want, got)
 	}
 }
 
 func TestResolveConfigPath_ConfigInDotCtx_UnixPrefix(t *testing.T) {
-	got := resolveConfigPath("/root/.ctx/config.toml", ".ctx/sub/path")
-	want := filepath.Join("/root/.ctx", "sub/path")
+	got := resolveConfigPath("/root/.ctxt/config.toml", ".ctxt/sub/path")
+	want := filepath.Join("/root/.ctxt", "sub/path")
 	if got != want {
 		t.Errorf("expected %q, got %q", want, got)
 	}
@@ -53,24 +53,24 @@ func TestResolveConfigPath_ConfigInDotCtx_UnixPrefix(t *testing.T) {
 func TestResolveConfigPath_ConfigInDotCtx_BackslashPrefix(t *testing.T) {
 	// Backslash paths should work on all platforms, not just Windows.
 	// On Unix, filepath.Clean preserves \ as literals, so we must normalize first.
-	got := resolveConfigPath("/root/.ctx/config.toml", ".ctx\\sub\\path")
-	want := filepath.Join("/root/.ctx", "sub/path")
+	got := resolveConfigPath("/root/.ctxt/config.toml", ".ctxt\\sub\\path")
+	want := filepath.Join("/root/.ctxt", "sub/path")
 	if got != want {
 		t.Errorf("expected %q, got %q", want, got)
 	}
 }
 
 func TestResolveConfigPath_ConfigInDotCtx_JustDotCtx(t *testing.T) {
-	got := resolveConfigPath("/root/.ctx/config.toml", ".ctx")
-	want := "/root/.ctx"
+	got := resolveConfigPath("/root/.ctxt/config.toml", ".ctxt")
+	want := "/root/.ctxt"
 	if got != want {
 		t.Errorf("expected %q, got %q", want, got)
 	}
 }
 
 func TestResolveConfigPath_ConfigInDotCtx_NestedDotCtx(t *testing.T) {
-	got := resolveConfigPath("/root/.ctx/config.toml", ".ctx/.ctx/sub/path")
-	want := filepath.Join("/root/.ctx", ".ctx/sub/path")
+	got := resolveConfigPath("/root/.ctxt/config.toml", ".ctxt/.ctxt/sub/path")
+	want := filepath.Join("/root/.ctxt", ".ctxt/sub/path")
 	if got != want {
 		t.Errorf("expected %q, got %q", want, got)
 	}
@@ -78,12 +78,12 @@ func TestResolveConfigPath_ConfigInDotCtx_NestedDotCtx(t *testing.T) {
 
 func TestResolveConfigPath_ConfigInDotCtx_MixedSeparators(t *testing.T) {
 	// Path containing both / and \ separators — must work on all platforms.
-	// Use a literal string with both separators: .ctx\sub/path
-	// After normalization, .ctx prefix is stripped, yielding sub/path joined with config dir.
-	got := resolveConfigPath("/root/.ctx/config.toml", ".ctx\\sub/path")
-	want := filepath.Join("/root/.ctx", "sub/path")
+	// Use a literal string with both separators: .ctxt\sub/path
+	// After normalization, .ctxt prefix is stripped, yielding sub/path joined with config dir.
+	got := resolveConfigPath("/root/.ctxt/config.toml", ".ctxt\\sub/path")
+	want := filepath.Join("/root/.ctxt", "sub/path")
 	if got != want {
-		t.Errorf("resolveConfigPath(.ctx\\\\sub/path) = %q, want %q", got, want)
+		t.Errorf("resolveConfigPath(.ctxt\\\\sub/path) = %q, want %q", got, want)
 	}
 }
 

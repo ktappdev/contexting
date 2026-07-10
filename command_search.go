@@ -113,7 +113,7 @@ func newSearchCommand() *cobra.Command {
 					results = []SearchResult{}
 				} else {
 					if index.RootPath == "" {
-						return fmt.Errorf("index missing root_path: regenerate index by running 'contexting watch' or 'contexting init' in the project directory")
+						return fmt.Errorf("index missing root_path: regenerate index by running 'ctxt watch' or 'ctxt init' in the project directory")
 					}
 					if index.RootPath != absRoot {
 						return fmt.Errorf("index root path mismatch: expected %s, got %s. Use --root to specify the project directory or run from the project root", absRoot, index.RootPath)
@@ -180,7 +180,7 @@ func newSearchCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&rootPath, "root", "", "Project root path (defaults to current working directory)")
-	cmd.Flags().StringVarP(&indexPath, "index", "i", ".ctx/ctx_index.json", "Path to context JSON")
+	cmd.Flags().StringVarP(&indexPath, "index", "i", ".ctxt/ctx_index.json", "Path to context JSON")
 	cmd.Flags().IntVarP(&opts.Limit, "limit", "n", 10, "Maximum number of matches")
 	cmd.Flags().IntVar(&opts.MinScore, "min-score", 1, "Minimum score required to return a match")
 	cmd.Flags().StringVar(&opts.TypeFilter, "type", "all", "Filter result type: all|files|dirs")

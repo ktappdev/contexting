@@ -264,7 +264,7 @@ func (m *IndexManager) Bootstrap(ctx context.Context) (IndexStats, error) {
 					logWarnf("########################################")
 					logWarnf("# Bootstrap diff: +%d new, -%d deleted, %d modified", newCount, deletedCount, modifiedCount)
 					if len(newNamesNeedSynonyms) > 0 {
-						logWarnf("# Run: contexting sync")
+						logWarnf("# Run: ctxt sync")
 						logWarnf("# to generate synonyms for %d new names", len(newNamesNeedSynonyms))
 					}
 					logWarnf("########################################")

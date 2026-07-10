@@ -144,7 +144,7 @@ func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKe
 		req.Header.Set("Authorization", "Bearer "+apiKey)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("HTTP-Referer", "https://github.com/contexting")
+	req.Header.Set("HTTP-Referer", "https://github.com/ktappdev/contexting")
 	req.Header.Set("X-Title", "Contexting")
 
 	client := &http.Client{Timeout: defaultHTTPTimeout}
@@ -219,12 +219,12 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 		}
 	}
 	if batchSize >= len(names) {
-		fmt.Printf("  Synonyms: processing %d names...\n", len(names))
+		logInfof("  Synonyms: processing %d names...", len(names))
 		return GenerateSynonymsBatchWithContext(ctx, names, apiKey, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax, symbols)
 	}
 
 	totalBatches := (len(names) + batchSize - 1) / batchSize
-	fmt.Printf("  Synonyms: %d names in %d batches (parallel=%d)\n", len(names), totalBatches, parallelLimit)
+	logInfof("  Synonyms: %d names in %d batches (parallel=%d)", len(names), totalBatches, parallelLimit)
 
 	result := make(SynonymResponse)
 	sem := make(chan struct{}, parallelLimit)
@@ -256,7 +256,7 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 
 			synonyms, err := GenerateSynonymsBatchWithContext(ctx, batchNames, apiKey, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax, batchSymbols)
 			if err != nil {
-				fmt.Printf("  ⚠ Synonyms: batch %d/%d failed: %v\n", batchNum, totalBatches, err)
+				logWarnf("  ⚠ Synonyms: batch %d/%d failed: %v", batchNum, totalBatches, err)
 				return
 			}
 			mu.Lock()
@@ -265,11 +265,11 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 			}
 			mu.Unlock()
 			atomic.AddInt32(&completed, 1)
-			fmt.Printf("  Synonyms: batch %d/%d done (%d names)\n", batchNum, totalBatches, len(batchNames))
+			logInfof("  Synonyms: batch %d/%d done (%d names)", batchNum, totalBatches, len(batchNames))
 		}(batchNum, batchNames, batchSymbols)
 	}
 	wg.Wait()
-	fmt.Printf("  Synonyms: %d names processed\n", len(result))
+	logInfof("  Synonyms: %d names processed", len(result))
 
 	return result, nil
 }

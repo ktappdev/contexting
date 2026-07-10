@@ -12,7 +12,7 @@ No API key required. OpenAI-compatible.
 
 ## Prompt Format
 
-Matches contexting's actual prompt in `openrouter.go`:
+Matches ctxt's actual prompt in `openrouter.go`:
 
 **System:**
 ```

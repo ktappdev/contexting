@@ -46,13 +46,13 @@ func RunDoctor(opts DoctorOptions) DoctorReport {
 			report.add(DoctorCheck{Name: "config.exists", Status: DoctorPass, Message: "Config file found: " + opts.ConfigPath})
 			loaded, err := LoadContextingConfig(opts.ConfigPath)
 			if err != nil {
-				report.add(DoctorCheck{Name: "config.parse", Status: DoctorFail, Message: err.Error(), Suggestion: "Fix TOML syntax or run `contexting config init --force` to reset."})
+				report.add(DoctorCheck{Name: "config.parse", Status: DoctorFail, Message: err.Error(), Suggestion: "Fix TOML syntax or run `ctxt config init --force` to reset."})
 			} else {
 				cfg = loaded
 				report.add(DoctorCheck{Name: "config.parse", Status: DoctorPass, Message: "Config parsed successfully."})
 			}
 		} else if os.IsNotExist(err) {
-			report.add(DoctorCheck{Name: "config.exists", Status: DoctorWarn, Message: "Config file not found: " + opts.ConfigPath, Suggestion: "Run `contexting config init` to create a starter config."})
+			report.add(DoctorCheck{Name: "config.exists", Status: DoctorWarn, Message: "Config file not found: " + opts.ConfigPath, Suggestion: "Run `ctxt config init` to create a starter config."})
 		} else {
 			report.add(DoctorCheck{Name: "config.exists", Status: DoctorFail, Message: err.Error(), Suggestion: "Check file permissions and path."})
 		}
@@ -122,7 +122,7 @@ func RunDoctor(opts DoctorOptions) DoctorReport {
 func checkIndexFile(report *DoctorReport, indexPath string) {
 	if _, err := os.Stat(indexPath); err != nil {
 		if os.IsNotExist(err) {
-			report.add(DoctorCheck{Name: "index.exists", Status: DoctorWarn, Message: "Index file not found: " + indexPath, Suggestion: "Run `contexting init` to generate the index."})
+			report.add(DoctorCheck{Name: "index.exists", Status: DoctorWarn, Message: "Index file not found: " + indexPath, Suggestion: "Run `ctxt init` to generate the index."})
 			return
 		}
 		report.add(DoctorCheck{Name: "index.exists", Status: DoctorFail, Message: err.Error(), Suggestion: "Check file permissions and path."})
@@ -131,7 +131,7 @@ func checkIndexFile(report *DoctorReport, indexPath string) {
 
 	index, err := LoadContextIndex(indexPath)
 	if err != nil {
-		report.add(DoctorCheck{Name: "index.parse", Status: DoctorFail, Message: err.Error(), Suggestion: "Regenerate with `contexting init` if file is corrupted."})
+		report.add(DoctorCheck{Name: "index.parse", Status: DoctorFail, Message: err.Error(), Suggestion: "Regenerate with `ctxt init` if file is corrupted."})
 		return
 	}
 	stats := ComputeStats(index.Tree)
@@ -141,7 +141,7 @@ func checkIndexFile(report *DoctorReport, indexPath string) {
 func checkCacheFile(report *DoctorReport, cachePath string) {
 	if _, err := os.Stat(cachePath); err != nil {
 		if os.IsNotExist(err) {
-			report.add(DoctorCheck{Name: "cache.exists", Status: DoctorWarn, Message: "Synonym cache not found: " + cachePath, Suggestion: "Run `contexting init` or `watch` to create cache."})
+			report.add(DoctorCheck{Name: "cache.exists", Status: DoctorWarn, Message: "Synonym cache not found: " + cachePath, Suggestion: "Run `ctxt init` or `watch` to create cache."})
 			return
 		}
 		report.add(DoctorCheck{Name: "cache.exists", Status: DoctorFail, Message: err.Error(), Suggestion: "Check cache path permissions."})
@@ -150,7 +150,7 @@ func checkCacheFile(report *DoctorReport, cachePath string) {
 
 	cache, err := LoadSynonymCache(cachePath)
 	if err != nil {
-		report.add(DoctorCheck{Name: "cache.parse", Status: DoctorFail, Message: err.Error(), Suggestion: "Delete cache file and let contexting recreate it."})
+		report.add(DoctorCheck{Name: "cache.parse", Status: DoctorFail, Message: err.Error(), Suggestion: "Delete cache file and let ctxt recreate it."})
 		return
 	}
 	report.add(DoctorCheck{Name: "cache.parse", Status: DoctorPass, Message: fmt.Sprintf("Cache OK: %d entries", len(cache))})
@@ -165,7 +165,7 @@ func checkAPIKey(report *DoctorReport) {
 }
 
 func checkWriteAccess(report *DoctorReport, root string) {
-	ctxDir := filepath.Join(root, ".ctx")
+	ctxDir := filepath.Join(root, ".ctxt")
 	if err := os.MkdirAll(ctxDir, 0o755); err != nil {
 		report.add(DoctorCheck{Name: "root.write", Status: DoctorFail, Message: err.Error(), Suggestion: "Ensure write permission on project root."})
 		return

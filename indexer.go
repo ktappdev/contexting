@@ -77,18 +77,18 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 
 	// Stats for progress
 	stats := ComputeStats(tree)
-	fmt.Printf("✓ Built tree: %d files, %d directories", stats.TotalFiles, stats.TotalDirs)
+	extraMsg := ""
 	if stats.TotalFiles >= MaxFileCount/2 {
-		fmt.Printf(" (large repo - consider more ignore patterns)")
+		extraMsg = " (large repo - consider more ignore patterns)"
 	}
-	fmt.Println()
+	logInfof("✓ Built tree: %d files, %d directories%s", stats.TotalFiles, stats.TotalDirs, extraMsg)
 
 	names := CollectNamesForLLM(tree)
 	combined := cloneSynonymMap(opts.SynonymCache)
 	missing := missingNames(names, combined)
 
 	if len(names) > 0 {
-		fmt.Printf("  %d names to process (%d cached, %d new)\n", len(names), len(names)-len(missing), len(missing))
+		logInfof("  %d names to process (%d cached, %d new)", len(names), len(names)-len(missing), len(missing))
 	}
 
 	// Check batch count in main goroutine so interactive prompt works
@@ -139,7 +139,7 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 		node.Symbols = syms
 		count++
 		if count%100 == 0 && opts.Verbose {
-			fmt.Printf("\r  Extracting symbols: %d/%d files...", count, stats.TotalFiles)
+			logInfof("  Extracting symbols: %d/%d files", count, stats.TotalFiles)
 		}
 	})
 	symbolCount = count
@@ -172,8 +172,8 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 	// Assign synonyms after goroutines complete
 	AssignSynonymsToTree(tree, combined, opts.SynonymsMax)
 
-	fmt.Printf("✓ Generated synonyms for %d names\n", len(names))
-	fmt.Printf("✓ Extracted symbols from %d files\n", symbolCount)
+	logInfof("✓ Generated synonyms for %d names", len(names))
+	logInfof("✓ Extracted symbols from %d files", symbolCount)
 
 	stats = ComputeStats(tree)
 	stats.CollectedNames = len(names)

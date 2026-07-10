@@ -1,6 +1,6 @@
 {
   "root_path": "/Users/kentaylor/developer/llm-search-thing/contexting",
-  "generated_at": "2026-07-01T03:59:15.101189Z",
+  "generated_at": "2026-07-10T15:07:25.395518Z",
   "model": "deepseek/deepseek-v4-flash",
   "tree": {
     "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting",
@@ -21,7 +21,7 @@
           "agents",
           "md"
         ],
-        "mod_time": 1782856883208435132
+        "mod_time": 1783695975674431225
       },
       "Makefile": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/Makefile",
@@ -37,7 +37,7 @@
           "project build",
           "makefile"
         ],
-        "mod_time": 1777559845845725614
+        "mod_time": 1783695759411067862
       },
       "README.md": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/README.md",
@@ -53,7 +53,7 @@
           "main doc",
           "md"
         ],
-        "mod_time": 1777621495896349622
+        "mod_time": 1783695989614955041
       },
       "SYMBOL_INDEXING.md": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/SYMBOL_INDEXING.md",
@@ -112,25 +112,25 @@
           "go"
         ],
         "symbols": [
-          "combinedEngine",
-          "instantiateEngines",
-          "findEngine",
-          "countTokens",
-          "countRelevantPaths",
-          "isKnownEngine",
-          "computeNoiseRatio",
           "SearchEngine",
-          "EngineResult",
-          "EngineSummary",
-          "contextingEngine",
+          "ctxtEngine",
+          "findEngine",
           "grepEngine",
-          "tokensMatchContent",
-          "hasNullByte",
-          "tokensMatchPath",
           "computeHitAtK",
-          "knownEngines"
+          "knownEngines",
+          "instantiateEngines",
+          "hasNullByte",
+          "countRelevantPaths",
+          "computeNoiseRatio",
+          "EngineResult",
+          "tokensMatchPath",
+          "countTokens",
+          "isKnownEngine",
+          "EngineSummary",
+          "combinedEngine",
+          "tokensMatchContent"
         ],
-        "mod_time": 1782875271028352565
+        "mod_time": 1783695772251081293
       },
       "bench_report.go": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/bench_report.go",
@@ -149,27 +149,27 @@
           "go"
         ],
         "symbols": [
-          "BenchMiss",
-          "printBenchSummary",
-          "printBenchTable",
-          "caseMatched",
-          "percentile",
-          "computeCategorySummaries",
-          "printCategoryReport",
-          "FullReport",
-          "pathMatchesExpected",
-          "computeBenchMisses",
           "BenchOutput",
-          "CategoryReport",
           "resultsToJSONBench",
+          "caseMatched",
+          "computeBenchMisses",
           "groupResultsByCategory",
-          "groupCasesByCategory",
-          "categoryReportToJSON",
-          "fullReportWithLoad",
+          "BenchMiss",
+          "FullReport",
+          "printBenchTable",
           "computeEngineSummaries",
-          "percentileTimes"
+          "percentile",
+          "pathMatchesExpected",
+          "groupCasesByCategory",
+          "computeCategorySummaries",
+          "CategoryReport",
+          "fullReportWithLoad",
+          "printBenchSummary",
+          "printCategoryReport",
+          "percentileTimes",
+          "categoryReportToJSON"
         ],
-        "mod_time": 1782863847741547048
+        "mod_time": 1783695783291667594
       },
       "bench_results": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/bench_results",
@@ -242,31 +242,49 @@
           "go"
         ],
         "symbols": [
-          "TestBenchEmptyQueryIsFailed",
-          "TestBenchJSONOutput",
-          "TestCategoryReportFallback",
           "TestBenchEnginesRespectIgnores",
           "TestComputeHitAtK",
-          "TestEngineResultTokenCounting",
           "TestSummaryHitAtK",
-          "TestNoiseRatioAllRelevant",
-          "TestSummaryNoiseRatio",
-          "buildFixtureBench",
-          "TestBenchFindMatchesBasename",
-          "TestBenchGrepMatchesContent",
-          "TestCountTokens",
-          "TestNoiseRatioEmptyResults",
-          "TestNoiseRatioMixed",
-          "TestBenchContextingFindsExpected",
-          "TestBenchCombinedIsSuperset",
-          "TestBenchLoadEvalCasesRoundTrip",
-          "TestCountRelevantPaths",
-          "TestBenchOutputIndexLoadMs",
           "TestPrintCategoryReport",
           "TestCategoryReportJSON",
-          "writeCasesBench"
+          "writeCasesBench",
+          "TestBenchFindMatchesBasename",
+          "TestBenchGrepMatchesContent",
+          "TestBenchCombinedIsSuperset",
+          "TestBenchEmptyQueryIsFailed",
+          "TestBenchLoadEvalCasesRoundTrip",
+          "TestBenchOutputIndexLoadMs",
+          "TestCategoryReportFallback",
+          "buildFixtureBench",
+          "TestEngineResultTokenCounting",
+          "TestCountRelevantPaths",
+          "TestNoiseRatioAllRelevant",
+          "TestSummaryNoiseRatio",
+          "TestBenchContextingFindsExpected",
+          "TestBenchJSONOutput",
+          "TestCountTokens",
+          "TestNoiseRatioEmptyResults",
+          "TestNoiseRatioMixed"
         ],
-        "mod_time": 1782863855275230442
+        "mod_time": 1783695847502241055
+      },
+      "bin": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/bin",
+        "type": "directory",
+        "synonyms": [
+          "bin"
+        ],
+        "mod_time": 1783696039061801628,
+        "children": {
+          "ctxt": {
+            "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/bin/ctxt",
+            "type": "file",
+            "synonyms": [
+              "ctxt"
+            ],
+            "mod_time": 1783696039061801628
+          }
+        }
       },
       "cache.go": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/cache.go",
@@ -284,8 +302,8 @@
           "go"
         ],
         "symbols": [
-          "SaveSynonymCache",
-          "LoadSynonymCache"
+          "LoadSynonymCache",
+          "SaveSynonymCache"
         ],
         "mod_time": 1772379286203438205
       },
@@ -328,13 +346,13 @@
           "go"
         ],
         "symbols": [
-          "TestLoadCasesAutoDetectsV2",
-          "TestEvalCaseV1UnmarshalIgnoresNewFields",
           "TestLoadCasesV1Array",
           "TestLoadCasesV2Object",
           "TestLoadCasesV2MissingVersion",
           "TestLoadCasesV2EmptyCategories",
-          "TestLoadCasesAutoDetectsV1"
+          "TestLoadCasesAutoDetectsV1",
+          "TestLoadCasesAutoDetectsV2",
+          "TestEvalCaseV1UnmarshalIgnoresNewFields"
         ],
         "mod_time": 1782862919127016179
       },
@@ -355,11 +373,11 @@
           "go"
         ],
         "symbols": [
-          "BenchInput",
           "runBench",
-          "newBenchCommand"
+          "newBenchCommand",
+          "BenchInput"
         ],
-        "mod_time": 1782876823220548166
+        "mod_time": 1783695779775555874
       },
       "command_clean.go": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/command_clean.go",
@@ -381,7 +399,7 @@
         "symbols": [
           "newCleanCommand"
         ],
-        "mod_time": 1781651220531546130
+        "mod_time": 1783695810857673606
       },
       "command_config.go": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/command_config.go",
@@ -423,8 +441,8 @@
           "go"
         ],
         "symbols": [
-          "printDoctorReport",
-          "newDoctorCommand"
+          "newDoctorCommand",
+          "printDoctorReport"
         ],
         "mod_time": 1772381959328368753
       },
@@ -472,6 +490,30 @@
         ],
         "mod_time": 1782874768641166225
       },
+      "command_mcp.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/command_mcp.go",
+        "type": "file",
+        "synonyms": [
+          "mcp command",
+          "tool arguments",
+          "model context protocol",
+          "tool call",
+          "command handler",
+          "tool execution",
+          "command dispatch",
+          "tool invocation",
+          "mcp action",
+          "command runner",
+          "mcp tool handler",
+          "command"
+        ],
+        "symbols": [
+          "searchToolArgs",
+          "statusToolArgs",
+          "newMCPCommand"
+        ],
+        "mod_time": 1783695790263920867
+      },
       "command_search.go": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/command_search.go",
         "type": "file",
@@ -492,7 +534,7 @@
         "symbols": [
           "newSearchCommand"
         ],
-        "mod_time": 1781655226419728578
+        "mod_time": 1783695803371877906
       },
       "command_shared.go": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/command_shared.go",
@@ -512,11 +554,11 @@
           "go"
         ],
         "symbols": [
-          "maskAPIKey",
-          "emitSynonymWarning",
           "CommonFlags",
           "resolveAPIKey",
-          "resolveLLMConfig"
+          "resolveLLMConfig",
+          "maskAPIKey",
+          "emitSynonymWarning"
         ],
         "mod_time": 1782874747195658818
       },
@@ -538,10 +580,10 @@
           "status"
         ],
         "symbols": [
+          "StatusReport",
           "newStatusCommand",
           "isProcessAlive",
-          "printStatusReport",
-          "StatusReport"
+          "printStatusReport"
         ],
         "mod_time": 1781655026024957421
       },
@@ -565,7 +607,7 @@
         "symbols": [
           "newSyncCommand"
         ],
-        "mod_time": 1782878054801351589
+        "mod_time": 1783695807061396502
       },
       "command_watch.go": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/command_watch.go",
@@ -585,11 +627,11 @@
           "go"
         ],
         "symbols": [
-          "newWatchCommand",
           "defaultDebounce",
-          "defaultPersistInterval"
+          "defaultPersistInterval",
+          "newWatchCommand"
         ],
-        "mod_time": 1782874343810376179
+        "mod_time": 1783695796097832462
       },
       "commands.go": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/commands.go",
@@ -611,13 +653,14 @@
         "symbols": [
           "configJustCreated",
           "agentMode",
+          "logToStderr",
           "agentUnsafeCommands",
           "NewRootCommand",
           "configPath",
           "noConfigPrompt",
           "createConfig"
         ],
-        "mod_time": 1782266631234932788
+        "mod_time": 1783695764128233149
       },
       "config.go": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/config.go",
@@ -638,14 +681,14 @@
         ],
         "symbols": [
           "ContextingConfig",
+          "CommonConfig",
           "InitConfig",
+          "WatchConfig",
           "SearchConfig",
           "EvalConfig",
-          "LoadContextingConfig",
-          "CommonConfig",
-          "WatchConfig",
           "BenchConfig",
-          "LLMConfig"
+          "LLMConfig",
+          "LoadContextingConfig"
         ],
         "mod_time": 1782266631234933163
       },
@@ -667,11 +710,11 @@
           "go"
         ],
         "symbols": [
+          "applyIntFlag",
+          "applyBoolFlag",
           "applyStringSliceFlag",
           "applyCommonConfig",
-          "applyStringFlag",
-          "applyIntFlag",
-          "applyBoolFlag"
+          "applyStringFlag"
         ],
         "mod_time": 1777580285855985748
       },
@@ -693,10 +736,10 @@
           "bootstrap"
         ],
         "symbols": [
-          "askYesNo",
-          "isInteractiveTerminal",
           "ensureStarterConfigPrompt",
-          "writeStarterConfig"
+          "writeStarterConfig",
+          "askYesNo",
+          "isInteractiveTerminal"
         ],
         "mod_time": 1777548464950675650
       },
@@ -742,7 +785,7 @@
         "symbols": [
           "starterConfigTemplate"
         ],
-        "mod_time": 1782874035460013802
+        "mod_time": 1783695823914151319
       },
       "config_test.go": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/config_test.go",
@@ -760,10 +803,10 @@
           "go"
         ],
         "symbols": [
-          "TestApplyCommonConfigRespectsCLIOverride",
-          "TestWatchDebounceDuration",
           "TestWatchPersistIntervalDuration",
-          "TestLoadContextingConfig"
+          "TestLoadContextingConfig",
+          "TestApplyCommonConfigRespectsCLIOverride",
+          "TestWatchDebounceDuration"
         ],
         "mod_time": 1777620679368987278
       },
@@ -826,7 +869,7 @@
           "documentation files",
           "docs"
         ],
-        "mod_time": 1782876311894172838,
+        "mod_time": 1783695953427465414,
         "children": {
           "DEVELOPER_MANUAL.html": {
             "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/DEVELOPER_MANUAL.html",
@@ -880,7 +923,7 @@
               "guide",
               "md"
             ],
-            "mod_time": 1782872033314262679
+            "mod_time": 1783695953426922828
           },
           "contexting-query-guide.md": {
             "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/contexting-query-guide.md",
@@ -898,7 +941,7 @@
               "guide",
               "md"
             ],
-            "mod_time": 1782248171305864640
+            "mod_time": 1783695953428201877
           },
           "contexting_feedback.md": {
             "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/contexting_feedback.md",
@@ -917,7 +960,7 @@
               "context validation",
               "context check"
             ],
-            "mod_time": 1782876311894172838
+            "mod_time": 1783695953427465414
           },
           "llm-tests": {
             "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/llm-tests",
@@ -932,7 +975,7 @@
               "llm",
               "tests"
             ],
-            "mod_time": 1777621798931686107,
+            "mod_time": 1777621814728004855,
             "children": {
               "README.md": {
                 "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/llm-tests/README.md",
@@ -948,7 +991,7 @@
                   "main doc",
                   "md"
                 ],
-                "mod_time": 1777571092065283776
+                "mod_time": 1783695953428807839
               },
               "results": {
                 "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/llm-tests/results",
@@ -963,7 +1006,7 @@
                   "logs",
                   "results"
                 ],
-                "mod_time": 1777621814727287051,
+                "mod_time": 1777621814728004855,
                 "children": {
                   "meta-llama": {
                     "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/llm-tests/results/meta-llama",
@@ -1258,6 +1301,25 @@
                 "mod_time": 1777621798931686107
               }
             }
+          },
+          "mcp.md": {
+            "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/docs/mcp.md",
+            "type": "file",
+            "synonyms": [
+              "mcp documentation",
+              "protocol guide",
+              "model context protocol docs",
+              "mcp manual",
+              "protocol reference",
+              "mcp help",
+              "mcp specification",
+              "protocol description",
+              "mcp usage guide",
+              "mcp readme",
+              "mcp",
+              "md"
+            ],
+            "mod_time": 1783695953426022907
           }
         }
       },
@@ -1276,22 +1338,22 @@
           "go"
         ],
         "symbols": [
-          "applyCommonConfigNoCLI",
-          "DoctorPass",
-          "DoctorFail",
           "DoctorCheck",
           "DoctorReport",
-          "RunDoctor",
-          "checkCacheFile",
-          "defaultCommonFlags",
-          "DoctorStatus",
-          "DoctorWarn",
-          "DoctorOptions",
           "checkIndexFile",
-          "checkAPIKey",
-          "checkWriteAccess"
+          "checkCacheFile",
+          "checkWriteAccess",
+          "defaultCommonFlags",
+          "applyCommonConfigNoCLI",
+          "DoctorStatus",
+          "DoctorPass",
+          "DoctorWarn",
+          "DoctorFail",
+          "DoctorOptions",
+          "RunDoctor",
+          "checkAPIKey"
         ],
-        "mod_time": 1781650393016222400
+        "mod_time": 1783695818851305785
       },
       "doctor_test.go": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/doctor_test.go",
@@ -1345,17 +1407,17 @@
           "go"
         ],
         "symbols": [
-          "EvalCase",
+          "CaseFile",
           "CaseCategory",
-          "EvalResult",
           "LoadEvalCases",
-          "isSpace",
           "EvaluateSearch",
           "firstMatchRank",
           "EvalSummary",
-          "CaseFile",
+          "EvalResult",
           "LoadCasesAuto",
-          "normalizeEvalPath"
+          "isSpace",
+          "normalizeEvalPath",
+          "EvalCase"
         ],
         "mod_time": 1782862796878501838
       },
@@ -1374,9 +1436,9 @@
           "go"
         ],
         "symbols": [
+          "printEvalSummary",
           "printFailedCases",
-          "resultsToJSONEval",
-          "printEvalSummary"
+          "resultsToJSONEval"
         ],
         "mod_time": 1772379260477530396
       },
@@ -1454,7 +1516,7 @@
           "go",
           "mod"
         ],
-        "mod_time": 1772406579441884317
+        "mod_time": 1782903219507055888
       },
       "go.sum": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/go.sum",
@@ -1469,7 +1531,7 @@
           "go",
           "sum"
         ],
-        "mod_time": 1772368681673232096
+        "mod_time": 1782903219506408806
       },
       "ignore.go": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/ignore.go",
@@ -1485,16 +1547,16 @@
           "go"
         ],
         "symbols": [
-          "dotWhitelistKey",
-          "BuildDotWhitelist",
-          "EmbedDotWhitelist",
-          "isDotPath",
           "defaultDotWhitelist",
           "defaultIgnores",
+          "EmbedDotWhitelist",
+          "BuildDotWhitelist",
           "BuildIgnoreMap",
           "BuildIgnoreMapForRoot",
           "shouldIgnorePath",
-          "normalizeIgnorePattern"
+          "normalizeIgnorePattern",
+          "isDotPath",
+          "dotWhitelistKey"
         ],
         "mod_time": 1777566300697169503
       },
@@ -1513,19 +1575,19 @@
           "go"
         ],
         "symbols": [
-          "WatchPersistMode",
-          "PersistInterval",
+          "ApplyResult",
           "IndexManager",
-          "collectFilesystemState",
           "collectSnapshotPaths",
+          "WatchPersistMode",
           "PersistShutdown",
           "PersistChange",
           "IndexManagerOptions",
-          "ApplyResult",
           "NewIndexManager",
-          "fsEntry"
+          "fsEntry",
+          "collectFilesystemState",
+          "PersistInterval"
         ],
-        "mod_time": 1782877793338898721
+        "mod_time": 1783695821195260097
       },
       "index_manager_test.go": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/index_manager_test.go",
@@ -1542,8 +1604,8 @@
           "go"
         ],
         "symbols": [
-          "TestIndexManagerApplyAndFlush",
-          "TestBootstrapStaleSnapshot"
+          "TestBootstrapStaleSnapshot",
+          "TestIndexManagerApplyAndFlush"
         ],
         "mod_time": 1777620717081330274
       },
@@ -1561,13 +1623,13 @@
           "go"
         ],
         "symbols": [
+          "missingNames",
+          "cloneSynonymMap",
           "BuildOptions",
           "BuildResult",
-          "BuildIndex",
-          "missingNames",
-          "cloneSynonymMap"
+          "BuildIndex"
         ],
-        "mod_time": 1782877737850218007
+        "mod_time": 1782903471058503456
       },
       "indexer_test.go": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/indexer_test.go",
@@ -1620,13 +1682,13 @@
           "go"
         ],
         "symbols": [
+          "logTimeFormat",
           "logInfof",
           "logWarnf",
           "logErrorf",
-          "logf",
-          "logTimeFormat"
+          "logf"
         ],
-        "mod_time": 1772381924409034875
+        "mod_time": 1782903164912373667
       },
       "main.go": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/main.go",
@@ -1642,8 +1704,8 @@
           "go"
         ],
         "symbols": [
-          "main",
-          "version"
+          "version",
+          "main"
         ],
         "mod_time": 1777559825682752934
       },
@@ -1710,14 +1772,14 @@
           "server"
         ],
         "symbols": [
-          "defaultShutdownTimeout",
-          "defaultSearchLogQueryMax",
           "MemorySearchLogOptions",
           "memorySearchRequest",
           "memorySearchResponse",
           "startMemorySearchServer",
           "formatSearchLogQuery",
           "defaultReadHeaderTimeout",
+          "defaultShutdownTimeout",
+          "defaultSearchLogQueryMax",
           "memorySearchServer"
         ],
         "mod_time": 1781655083647082240
@@ -1759,15 +1821,15 @@
           "go"
         ],
         "symbols": [
+          "IndexStats",
           "BuildTree",
+          "dedupeStrings",
+          "Node",
+          "MaxFileCount",
           "CollectNamesForLLM",
           "AssignSynonymsToTree",
-          "walkTree",
-          "Node",
           "ComputeStats",
-          "dedupeStrings",
-          "MaxFileCount",
-          "IndexStats"
+          "walkTree"
         ],
         "mod_time": 1777567833422232330
       },
@@ -1788,12 +1850,12 @@
           "go"
         ],
         "symbols": [
+          "buildNodeSynonyms",
           "splitRelPath",
           "isExistingDirectory",
           "stringSlicesEqual",
           "removeNodeByRelPath",
-          "upsertNodeByRelPath",
-          "buildNodeSynonyms"
+          "upsertNodeByRelPath"
         ],
         "mod_time": 1777567857311655786
       },
@@ -1812,12 +1874,12 @@
           "go"
         ],
         "symbols": [
+          "mustMkdir",
           "mustWriteFile",
           "TestBuildTreeNestedAndIgnore",
           "TestCollectNamesForLLMUnique",
           "TestAssignSynonymsToTree",
-          "TestComputeStats",
-          "mustMkdir"
+          "TestComputeStats"
         ],
         "mod_time": 1772450785030238965
       },
@@ -1837,24 +1899,24 @@
           "go"
         ],
         "symbols": [
-          "GenerateSynonymsForNamesWithContext",
-          "defaultModel",
           "defaultSynonymsMax",
-          "GetAPIKey",
-          "GenerateSynonymsBatchWithContext",
-          "GenerateSynonymsForNames",
+          "defaultEndpoint",
           "OpenRouterRequest",
-          "OpenRouterResponse",
-          "Choice",
-          "sanitizeJSON",
-          "defaultSynonyms",
           "Message",
+          "Choice",
+          "GenerateSynonymsBatchWithContext",
+          "defaultModel",
+          "defaultSynonyms",
+          "defaultHTTPTimeout",
+          "OpenRouterResponse",
+          "GenerateSynonymsForNames",
           "SynonymResponse",
           "GenerateSynonymsBatch",
-          "defaultHTTPTimeout",
-          "defaultEndpoint"
+          "GenerateSynonymsForNamesWithContext",
+          "sanitizeJSON",
+          "GetAPIKey"
         ],
-        "mod_time": 1782878048410679878
+        "mod_time": 1783695830796409802
       },
       "openrouter_test.go": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/openrouter_test.go",
@@ -1871,10 +1933,10 @@
           "go"
         ],
         "symbols": [
-          "TestGetAPIKey",
           "TestGenerateSynonymsBatchValidation",
           "TestGenerateSynonymsForNamesHandlesEmptyList",
-          "TestOpenRouterConstants"
+          "TestOpenRouterConstants",
+          "TestGetAPIKey"
         ],
         "mod_time": 1782877837080920768
       },
@@ -1896,8 +1958,8 @@
           "go"
         ],
         "symbols": [
-          "resolveConfigPath",
-          "resolveProjectPath"
+          "resolveProjectPath",
+          "resolveConfigPath"
         ],
         "mod_time": 1777622062669229002
       },
@@ -1915,20 +1977,20 @@
           "go"
         ],
         "symbols": [
-          "TestResolveProjectPath_EmptyPath",
           "TestResolveProjectPath_AbsolutePath",
           "TestResolveProjectPath_EmptyProjectRoot",
           "TestResolveProjectPath_RelativePath",
-          "TestResolveConfigPath_EmptyPath",
+          "TestResolveConfigPath_AbsolutePath",
           "TestResolveConfigPath_EmptyConfigFile",
           "TestResolveConfigPath_ConfigNotInDotCtx",
-          "TestResolveConfigPath_ConfigInDotCtx_NoPrefix",
           "TestResolveConfigPath_ConfigInDotCtx_UnixPrefix",
           "TestResolveConfigPath_ConfigInDotCtx_BackslashPrefix",
-          "TestResolveConfigPath_ConfigInDotCtx_JustDotCtx",
+          "TestResolveConfigPath_ConfigInDotCtx_NestedDotCtx",
           "TestResolveConfigPath_ConfigInDotCtx_MixedSeparators",
-          "TestResolveConfigPath_AbsolutePath",
-          "TestResolveConfigPath_ConfigInDotCtx_NestedDotCtx"
+          "TestResolveProjectPath_EmptyPath",
+          "TestResolveConfigPath_EmptyPath",
+          "TestResolveConfigPath_ConfigInDotCtx_NoPrefix",
+          "TestResolveConfigPath_ConfigInDotCtx_JustDotCtx"
         ],
         "mod_time": 1777622092415980093
       },
@@ -1949,9 +2011,9 @@
           "go"
         ],
         "symbols": [
-          "RuntimeState",
           "SaveRuntimeState",
-          "LoadRuntimeState"
+          "LoadRuntimeState",
+          "RuntimeState"
         ],
         "mod_time": 1772407781628209108
       },
@@ -1992,16 +2054,16 @@
           "go"
         ],
         "symbols": [
-          "searchResponseToJSON",
           "SearchResult",
-          "passesTypeFilter",
-          "tokenize",
+          "SearchHintsWithOptions",
+          "hasSegmentPrefix",
+          "resultsToJSON",
+          "searchResponseToJSON",
           "SearchResponse",
           "SearchOptions",
           "SearchHints",
-          "SearchHintsWithOptions",
-          "hasSegmentPrefix",
-          "resultsToJSON"
+          "passesTypeFilter",
+          "tokenize"
         ],
         "mod_time": 1782877079985216241
       },
@@ -2021,12 +2083,12 @@
           "go"
         ],
         "symbols": [
-          "DirectorySummary",
           "SummarizeDirectories",
           "directoryForResultPath",
           "tokenFromMatch",
           "printDirectorySummaries",
-          "directorySummariesToJSON"
+          "directorySummariesToJSON",
+          "DirectorySummary"
         ],
         "mod_time": 1772414944771420307
       },
@@ -2046,8 +2108,8 @@
           "go"
         ],
         "symbols": [
-          "TestSummarizeDirectoriesDrillLimit",
-          "TestSummarizeDirectories"
+          "TestSummarizeDirectories",
+          "TestSummarizeDirectoriesDrillLimit"
         ],
         "mod_time": 1772414944771248307
       },
@@ -2066,16 +2128,16 @@
           "go"
         ],
         "symbols": [
-          "TestTokenizeFiltersLowSignalWords",
-          "TestSearchCommandValidatesRuntimeRootPath",
           "TestQueryMemorySearchRejectsMismatchedRoot",
-          "contains",
           "findSubstring",
+          "TestContextIndexMarshalsWithRootPath",
           "TestSearchHintsReturnsStrongMatches",
-          "TestSearchHintsNoTokens",
           "TestSearchHintsTypeFilter",
           "TestSearchCommandValidatesIndexRootPath",
-          "TestContextIndexMarshalsWithRootPath"
+          "contains",
+          "TestSearchHintsNoTokens",
+          "TestTokenizeFiltersLowSignalWords",
+          "TestSearchCommandValidatesRuntimeRootPath"
         ],
         "mod_time": 1777620737888965812
       },
@@ -2155,11 +2217,20 @@
         ],
         "symbols": [
           "extractSymbols",
+          "extractByRegexContent",
+          "extractScriptBlock",
+          "jsPatternsWhitespace",
+          "extractVueSymbols",
+          "tokenizeIdentifier",
           "extractGoSymbols",
           "extractByRegex",
-          "tokenizeIdentifier"
+          "jsPatterns",
+          "tsPatterns",
+          "tsPatternsWhitespace",
+          "extractSvelteSymbols",
+          "extractAstroSymbols"
         ],
-        "mod_time": 1776941158308987506
+        "mod_time": 1782901483618165383
       },
       "synonyms.go": {
         "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/synonyms.go",
@@ -2176,15 +2247,15 @@
           "go"
         ],
         "symbols": [
-          "isLowSignalToken",
+          "lowSignalTokens",
           "splitNonAlnum",
-          "isSourceExtension",
           "camelBoundary",
           "genericSynonymStopwords",
-          "lowSignalTokens",
           "sanitizeSynonyms",
           "lexicalSynonyms",
-          "splitIdentifierTokens"
+          "splitIdentifierTokens",
+          "isLowSignalToken",
+          "isSourceExtension"
         ],
         "mod_time": 1782874683138939165
       },
@@ -2202,10 +2273,10 @@
           "go"
         ],
         "symbols": [
-          "TestDefaultSynonymsMax",
           "TestLexicalSynonymsSplitsIdentifiers",
           "TestSanitizeSynonymsFiltersGenericAndCaps",
-          "TestSanitizeSynonymsDropsAllLowSignalPhrase"
+          "TestSanitizeSynonymsDropsAllLowSignalPhrase",
+          "TestDefaultSynonymsMax"
         ],
         "mod_time": 1782874444343013055
       },
@@ -2248,14 +2319,14 @@
           "go"
         ],
         "symbols": [
+          "isInsideProject",
           "shouldSkipInternalOutput",
           "logChangeSummary",
           "summarizeOp",
           "parsePersistMode",
           "tickerChan",
           "syncWatchDirectories",
-          "shouldSkipEvent",
-          "isInsideProject"
+          "shouldSkipEvent"
         ],
         "mod_time": 1777620745404639313
       },

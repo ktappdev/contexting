@@ -14,20 +14,20 @@ func newCleanCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "clean",
-		Short: "Remove .ctx/ directory and all contexting files from a project",
+		Short: "Remove .ctxt/ directory and all ctxt files from a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			absRoot, err := filepath.Abs(rootPath)
 			if err != nil {
 				return fmt.Errorf("resolve root path: %w", err)
 			}
-			ctxDir := filepath.Join(absRoot, ".ctx")
+			ctxDir := filepath.Join(absRoot, ".ctxt")
 			info, err := os.Stat(ctxDir)
 			if os.IsNotExist(err) {
-				logInfof("No .ctx/ directory found at %s — nothing to clean.", ctxDir)
+				logInfof("No .ctxt/ directory found at %s — nothing to clean.", ctxDir)
 				return nil
 			}
 			if err != nil {
-				return fmt.Errorf("check .ctx directory: %w", err)
+				return fmt.Errorf("check .ctxt directory: %w", err)
 			}
 			if !info.IsDir() {
 				return fmt.Errorf("%s exists but is not a directory", ctxDir)
@@ -36,7 +36,7 @@ func newCleanCommand() *cobra.Command {
 			if dryRun {
 				entries, err := os.ReadDir(ctxDir)
 				if err != nil {
-					return fmt.Errorf("read .ctx directory: %w", err)
+					return fmt.Errorf("read .ctxt directory: %w", err)
 				}
 				logInfof("Would remove %s (%d entries):", ctxDir, len(entries))
 				for _, e := range entries {
@@ -46,7 +46,7 @@ func newCleanCommand() *cobra.Command {
 			}
 
 			if err := os.RemoveAll(ctxDir); err != nil {
-				return fmt.Errorf("remove .ctx directory: %w", err)
+				return fmt.Errorf("remove .ctxt directory: %w", err)
 			}
 			logInfof("Removed %s", ctxDir)
 			return nil

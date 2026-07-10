@@ -5,18 +5,27 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/cobra"
 )
 
-// Timeouts used for watching and persistence
-const defaultDebounce = 750 * time.Millisecond // Coalesces multiple fs events into single re-index
-const defaultPersistInterval = 45 * time.Second
+// MCP search tool input.
+type searchToolArgs struct {
+	Query   string `json:"query" jsonschema:"Search query - keywords, filenames, or concepts"`
+	Limit   int    `json:"limit,omitempty" jsonschema:"Max results (default 10)"`
+	Type    string `json:"type,omitempty" jsonschema:"Filter: all, files, or dirs"`
+	Explain bool   `json:"explain,omitempty" jsonschema:"Include score breakdown"`
+}
 
-func newWatchCommand() *cobra.Command {
+// MCP status tool has no input.
+type statusToolArgs struct{}
+
+func newMCPCommand() *cobra.Command {
 	flags := CommonFlags{}
 	var debounce time.Duration
 	var llmOnWatch bool
@@ -25,12 +34,16 @@ func newWatchCommand() *cobra.Command {
 	var searchLog bool
 	var searchLogQueryMax int
 	var maxBatchSize int
+	var enableHTTP bool
 
 	cmd := &cobra.Command{
-		Use:   "watch [path]",
-		Short: "Watch a directory, keep index in memory, and flush snapshot on shutdown",
+		Use:   "mcp [path]",
+		Short: "Watch a directory and serve search queries via MCP over stdio",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// MCP uses stdout for JSON-RPC; all logging must go to stderr.
+			logToStderr = true
+
 			var absConfigPath string
 			if configPath != "" {
 				var err error
@@ -72,7 +85,7 @@ func newWatchCommand() *cobra.Command {
 				return err
 			}
 			if persistMode != PersistShutdown {
-				logWarnf("Persistence mode %q requested, but watch now runs shutdown-only persistence. Using shutdown mode.", persistMode)
+				logWarnf("Persistence mode %q requested, but MCP now runs shutdown-only persistence. Using shutdown mode.", persistMode)
 				persistMode = PersistShutdown
 			}
 			if persistInterval <= 0 {
@@ -88,7 +101,7 @@ func newWatchCommand() *cobra.Command {
 
 			absRoot, err := filepath.Abs(rootPath)
 			if err != nil {
-				return fmt.Errorf("resolve watch path: %w", err)
+				return fmt.Errorf("resolve mcp path: %w", err)
 			}
 			if _, statErr := os.Stat(absConfigPath); os.IsNotExist(statErr) {
 				if !cmd.Flags().Changed("config") {
@@ -107,9 +120,6 @@ func newWatchCommand() *cobra.Command {
 				return err
 			}
 			EmbedDotWhitelist(ignored, BuildDotWhitelist(cfg.Common.DotWhitelist))
-			// Only skip internal files by basename when the resolved paths are inside the project.
-			// If --config or --output points outside the project, skipping by basename could
-			// incorrectly exclude legitimate project files.
 			if isInsideProject(absConfigPath, absRoot) {
 				ignored[filepath.Base(absConfigPath)] = true
 				ignored[filepath.Base(absConfigPath)+".example"] = true
@@ -122,7 +132,7 @@ func newWatchCommand() *cobra.Command {
 			logInfof("LLM: provider=%s model=%s endpoint=%s api_key=%s", llmProvider, llmModel, llmEndpoint, maskAPIKey(llmKey))
 			if !llmOnWatch {
 				llmKey = ""
-				logInfof("Watch LLM mode is off (default). Using cache + lexical synonyms only.")
+				logInfof("MCP LLM mode is off. Using cache + lexical synonyms only.")
 			}
 			if llmOnWatch && llmKey == "" {
 				logWarnf("LLM API key not configured; continuing without synonyms")
@@ -171,22 +181,26 @@ func newWatchCommand() *cobra.Command {
 			}
 
 			logInfof("Watching %s for changes...", absRoot)
-			logInfof("Watch settings: debounce=%s verbose=%t persist=%s output=%s cache=%s", debounce.String(), flags.Verbose, persistMode, outputPath, cachePath)
+			logInfof("MCP settings: debounce=%s verbose=%t persist=%s output=%s cache=%s http=%t", debounce.String(), flags.Verbose, persistMode, outputPath, cachePath, enableHTTP)
 
-			if searchLogQueryMax <= 0 {
-				searchLogQueryMax = defaultSearchLogQueryMax
+			var memoryServer *memorySearchServer
+			if enableHTTP {
+				if searchLogQueryMax <= 0 {
+					searchLogQueryMax = defaultSearchLogQueryMax
+				}
+				var err error
+				memoryServer, err = startMemorySearchServer(ctx, manager, runtimeFile, MemorySearchLogOptions{
+					Enabled:  searchLog,
+					QueryMax: searchLogQueryMax,
+				})
+				if err != nil {
+					return err
+				}
+				defer func() {
+					_ = memoryServer.Close()
+				}()
+				logInfof("Memory search endpoint ready at %s", memoryServer.Address())
 			}
-			memoryServer, err := startMemorySearchServer(ctx, manager, runtimeFile, MemorySearchLogOptions{
-				Enabled:  searchLog,
-				QueryMax: searchLogQueryMax,
-			})
-			if err != nil {
-				return err
-			}
-			defer func() {
-				_ = memoryServer.Close()
-			}()
-			logInfof("Memory search endpoint ready at %s", memoryServer.Address())
 
 			var persistTicker *time.Ticker
 			if persistMode == PersistInterval {
@@ -271,96 +285,163 @@ func newWatchCommand() *cobra.Command {
 				<-timer.C
 			}
 
-			for {
-				select {
-				case <-ctx.Done():
-					remaining := drainPending()
-					if len(remaining) > 0 {
-						logChangeSummary(remaining, flags.Verbose)
-						result, applyErr := manager.ApplyChanges(context.Background(), remaining)
-						if applyErr != nil {
-							logErrorf("Final apply failed: %v", applyErr)
-						} else {
-							emitSynonymWarning(result.SynonymError)
-							if result.Changed {
-								if flags.Verbose {
-									logInfof("In-memory index updated: %d nodes (%d files, %d directories).", result.Stats.TotalNodes, result.Stats.TotalFiles, result.Stats.TotalDirs)
-								}
-								if persistMode == PersistChange {
-									flushed, flushErr := manager.FlushIfDirty()
-									if flushErr != nil {
-										logErrorf("Final change-triggered flush failed: %v", flushErr)
-									} else if flushed && flags.Verbose {
-										logInfof("Saved snapshot after final change to %s", outputPath)
-									}
-								}
+			go func() {
+				for {
+					select {
+					case <-ctx.Done():
+						return
+					case err := <-watcher.Errors:
+						if err != nil {
+							logErrorf("Watcher error: %v", err)
+						}
+					case event, ok := <-watcher.Events:
+						if !ok {
+							continue
+						}
+						if shouldSkipEvent(absRoot, event, ignored, outputPath, cachePath, absConfigPath) {
+							continue
+						}
+						relName := event.Name
+						if rel, relErr := filepath.Rel(absRoot, event.Name); relErr == nil {
+							relName = rel
+						}
+						addPending(relName, event.Op)
+						if flags.Verbose {
+							logInfof("Event: %s %s", event.Op, event.Name)
+						}
+
+						if event.Op&(fsnotify.Create|fsnotify.Rename) != 0 {
+							if err := syncWatchDirectories(watcher, absRoot, ignored, watchedDirs); err != nil {
+								logErrorf("Sync watch dirs failed: %v", err)
+							}
+						}
+
+						dirty = true
+						if !timer.Stop() {
+							select {
+							case <-timer.C:
+							default:
+							}
+						}
+						timer.Reset(debounce)
+					case <-tickerChan(persistTicker):
+						flushed, flushErr := manager.FlushIfDirty()
+						if flushErr != nil {
+							logErrorf("Periodic flush failed: %v", flushErr)
+							continue
+						}
+						if flushed {
+							logInfof("Periodic flush wrote snapshot to %s", outputPath)
+						}
+					case <-timer.C:
+						if !dirty {
+							continue
+						}
+						dirty = false
+						enqueueApply()
+					}
+				}
+			}()
+
+			server := mcp.NewServer(&mcp.Implementation{
+				Name:    "ctxt",
+				Version: version,
+			}, nil)
+
+			mcp.AddTool(server, &mcp.Tool{
+				Name: "search",
+				Description: "Search a codebase for files using concept-based ranked search. Faster and more relevant than grep or find for locating WHERE code lives. " +
+					"Query with plain keywords, concepts, partial filenames, or symbol names (e.g. \"auth login\", \"jwt token refresh\", \"payment handler\", \"createUser\"). " +
+					"Results are ranked by relevance score, not alphabetical. Use this instead of grep when you need to find which file handles a concept — grep finds what's INSIDE files, this finds WHICH files matter. " +
+					"Do not use for searching file contents (use grep) or file metadata like size/date/permissions (use find).",
+			}, func(ctx context.Context, req *mcp.CallToolRequest, args searchToolArgs) (*mcp.CallToolResult, any, error) {
+				if args.Query == "" {
+					return &mcp.CallToolResult{
+						IsError: true,
+						Content: []mcp.Content{&mcp.TextContent{Text: "missing required argument: query"}},
+					}, nil, nil
+				}
+				limit := args.Limit
+				if limit <= 0 {
+					limit = 10
+				}
+				typeFilter := args.Type
+				if typeFilter == "" {
+					typeFilter = "all"
+				}
+				results := manager.Search(args.Query, SearchOptions{
+					Limit:        limit,
+					MinScore:     1,
+					TypeFilter:   typeFilter,
+					IncludeDebug: args.Explain,
+				})
+				var sb strings.Builder
+				if len(results) == 0 {
+					sb.WriteString("No results found.")
+				} else {
+					for i, r := range results {
+						fmt.Fprintf(&sb, "%d. %s (score: %d, type: %s)", i+1, r.Path, r.Score, r.Type)
+						if len(r.Matches) > 0 {
+							fmt.Fprintf(&sb, " matches: %s", strings.Join(r.Matches, ", "))
+						}
+						sb.WriteString("\n")
+						if args.Explain && len(r.Breakdown) > 0 {
+							for _, b := range r.Breakdown {
+								fmt.Fprintf(&sb, "   - %s\n", b)
 							}
 						}
 					}
-					flushed, flushErr := manager.FlushIfDirty()
-					if flushErr != nil {
-						logErrorf("Failed to flush snapshot on shutdown: %v", flushErr)
-						logInfof("Stopping watcher.")
-						return flushErr
-					}
-					if flushed {
-						logInfof("Flushed snapshot to %s and %s", outputPath, cachePath)
-					} else {
-						logInfof("No snapshot flush needed.")
-					}
-					logInfof("Stopping watcher.")
-					return nil
-				case err := <-watcher.Errors:
-					if err != nil {
-						logErrorf("Watcher error: %v", err)
-					}
-				case event, ok := <-watcher.Events:
-					if !ok {
-						continue
-					}
-					if shouldSkipEvent(absRoot, event, ignored, outputPath, cachePath, absConfigPath) {
-						continue
-					}
-					relName := event.Name
-					if rel, relErr := filepath.Rel(absRoot, event.Name); relErr == nil {
-						relName = rel
-					}
-					addPending(relName, event.Op)
-					if flags.Verbose {
-						logInfof("Event: %s %s", event.Op, event.Name)
-					}
+				}
+				return &mcp.CallToolResult{
+					Content: []mcp.Content{&mcp.TextContent{Text: sb.String()}},
+				}, nil, nil
+			})
 
-					if event.Op&(fsnotify.Create|fsnotify.Rename) != 0 {
-						if err := syncWatchDirectories(watcher, absRoot, ignored, watchedDirs); err != nil {
-							logErrorf("Sync watch dirs failed: %v", err)
-						}
-					}
+			mcp.AddTool(server, &mcp.Tool{
+				Name: "status",
+				Description: "Check the health and coverage of the ctxt codebase index. " +
+					"Returns total indexed files, directories, index generation time, and root path. " +
+					"Use this to verify the index is built and current before searching, or to diagnose why search results may be empty or stale.",
+			}, func(ctx context.Context, req *mcp.CallToolRequest, _ statusToolArgs) (*mcp.CallToolResult, any, error) {
+				stats := manager.SnapshotStats()
+				root := manager.RootPath()
+				generatedAt := manager.IndexGeneratedAt()
+				var sb strings.Builder
+				fmt.Fprintf(&sb, "Root: %s\n", root)
+				fmt.Fprintf(&sb, "Total nodes: %d\n", stats.TotalNodes)
+				fmt.Fprintf(&sb, "Files: %d\n", stats.TotalFiles)
+				fmt.Fprintf(&sb, "Directories: %d\n", stats.TotalDirs)
+				fmt.Fprintf(&sb, "Generated: %s\n", generatedAt.Format(time.RFC3339))
+				return &mcp.CallToolResult{
+					Content: []mcp.Content{&mcp.TextContent{Text: sb.String()}},
+				}, nil, nil
+			})
 
-					dirty = true
-					if !timer.Stop() {
-						select {
-						case <-timer.C:
-						default:
-						}
-					}
-					timer.Reset(debounce)
-				case <-tickerChan(persistTicker):
-					flushed, flushErr := manager.FlushIfDirty()
-					if flushErr != nil {
-						logErrorf("Periodic flush failed: %v", flushErr)
-						continue
-					}
-					if flushed {
-						logInfof("Periodic flush wrote snapshot to %s", outputPath)
-					}
-				case <-timer.C:
-					if !dirty {
-						continue
-					}
-					dirty = false
-					enqueueApply()
+			logInfof("MCP server ready on stdio.")
+			serverErr := server.Run(ctx, &mcp.StdioTransport{})
+
+			remaining := drainPending()
+			if len(remaining) > 0 {
+				logChangeSummary(remaining, flags.Verbose)
+				result, applyErr := manager.ApplyChanges(context.Background(), remaining)
+				if applyErr != nil {
+					logErrorf("Final apply failed: %v", applyErr)
+				} else {
+					emitSynonymWarning(result.SynonymError)
 				}
 			}
+			flushed, flushErr := manager.FlushIfDirty()
+			if flushErr != nil {
+				logErrorf("Failed to flush snapshot on shutdown: %v", flushErr)
+			}
+			if flushed {
+				logInfof("Flushed snapshot to %s and %s", outputPath, cachePath)
+			}
+			logInfof("Stopping MCP server.")
+			if serverErr != nil {
+				return fmt.Errorf("mcp server: %w", serverErr)
+			}
+			return nil
 		},
 	}
 
@@ -377,11 +458,12 @@ func newWatchCommand() *cobra.Command {
 	cmd.Flags().StringSliceVar(&flags.ExtraIgnores, "ignore", nil, "Additional ignore entries (name or relative path)")
 	cmd.Flags().BoolVarP(&flags.Verbose, "verbose", "v", false, "Enable verbose logging")
 	cmd.Flags().DurationVar(&debounce, "debounce", defaultDebounce, "Debounce interval for coalescing fs events")
-	cmd.Flags().BoolVar(&llmOnWatch, "llm-on-watch", true, "Enable live LLM synonym generation during watch (on by default)")
+	cmd.Flags().BoolVar(&llmOnWatch, "llm-on-watch", false, "Enable live LLM synonym generation during MCP watch")
 	cmd.Flags().StringVar(&persist, "persist", string(PersistShutdown), "Persistence mode: shutdown|interval|change")
 	cmd.Flags().DurationVar(&persistInterval, "persist-interval", defaultPersistInterval, "Snapshot flush interval when --persist=interval")
 	cmd.Flags().BoolVar(&searchLog, "search-log", true, "Log incoming memory search queries in watch output")
 	cmd.Flags().IntVar(&searchLogQueryMax, "search-log-query-max", defaultSearchLogQueryMax, "Maximum query characters shown in search logs")
+	cmd.Flags().BoolVar(&enableHTTP, "http", false, "Also serve HTTP memory search endpoint alongside MCP")
 
 	return cmd
 }

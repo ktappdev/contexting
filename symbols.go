@@ -21,7 +21,7 @@ func extractSymbols(path string) ([]string, error) {
 			`(?m)^class\s+([A-Za-z_][A-Za-z0-9_]*)`,
 		})
 	}
-	if strings.HasSuffix(ext, ".js") || strings.HasSuffix(ext, ".mjs") {
+	if strings.HasSuffix(ext, ".js") || strings.HasSuffix(ext, ".mjs") || strings.HasSuffix(ext, ".jsx") {
 		return extractByRegex(path, []string{
 			`(?m)^(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_][A-Za-z0-9_]*)`,
 			`(?m)^(?:export\s+)?class\s+([A-Za-z_][A-Za-z0-9_]*)`,
@@ -54,6 +54,15 @@ func extractSymbols(path string) ([]string, error) {
 			`(?m)^module\s+([A-Za-z_][A-Za-z0-9_]*)`,
 		})
 	}
+	if strings.HasSuffix(ext, ".vue") {
+		return extractVueSymbols(path)
+	}
+	if strings.HasSuffix(ext, ".svelte") {
+		return extractSvelteSymbols(path)
+	}
+	if strings.HasSuffix(ext, ".astro") {
+		return extractAstroSymbols(path)
+	}
 	return nil, nil
 }
 
@@ -77,11 +86,15 @@ func extractByRegex(path string, patterns []string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	return extractByRegexContent(string(content), patterns)
+}
 
+// extractByRegexContent extracts symbols from content matching the given patterns
+func extractByRegexContent(content string, patterns []string) ([]string, error) {
 	var symbols []string
 	for _, pattern := range patterns {
 		re := regexp.MustCompile(pattern)
-		matches := re.FindAllStringSubmatch(string(content), -1)
+		matches := re.FindAllStringSubmatch(content, -1)
 		for _, match := range matches {
 			if len(match) > 1 {
 				symbols = append(symbols, match[1])
@@ -89,6 +102,161 @@ func extractByRegex(path string, patterns []string) ([]string, error) {
 		}
 	}
 	return dedupeStrings(symbols), nil
+}
+
+// extractScriptBlock extracts all content between opening and closing patterns.
+// Returns the concatenated inner content of all matching blocks, the full opening tag text
+// of the first block (or empty string), and whether any block was found.
+func extractScriptBlock(content string, openPattern, closePattern string) (string, string, bool) {
+	openRe := regexp.MustCompile(openPattern)
+	closeRe := regexp.MustCompile(closePattern)
+
+	var found bool
+	var firstOpeningTag string
+	var builder strings.Builder
+
+	offset := 0
+	for {
+		openMatch := openRe.FindStringIndex(content[offset:])
+		if openMatch == nil {
+			break
+		}
+		found = true
+
+		// Capture the full opening tag text for the first block
+		if firstOpeningTag == "" {
+			firstOpeningTag = content[offset+openMatch[0] : offset+openMatch[1]]
+		}
+
+		// Search for close pattern after the open match
+		contentAfterOpen := content[offset+openMatch[1]:]
+		closeMatch := closeRe.FindStringIndex(contentAfterOpen)
+		if closeMatch == nil {
+			break
+		}
+
+		// Extract content between the end of open match and start of close match
+		blockContent := contentAfterOpen[:closeMatch[0]]
+		if builder.Len() > 0 {
+			builder.WriteString("\n")
+		}
+		builder.WriteString(blockContent)
+
+		// Advance offset past the close tag
+		// closeMatch indices are relative to contentAfterOpen
+		closeEnd := closeMatch[1]
+		offset = offset + openMatch[1] + closeEnd
+	}
+
+	return builder.String(), firstOpeningTag, found
+}
+
+var jsPatterns = []string{
+	`(?m)^(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_][A-Za-z0-9_]*)`,
+	`(?m)^(?:export\s+)?class\s+([A-Za-z_][A-Za-z0-9_]*)`,
+	`(?m)^(?:export\s+)?const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=`,
+}
+
+var tsPatterns = []string{
+	`(?m)^(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_][A-Za-z0-9_]*)`,
+	`(?m)^(?:export\s+)?class\s+([A-Za-z_][A-Za-z0-9_]*)`,
+	`(?m)^(?:export\s+)?const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=`,
+	`(?m)^(?:export\s+)?interface\s+([A-Za-z_][A-Za-z0-9_]*)`,
+	`(?m)^(?:export\s+)?type\s+([A-Za-z_][A-Za-z0-9_]*)`,
+	`(?m)^(?:export\s+)?enum\s+([A-Za-z_][A-Za-z0-9_]*)`,
+}
+
+var jsPatternsWhitespace = []string{
+	`(?m)^\s*(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_][A-Za-z0-9_]*)`,
+	`(?m)^\s*(?:export\s+)?class\s+([A-Za-z_][A-Za-z0-9_]*)`,
+	`(?m)^\s*(?:export\s+)?const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=`,
+}
+
+var tsPatternsWhitespace = []string{
+	`(?m)^\s*(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_][A-Za-z0-9_]*)`,
+	`(?m)^\s*(?:export\s+)?class\s+([A-Za-z_][A-Za-z0-9_]*)`,
+	`(?m)^\s*(?:export\s+)?const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=`,
+	`(?m)^\s*(?:export\s+)?interface\s+([A-Za-z_][A-Za-z0-9_]*)`,
+	`(?m)^\s*(?:export\s+)?type\s+([A-Za-z_][A-Za-z0-9_]*)`,
+	`(?m)^\s*(?:export\s+)?enum\s+([A-Za-z_][A-Za-z0-9_]*)`,
+}
+
+// extractVueSymbols extracts symbols from Vue single-file components
+func extractVueSymbols(path string) ([]string, error) {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract all script blocks
+	scriptContent, openingTag, found := extractScriptBlock(string(content), `<script[^>]*>`, `</script>`)
+	if !found {
+		return nil, nil
+	}
+
+	// Check if any script uses TypeScript (lang attribute is in the opening tag)
+	isTS := strings.Contains(openingTag, "lang=\"ts\"") || strings.Contains(openingTag, "lang='ts'")
+
+	if isTS {
+		return extractByRegexContent(scriptContent, tsPatternsWhitespace)
+	}
+	return extractByRegexContent(scriptContent, jsPatternsWhitespace)
+}
+
+// extractSvelteSymbols extracts symbols from Svelte single-file components
+func extractSvelteSymbols(path string) ([]string, error) {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract all script blocks
+	scriptContent, openingTag, found := extractScriptBlock(string(content), `<script[^>]*>`, `</script>`)
+	if !found {
+		return nil, nil
+	}
+
+	// Check if any script uses TypeScript (lang attribute is in the opening tag)
+	isTS := strings.Contains(openingTag, "lang=\"ts\"") || strings.Contains(openingTag, "lang='ts'")
+
+	if isTS {
+		return extractByRegexContent(scriptContent, tsPatternsWhitespace)
+	}
+	return extractByRegexContent(scriptContent, jsPatternsWhitespace)
+}
+
+// extractAstroSymbols extracts symbols from Astro frontmatter
+func extractAstroSymbols(path string) ([]string, error) {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	contentStr := string(content)
+
+	// Find frontmatter delimiters using line-anchored regex
+	dashRe := regexp.MustCompile(`(?m)^---\s*$`)
+	matches := dashRe.FindAllStringIndex(contentStr, -1)
+	if len(matches) < 2 {
+		return nil, nil
+	}
+
+	// Ensure the opening --- is at or near the top of the file
+	firstMatchStart := matches[0][0]
+	if firstMatchStart > 0 {
+		before := strings.TrimSpace(contentStr[:firstMatchStart])
+		if before != "" {
+			return nil, nil
+		}
+	}
+
+	// Extract frontmatter content between the first two --- delimiters
+	start := matches[0][1]
+	end := matches[1][0]
+	frontmatter := strings.TrimSpace(contentStr[start:end])
+
+	// Use TypeScript patterns (TS is a superset of JS)
+	return extractByRegexContent(frontmatter, tsPatternsWhitespace)
 }
 
 // tokenizeIdentifier splits CamelCase and snake_case into component tokens

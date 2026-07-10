@@ -120,7 +120,7 @@ func TestSearchCommandValidatesIndexRootPath(t *testing.T) {
 		},
 	}
 
-	indexPath := filepath.Join(tmpDir, ".ctx", "ctx_index.json")
+	indexPath := filepath.Join(tmpDir, ".ctxt", "ctx_index.json")
 	if err := SaveContextIndex(indexPath, index); err != nil {
 		t.Fatalf("failed to save index: %v", err)
 	}
@@ -146,7 +146,7 @@ func TestSearchCommandValidatesRuntimeRootPath(t *testing.T) {
 		StartedAt: time.Now(),
 	}
 
-	runtimePath := filepath.Join(tmpDir, ".ctx", "ctx_runtime.json")
+	runtimePath := filepath.Join(tmpDir, ".ctxt", "ctx_runtime.json")
 	if err := SaveRuntimeState(runtimePath, state); err != nil {
 		t.Fatalf("failed to save runtime state: %v", err)
 	}
@@ -174,7 +174,7 @@ func TestQueryMemorySearchRejectsMismatchedRoot(t *testing.T) {
 		StartedAt: time.Now(),
 	}
 
-	runtimePath := filepath.Join(tmpDir, ".ctx", "ctx_runtime.json")
+	runtimePath := filepath.Join(tmpDir, ".ctxt", "ctx_runtime.json")
 	if err := SaveRuntimeState(runtimePath, state); err != nil {
 		t.Fatalf("failed to save runtime state: %v", err)
 	}
@@ -216,7 +216,7 @@ func TestContextIndexMarshalsWithRootPath(t *testing.T) {
 		},
 	}
 
-	indexPath := filepath.Join(tmpDir, ".ctx", "ctx_index.json")
+	indexPath := filepath.Join(tmpDir, ".ctxt", "ctx_index.json")
 	if err := SaveContextIndex(indexPath, index); err != nil {
 		t.Fatalf("failed to save index: %v", err)
 	}

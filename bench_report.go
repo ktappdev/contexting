@@ -190,7 +190,7 @@ func computeEngineSummaries(cases []EvalCase, results [][]EngineResult) []Engine
 }
 
 func caseMatched(c EvalCase, res EngineResult) bool {
-	if res.EngineName == "contexting" {
+	if res.EngineName == "ctxt" {
 		return res.Rank > 0
 	}
 	for _, expected := range c.ExpectAny {

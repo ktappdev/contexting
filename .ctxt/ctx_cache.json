@@ -229,6 +229,19 @@
     "generate",
     "scaffold"
   ],
+  "command_mcp.go": [
+    "mcp command",
+    "tool arguments",
+    "model context protocol",
+    "tool call",
+    "command handler",
+    "tool execution",
+    "command dispatch",
+    "tool invocation",
+    "mcp action",
+    "command runner",
+    "mcp tool handler"
+  ],
   "command_search.go": [
     "find",
     "query",
@@ -617,6 +630,18 @@
     "testing",
     "test cases",
     "go test"
+  ],
+  "mcp.md": [
+    "mcp documentation",
+    "protocol guide",
+    "model context protocol docs",
+    "mcp manual",
+    "protocol reference",
+    "mcp help",
+    "mcp specification",
+    "protocol description",
+    "mcp usage guide",
+    "mcp readme"
   ],
   "memory_search_client.go": [
     "memory client",

@@ -90,10 +90,10 @@ func newBenchCommand() *cobra.Command {
 			engineList := instantiateEngines(engineNames)
 
 			var index *ContextIndex
-			needContexting := false
+			needCtxt := false
 			for _, name := range engineNames {
-				if name == "contexting" {
-					needContexting = true
+				if name == "ctxt" {
+					needCtxt = true
 					break
 				}
 			}
@@ -101,15 +101,15 @@ func newBenchCommand() *cobra.Command {
 			index, err = LoadContextIndex(indexPath)
 			indexLoadMs := time.Since(indexStart).Milliseconds()
 			if err != nil {
-				if needContexting {
+				if needCtxt {
 					return err
 				}
-				logWarnf("index load failed, contexting engine will be skipped: %v", err)
+				logWarnf("index load failed, ctxt engine will be skipped: %v", err)
 				indexLoadMs = 0
 				index = &ContextIndex{RootPath: absRoot}
 			} else {
 				if index.RootPath == "" {
-					return fmt.Errorf("index missing root_path: regenerate index by running 'contexting watch' or 'contexting init' in the project directory")
+					return fmt.Errorf("index missing root_path: regenerate index by running 'ctxt watch' or 'ctxt init' in the project directory")
 				}
 				if index.RootPath != absRoot {
 					return fmt.Errorf("index root path mismatch: expected %s, got %s. Use --root to specify the project directory or run from the project root", absRoot, index.RootPath)
@@ -117,7 +117,7 @@ func newBenchCommand() *cobra.Command {
 			}
 			if index == nil {
 				for i, name := range engineNames {
-					if name == "contexting" {
+					if name == "ctxt" {
 						engineNames = append(engineNames[:i], engineNames[i+1:]...)
 						break
 					}
@@ -173,11 +173,11 @@ func newBenchCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&rootPath, "root", "", "Project root path (defaults to current working directory)")
-	cmd.Flags().StringVarP(&indexPath, "index", "i", ".ctx/ctx_index.json", "Path to context JSON")
+	cmd.Flags().StringVarP(&indexPath, "index", "i", ".ctxt/ctx_index.json", "Path to context JSON")
 	cmd.Flags().StringVarP(&casesPath, "cases", "c", "", "Path to eval cases JSON")
 	cmd.Flags().IntVarP(&opts.Limit, "limit", "n", 10, "Number of ranked search results per query")
 	cmd.Flags().IntVar(&opts.MinScore, "min-score", 1, "Minimum score required for candidate results")
-	cmd.Flags().StringVar(&engines, "engines", "contexting,find,grep", "Comma-separated list of engines to benchmark")
+	cmd.Flags().StringVar(&engines, "engines", "ctxt,find,grep", "Comma-separated list of engines to benchmark")
 	cmd.Flags().IntVar(&grepMaxBytes, "grep-max-bytes", 1048576, "Maximum file size in bytes for grep engine to read")
 	cmd.Flags().BoolVar(&jsonOut, "json", false, "Print full benchmark report as JSON")
 	cmd.Flags().BoolVar(&byCategory, "by-category", true, "Group report by category (for v2 case files)")

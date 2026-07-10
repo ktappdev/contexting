@@ -1,6 +1,6 @@
 [common]
-output = ".ctx/ctx_index.json"
-synonym_cache = ".ctx/ctx_cache.json"
+output = ".ctxt/ctx_index.json"
+synonym_cache = ".ctxt/ctx_cache.json"
 llm_model = "qwen3.5-4b"
 batch_size = 0
 synonyms = 10

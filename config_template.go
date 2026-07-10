@@ -1,8 +1,8 @@
 package main
 
 const starterConfigTemplate = `[common]
-output = ".ctx/ctx_index.json"
-synonym_cache = ".ctx/ctx_cache.json"
+output = ".ctxt/ctx_index.json"
+synonym_cache = ".ctxt/ctx_cache.json"
 llm_model = "deepseek/deepseek-v4-flash"  # any OpenAI-compatible model name
 batch_size = 15             # names per batch; 15 works well for 8B models
 synonyms_min = 5            # min synonyms per name
@@ -66,7 +66,7 @@ index = "ctx_index.json"
 cases = "ctx_cases.json"
 limit = 10
 min_score = 1
-engines = ["contexting", "find", "grep", "combined"]
+engines = ["ctxt", "find", "grep", "combined"]
 grep_max_bytes = 1048576
 json = false
 `

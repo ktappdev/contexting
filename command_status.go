@@ -71,11 +71,11 @@ func newStatusCommand() *cobra.Command {
 			}
 			indexPath = resolveConfigPath(absConfigPath, indexPath)
 			if indexPath == "" {
-				indexPath = resolveProjectPath(absRoot, ".ctx/ctx_index.json")
+				indexPath = resolveProjectPath(absRoot, ".ctxt/ctx_index.json")
 			}
 
 			cachePath := resolveProjectPath(absRoot, common.SynonymCache)
-			runtimeFile := resolveProjectPath(absRoot, ".ctx/ctx_runtime.json")
+			runtimeFile := resolveProjectPath(absRoot, ".ctxt/ctx_runtime.json")
 
 			report := StatusReport{
 				ProjectRoot:  absRoot,
@@ -86,7 +86,7 @@ func newStatusCommand() *cobra.Command {
 			}
 
 			if absConfigPath == "" {
-				report.ConfigPath = resolveProjectPath(absRoot, ".ctx/ctx_config.toml")
+				report.ConfigPath = resolveProjectPath(absRoot, ".ctxt/ctx_config.toml")
 			}
 			if _, err := os.Stat(report.ConfigPath); err == nil {
 				report.ConfigExists = true

@@ -8,7 +8,7 @@ import (
 
 func TestSaveAndLoadRuntimeState(t *testing.T) {
 	tmpDir := t.TempDir()
-	path := filepath.Join(tmpDir, ".ctx", "ctx_runtime.json")
+	path := filepath.Join(tmpDir, ".ctxt", "ctx_runtime.json")
 	state := RuntimeState{
 		RootPath:  tmpDir,
 		Address:   "127.0.0.1:12345",

@@ -80,7 +80,7 @@ func newEvalCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&indexPath, "index", "i", ".ctx/ctx_index.json", "Path to context JSON")
+	cmd.Flags().StringVarP(&indexPath, "index", "i", ".ctxt/ctx_index.json", "Path to context JSON")
 	cmd.Flags().StringVar(&casesPath, "cases", "", "Path to eval cases JSON")
 	cmd.Flags().IntVarP(&opts.Limit, "limit", "n", 5, "Number of ranked search results per query")
 	cmd.Flags().IntVar(&opts.MinScore, "min-score", 1, "Minimum score required for candidate results")

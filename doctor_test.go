@@ -19,10 +19,10 @@ func TestRunDoctorHealthy(t *testing.T) {
 			Children: map[string]*Node{},
 		},
 	}
-	if err := SaveContextIndex(filepath.Join(tmpDir, ".ctx", "ctx_index.json"), index); err != nil {
+	if err := SaveContextIndex(filepath.Join(tmpDir, ".ctxt", "ctx_index.json"), index); err != nil {
 		t.Fatalf("save index: %v", err)
 	}
-	if err := SaveSynonymCache(filepath.Join(tmpDir, ".ctx", "ctx_cache.json"), SynonymResponse{"src": {"code"}}); err != nil {
+	if err := SaveSynonymCache(filepath.Join(tmpDir, ".ctxt", "ctx_cache.json"), SynonymResponse{"src": {"code"}}); err != nil {
 		t.Fatalf("save cache: %v", err)
 	}
 	if err := writeStarterConfig(filepath.Join(tmpDir, "context.toml"), false); err != nil {

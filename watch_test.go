@@ -3,8 +3,8 @@ package main
 import "testing"
 
 func TestShouldSkipInternalOutput(t *testing.T) {
-	out := "/tmp/project/.ctx/ctx_index.json"
-	cache := "/tmp/project/.ctx/ctx_cache.json"
+	out := "/tmp/project/.ctxt/ctx_index.json"
+	cache := "/tmp/project/.ctxt/ctx_cache.json"
 
 	if !shouldSkipInternalOutput(out, out, cache, "") {
 		t.Fatalf("expected output path to be skipped")
