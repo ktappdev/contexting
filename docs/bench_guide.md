@@ -17,7 +17,7 @@ This helps you understand:
 ctxt bench --cases docs/bench_cases.json
 ```
 
-This runs all 4 engines (ctxt, find, grep, combined) against the case file and prints a summary.
+This runs the default engines (ctxt, find, grep) against the case file and prints a summary.
 
 ### Run specific engines
 
@@ -44,21 +44,24 @@ ctxt bench \
   --root . \
   --index .ctxt/ctx_index.json \
   --cases docs/bench_cases.json \
-  --engines ctxt,find,grep,combined \
+  --engines ctxt,find,grep,fd,rg,hybrid,combined \
   --limit 10 \
   --by-category
 ```
 
-## The 4 Engines
+## Bench Engines
 
 | Engine | What it does |
 |--------|--------------|
 | **ctxt** | Uses the precomputed index with symbols, synonyms, and path scoring. Ranked results. |
 | **find** | Walks the filesystem and matches tokens against filenames. Alphabetical results. |
+| **fd** | Like find but respects .gitignore and is faster. Alphabetical results. |
 | **grep** | Walks the filesystem and matches tokens against file contents. Alphabetical results. |
+| **rg** | ripgrep — like grep but respects .gitignore and is faster. Alphabetical results. |
+| **hybrid** | ctxt index + ripgrep content fallback for sparse results. Content matches at score=1. |
 | **combined** | Union of find and grep results. Alphabetical results. |
 
-**Key difference:** ctxt returns ranked results (best match first). The other engines return alphabetical lists and don't rank by relevance.
+**Key difference:** ctxt returns ranked results (best match first). The other engines return alphabetical lists and don't rank by relevance. hybrid combines ctxt ranking with content fallback.
 
 ## Metrics Explained
 
@@ -217,10 +220,26 @@ ctxt bench --cases your_cases.json
 - **Low noise ratio** (< 0.3) — means ctxt isn't returning irrelevant files
 - **Fast time** (< 50ms per query) — index lookup should be fast
 
-### Contexting vs others:
+### ctxt vs others:
 - **ctxt vs find:** ctxt should win on conceptual queries; find may win on exact filename matches
 - **ctxt vs grep:** ctxt should be faster and have less noise; grep may find more but with lower precision
+- **ctxt vs fd:** similar to find but fd respects .gitignore and is faster
+- **ctxt vs rg:** similar to grep but rg respects .gitignore and is faster
+- **ctxt vs hybrid:** hybrid fills gaps when index results are sparse, but is slower (~7ms avg)
 - **ctxt vs combined:** ctxt should have higher Hit@1 due to ranking; combined may have higher recall but more noise
+
+### Symbol extraction mode
+Bench results depend on the symbol extraction mode used when building the index. To compare tree-sitter vs regex:
+
+```bash
+# Re-index with tree-sitter
+ctxt init . --symbol-extractor treesitter
+ctxt bench --cases docs/bench_cases.json --engines ctxt
+
+# Re-index with regex
+ctxt init . --symbol-extractor regex
+ctxt bench --cases docs/bench_cases.json --engines ctxt
+```
 
 ### When to investigate:
 - If exact-file Hit@1 is below 100%, there's a bug

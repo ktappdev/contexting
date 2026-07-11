@@ -28,6 +28,9 @@ func newSyncCommand() *cobra.Command {
 				return err
 			}
 			applyCommonConfig(cmd, &flags, cfg.Common)
+			if flags.SymbolExtractor != "" {
+				SymbolsExtractorMode = flags.SymbolExtractor
+			}
 			flags.normalize()
 
 			rootPath := "."
@@ -93,13 +96,14 @@ func newSyncCommand() *cobra.Command {
 			ctx, stop := signalAwareContext()
 			defer stop()
 
-			// Build symbols map for targets
+			// Build symbols and imports maps for targets
 			symbolsMap := make(map[string][]string)
+			importsMap := make(map[string][]string)
 			walkTree(index.Tree, func(node *Node) {
 				if node.Type != "file" {
 					return
 				}
-				name := filepath.Base(node.FullPath)
+				name := llmSynonymKey(node)
 				if len(node.Symbols) > 0 {
 					symbolsMap[name] = node.Symbols
 				} else {
@@ -109,9 +113,14 @@ func newSyncCommand() *cobra.Command {
 						symbolsMap[name] = syms
 					}
 				}
+				// Imports reveal external dependencies (e.g. "@clerk/nextjs")
+				// that help the LLM generate domain-accurate synonyms.
+				if imps := extractFileImports(node.FullPath); len(imps) > 0 {
+					importsMap[name] = imps
+				}
 			})
 
-			generated, err := GenerateSynonymsForNamesWithContext(ctx, targets, llmKey, cfg.Watch.MaxBatchSize, llmModel, llmEndpoint, llmTemp, llmMaxTokens, synonymsMin, synonymsMax, cfg.LLM.ParallelRequests, symbolsMap)
+			generated, err := GenerateSynonymsForNamesWithContext(ctx, targets, llmKey, cfg.Watch.MaxBatchSize, llmModel, llmEndpoint, llmTemp, llmMaxTokens, synonymsMin, synonymsMax, cfg.LLM.ParallelRequests, symbolsMap, importsMap)
 			if err != nil {
 				return fmt.Errorf("generate synonyms: %w", err)
 			}
@@ -146,6 +155,7 @@ func newSyncCommand() *cobra.Command {
 	cmd.Flags().IntVar(&flags.SynonymsMin, "synonyms-min", 0, "Min synonyms per name (0 = use synonyms value)")
 	cmd.Flags().IntVar(&flags.SynonymsMax, "synonyms-max", 0, "Max synonyms per name (0 = use synonyms value)")
 	cmd.Flags().StringVar(&flags.SynonymCache, "synonym-cache", ".ctxt/ctx_cache.json", "Path to persistent synonym cache JSON")
+	cmd.Flags().StringVar(&flags.SymbolExtractor, "symbol-extractor", "auto", "Symbol extraction engine: auto, treesitter, regex")
 	cmd.Flags().BoolVarP(&flags.Verbose, "verbose", "v", false, "Enable verbose logging")
 
 	return cmd

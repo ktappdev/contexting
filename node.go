@@ -102,6 +102,25 @@ func BuildTree(rootPath string, ignored map[string]bool) (*Node, error) {
 	return root, nil
 }
 
+func pathSuffix(fullPath string) string {
+	dir := filepath.Dir(fullPath)
+	base := filepath.Base(fullPath)
+	parent := filepath.Base(dir)
+	// For root-level files, parent is the project directory name (still useful context).
+	// For deeply nested files, parentDir/basename is usually unique enough.
+	return parent + "/" + base
+}
+
+// llmSynonymKey returns the key used for LLM synonym generation and lookup.
+// Files use parentDir/basename (pathSuffix); directories use just basename.
+// Must match CollectNamesForLLM's key logic.
+func llmSynonymKey(node *Node) string {
+	if node.Type == "file" {
+		return pathSuffix(node.FullPath)
+	}
+	return filepath.Base(node.FullPath)
+}
+
 func CollectNamesForLLM(tree *Node) []string {
 	if tree == nil {
 		return nil
@@ -113,7 +132,7 @@ func CollectNamesForLLM(tree *Node) []string {
 		if node == tree {
 			return
 		}
-		name := filepath.Base(node.FullPath)
+		name := llmSynonymKey(node)
 		if _, ok := seen[name]; ok {
 			return
 		}
@@ -131,7 +150,7 @@ func AssignSynonymsToTree(tree *Node, synonyms SynonymResponse, maxPerNode int) 
 			if node == tree {
 				return
 			}
-			name := filepath.Base(node.FullPath)
+			name := llmSynonymKey(node)
 			node.Synonyms = sanitizeSynonyms(lexicalSynonyms(name), maxPerNode)
 		})
 		return
@@ -141,7 +160,7 @@ func AssignSynonymsToTree(tree *Node, synonyms SynonymResponse, maxPerNode int) 
 		if node == tree {
 			return
 		}
-		name := filepath.Base(node.FullPath)
+		name := llmSynonymKey(node)
 		combined := make([]string, 0, maxPerNode+4)
 		if syns, ok := synonyms[name]; ok {
 			combined = append(combined, syns...)

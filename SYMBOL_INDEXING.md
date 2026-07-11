@@ -45,7 +45,25 @@ Symbol indexing closes that gap **without extra LLM calls** — it's pure static
 
 ### Parsing Strategy
 
-Two approaches depending on file type:
+The default extractor mode is `auto` (tree-sitter with regex fallback). You can override this with the `--symbol-extractor` flag on `ctxt init`:
+
+- `auto` (default): Use tree-sitter for supported languages, fall back to regex for others
+- `treesitter`: Force tree-sitter for all supported languages (fails for unsupported languages)
+- `regex`: Use regex-based extraction for all languages
+
+**Language support:**
+
+| Language | Extensions | Parser |
+|----------|-----------|--------|
+| Go | `.go` | `go/parser` (stdlib) |
+| Python | `.py` | tree-sitter (via gotreesitter, pure Go) |
+| JavaScript | `.js`, `.mjs` | tree-sitter (via gotreesitter, pure Go) |
+| TypeScript | `.ts`, `.tsx` | tree-sitter (via gotreesitter, pure Go) |
+| Rust | `.rs` | tree-sitter (via gotreesitter, pure Go) |
+| Svelte | `.svelte` | tree-sitter (via gotreesitter, pure Go) |
+| Astro | `.astro` | tree-sitter (via gotreesitter, pure Go) |
+| Vue | `.vue` | regex (fallback) |
+| Ruby | `.rb` | regex (fallback) |
 
 **Go files — use `go/parser` (stdlib)**
 
@@ -73,18 +91,21 @@ func extractGoSymbols(path string) ([]string, error) {
 
 This gives you every top-level `func`, `type`, `var`, and `const` name — exactly what we want.
 
-**All other languages — regex line scanning**
+**Tree-sitter languages — Python, JS/TS, Rust, Svelte, Astro**
 
-Read the file line by line. Match lines that start with known declaration patterns. Extract the identifier that follows.
+Tree-sitter (via gotreesitter, a pure Go implementation) provides accurate AST-based symbol extraction for these languages. It extracts top-level declarations:
+- Python: `def`, `class`, `async def`
+- JavaScript/TypeScript: `function`, `class`, `const`, `export function`, `export class`, `export const`, `interface`, `type`, `enum`
+- Rust: `fn`, `pub fn`, `struct`, `enum`, `trait`, `impl`
+- Svelte/Astro: script blocks with the above patterns
 
-Language patterns:
+**Regex fallback — Vue, Ruby, and others**
+
+For languages without tree-sitter support, regex line scanning extracts symbols. Read the file line by line and match declaration patterns:
 
 | Language | Extensions | Patterns |
 |----------|-----------|---------|
-| Python | `.py` | `def `, `class `, `async def ` |
-| JavaScript | `.js`, `.mjs` | `function `, `class `, `const `, `export function`, `export class`, `export const` |
-| TypeScript | `.ts`, `.tsx` | same as JS + `interface `, `type `, `enum ` |
-| Rust | `.rs` | `fn `, `pub fn `, `struct `, `enum `, `trait `, `impl ` |
+| Vue | `.vue` | `function `, `class `, `const `, `export function`, `export class`, `export const` |
 | Ruby | `.rb` | `def `, `class `, `module ` |
 
 Example regex for a line like `export function handlePayment(`:
@@ -168,32 +189,21 @@ This is what makes `"JWT validation"` find `validateJWTToken`.
 
 ---
 
-## Implementation Plan
+## Implementation Status
 
-### Step 1 — Symbol extraction
-- Create `symbols.go`
-- Implement `extractSymbols(path string) []string` dispatcher
-- Implement `extractGoSymbols` using `go/parser`
-- Implement `extractByRegex` for Python, JS/TS, Rust
-- Write unit tests with sample file fixtures
+**✓ Completed** — Symbol indexing is implemented and enabled by default.
 
-### Step 2 — Data model
-- Add `Symbols []string` to `Node` in `indexer.go`
-- Backward compatible: old `ctx_index.json` files without `symbols` still load fine (field is omitempty)
+- **Step 1 — Symbol extraction:** ✓ Implemented in `symbols.go` with `auto` mode (tree-sitter with regex fallback)
+- **Step 2 — Data model:** ✓ `Symbols []string` added to `Node` in `node.go`
+- **Step 3 — Indexing integration:** ✓ Called during tree build in `indexer.go` and on file changes in `index_manager.go`
+- **Step 4 — Search scoring:** ✓ Symbol scoring added to `SearchHintsWithOptions` in `search.go`
+- **Step 5 — Eval:** ✓ Eval cases for content-vs-name mismatch scenarios in `docs/bench_cases.json`
 
-### Step 3 — Indexing integration
-- Call `extractSymbols` during tree build in `indexer.go`
-- Call it again on file change events in `index_manager.go`
-
-### Step 4 — Search scoring
-- Add symbol scoring block to `SearchHintsWithOptions` in `search.go`
-- Add `tokenizeIdentifier` helper
-- Update `SearchResult.Matches` to show `sym:validateJWTToken` for transparency
-
-### Step 5 — Eval
-- Add eval cases that specifically test content-vs-name mismatch scenarios
-- E.g. query `"retry logic"` should hit `http_client.go` which has `RetryWithBackoff`
-- Measure Hit@1/3/5 improvement vs baseline
+**Additional enhancements:**
+- ✓ Tree-sitter support for Python, JS/TS, Rust, Svelte, Astro (via gotreesitter, pure Go)
+- ✓ Import extraction for JS/TS files to improve LLM synonym context
+- ✓ Path-suffix deduplication (`parentDir/basename` keys) to prevent duplicate filename collisions
+- ✓ `--symbol-extractor` flag to choose between `auto`, `treesitter`, or `regex` modes
 
 ---
 
@@ -202,7 +212,41 @@ This is what makes `"JWT validation"` find `validateJWTToken`.
 - **No full-text search** — we only extract declaration lines, not file contents. Keeps it fast and the index small.
 - **No type inference** — we don't resolve what types functions return or accept. Just names.
 - **No cross-file reference tracking** — not building a call graph. That's a different tool.
-- **No tree-sitter dependency** — regex + stdlib is good enough and keeps the binary simple.
+- **No full-text search** — we only extract declaration lines, not file contents. Keeps it fast and the index small.
+- **No type inference** — we don't resolve what types functions return or accept. Just names.
+- **No cross-file reference tracking** — not building a call graph. That's a different tool.
+
+---
+
+## Import Extraction
+
+For JavaScript and TypeScript files, tree-sitter also extracts ESM import statements. These imports are fed to the LLM during synonym generation to improve context awareness.
+
+**Why this matters:** Generic filenames like `route.ts`, `handler.ts`, or `controller.ts` are common across codebases. Without import context, the LLM can only guess at the file's purpose. With import extraction, a `route.ts` file containing:
+
+```typescript
+import {clerkClient} from "@clerk/nextjs"
+import {WebhookEvent} from "@clerk/nextjs/server"
+```
+
+Gets domain-accurate synonyms like "clerk webhook handler" instead of generic terms like "route handler".
+
+**Implementation:** Imports are extracted during symbol extraction and included in the LLM prompt alongside the file's symbols (up to 10 symbols and imports total per file).
+
+---
+
+## Path-Suffix Deduplication
+
+To prevent duplicate filenames from overwriting each other in the synonym map, ctxt uses `parentDir/basename` keys instead of bare basenames.
+
+**Problem:** A large codebase might have 194 files named `route.ts` scattered across different directories. If synonyms were keyed only by basename (`route.ts`), each would overwrite the previous, leaving only one synonym set.
+
+**Solution:** Synonym keys use the parent directory as a prefix: `webhook/route.ts`, `api/route.ts`, `auth/route.ts`. This ensures each file gets its own synonym entry while keeping the key readable and hierarchical.
+
+**Example:**
+- `webhook/route.ts` → `["clerk webhook handler", "webhook endpoint"]`
+- `api/route.ts` → `["api route", "rest endpoint"]`
+- `auth/route.ts` → `["auth handler", "login route"]`
 
 ---
 

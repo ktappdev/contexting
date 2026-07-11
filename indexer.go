@@ -144,22 +144,32 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 	})
 	symbolCount = count
 
-	// Step 2: Build symbols map for LLM context
+	// Step 2: Build symbols and imports maps for LLM context
 	symbolsMap := make(map[string][]string)
+	importsMap := make(map[string][]string)
 	walkTree(tree, func(node *Node) {
-		if node.Type == "file" && len(node.Symbols) > 0 {
-			name := filepath.Base(node.FullPath)
+		if node.Type != "file" {
+			return
+		}
+		name := llmSynonymKey(node)
+		if len(node.Symbols) > 0 {
 			symbolsMap[name] = node.Symbols
+		}
+		// Imports reveal external dependencies (e.g. "@clerk/nextjs") that
+		// help the LLM generate domain-accurate synonyms for files whose
+		// own symbols are generic (e.g. POST/GET handlers in route.ts).
+		if imps := extractFileImports(node.FullPath); len(imps) > 0 {
+			importsMap[name] = imps
 		}
 	})
 
-	// Step 3: Generate synonyms with symbols context
+	// Step 3: Generate synonyms with symbols + imports context
 	if runSynonyms && opts.APIKey != "" && len(missing) > 0 {
 		batchSize := opts.MaxBatchSize
 		if batchSize <= 0 {
 			batchSize = opts.BatchSize
 		}
-		generated, err := GenerateSynonymsForNamesWithContext(opts.Ctx, missing, opts.APIKey, batchSize, opts.Model, opts.Endpoint, opts.Temperature, opts.MaxTokens, opts.SynonymsMin, opts.SynonymsMax, opts.ParallelRequests, symbolsMap)
+		generated, err := GenerateSynonymsForNamesWithContext(opts.Ctx, missing, opts.APIKey, batchSize, opts.Model, opts.Endpoint, opts.Temperature, opts.MaxTokens, opts.SynonymsMin, opts.SynonymsMax, opts.ParallelRequests, symbolsMap, importsMap)
 		if err != nil {
 			synonymErr = err
 		} else {

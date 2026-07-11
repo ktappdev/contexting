@@ -382,18 +382,43 @@ func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsno
 		}
 		sort.Strings(names)
 
-		// Build symbols map for new names
+		// Build symbols and imports maps for new names
 		symbolsMap := make(map[string][]string)
+		importsMap := make(map[string][]string)
 		for _, name := range names {
 			// Find the node with this basename and extract its symbols
+			// and imports. We collect imports from every file with this
+			// basename, deduped, so a name like "route.ts" gets the union
+			// of all its call sites' dependencies.
+			seenImports := make(map[string]struct{})
 			walkTree(m.index.Tree, func(node *Node) {
-				if node.Type == "file" && filepath.Base(node.FullPath) == name && len(node.Symbols) > 0 {
+				if node.Type != "file" || filepath.Base(node.FullPath) != name {
+					return
+				}
+				if len(node.Symbols) > 0 {
 					symbolsMap[name] = node.Symbols
 				}
+				// Imports reveal external dependencies (e.g. "@clerk/nextjs")
+				// that help the LLM generate domain-accurate synonyms.
+				// Imports aren't stored on the node, so we re-extract from disk.
+				for _, imp := range extractFileImports(node.FullPath) {
+					if _, dup := seenImports[imp]; dup {
+						continue
+					}
+					seenImports[imp] = struct{}{}
+				}
 			})
+			if len(seenImports) > 0 {
+				imports := make([]string, 0, len(seenImports))
+				for imp := range seenImports {
+					imports = append(imports, imp)
+				}
+				sort.Strings(imports)
+				importsMap[name] = imports
+			}
 		}
 
-		synonyms, err := GenerateSynonymsForNamesWithContext(ctx, names, m.activeAPIKey(), m.maxBatchSize, m.model, m.endpoint, m.temperature, m.maxTokens, m.synonymsMin, m.synonymsMax, 1, symbolsMap)
+		synonyms, err := GenerateSynonymsForNamesWithContext(ctx, names, m.activeAPIKey(), m.maxBatchSize, m.model, m.endpoint, m.temperature, m.maxTokens, m.synonymsMin, m.synonymsMax, 1, symbolsMap, importsMap)
 		if err != nil {
 			result.SynonymError = err
 		} else {

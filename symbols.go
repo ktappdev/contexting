@@ -1,6 +1,7 @@
 package contexting
 
 import (
+	"fmt"
 	"go/parser"
 	"go/token"
 	"os"
@@ -14,6 +15,18 @@ func extractSymbols(path string) ([]string, error) {
 	ext := strings.ToLower(path)
 	if strings.HasSuffix(ext, ".go") {
 		return extractGoSymbols(path)
+	}
+
+	// Tree-sitter extraction for supported non-Go languages (if enabled).
+	// Default mode is "regex" so this block is skipped unless the user
+	// opts in via --symbol-extractor or the [common] config.
+	if SymbolsExtractorMode == "treesitter" || SymbolsExtractorMode == "auto" {
+		if syms, err := extractSymbolsTreeSitter(path); err == nil {
+			return syms, nil
+		} else if SymbolsExtractorMode == "treesitter" {
+			return nil, fmt.Errorf("tree-sitter extraction failed for %s: %w", path, err)
+		}
+		// auto mode: fall through to regex below on tree-sitter errors
 	}
 	if strings.HasSuffix(ext, ".py") {
 		return extractByRegex(path, []string{

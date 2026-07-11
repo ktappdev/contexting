@@ -7,6 +7,7 @@ llm_model = "deepseek/deepseek-v4-flash"  # any OpenAI-compatible model name
 batch_size = 15             # names per batch; 15 works well for 8B models
 synonyms_min = 5            # min synonyms per name
 synonyms_max = 12           # max synonyms per name
+symbol_extractor = "auto"  # "auto", "treesitter", or "regex"
 ignore = [".git", ".venv", "site-packages", "__pycache__", "node_modules", "vendor", "dist", "migrations", "pb_migrations", "alembic", "flyway"]
 # Extra dot files to keep (merged with built-in defaults like .prettierrc, .editorconfig, etc.)
 # dot_whitelist = [".env.local", ".env.production"]

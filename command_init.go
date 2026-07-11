@@ -32,6 +32,10 @@ func newInitCommand() *cobra.Command {
 			applyCommonConfig(cmd, &flags, cfg.Common)
 			flags.normalize()
 
+			if flags.SymbolExtractor != "" {
+				SymbolsExtractorMode = flags.SymbolExtractor
+			}
+
 			// If config was just created, pause so user can edit settings before indexing
 			if configJustCreated {
 				fmt.Println()
@@ -142,6 +146,7 @@ func newInitCommand() *cobra.Command {
 	cmd.Flags().IntVar(&flags.SynonymsMax, "synonyms-max", 0, "Max synonyms per name (0 = use synonyms value)")
 	cmd.Flags().StringVar(&flags.SynonymCache, "synonym-cache", ".ctxt/ctx_cache.json", "Path to persistent synonym cache JSON")
 	cmd.Flags().StringSliceVar(&flags.ExtraIgnores, "ignore", nil, "Additional ignore entries (name or relative path)")
+	cmd.Flags().StringVar(&flags.SymbolExtractor, "symbol-extractor", "auto", "Symbol extraction engine: auto, treesitter, regex")
 	cmd.Flags().BoolVarP(&flags.Verbose, "verbose", "v", false, "Enable verbose logging")
 
 	return cmd

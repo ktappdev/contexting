@@ -20,6 +20,7 @@ type searchToolArgs struct {
 	Limit   int    `json:"limit,omitempty" jsonschema:"Max results (default 10)"`
 	Type    string `json:"type,omitempty" jsonschema:"Filter: all, files, or dirs"`
 	Explain bool   `json:"explain,omitempty" jsonschema:"Include score breakdown"`
+	Hybrid  bool   `json:"hybrid,omitempty" jsonschema:"Enable content fallback via ripgrep when index results are sparse"`
 }
 
 // MCP status tool has no input.
@@ -67,6 +68,9 @@ Setup: Add to your AI client's MCP config:
 				return err
 			}
 			applyCommonConfig(cmd, &flags, cfg.Common)
+			if flags.SymbolExtractor != "" {
+				SymbolsExtractorMode = flags.SymbolExtractor
+			}
 			if cfg.Watch.UseLLM != nil && !cmd.Flags().Changed("llm-on-watch") {
 				llmOnWatch = *cfg.Watch.UseLLM
 			}
@@ -363,7 +367,7 @@ Setup: Add to your AI client's MCP config:
 				Description: "Search a codebase for files using concept-based ranked search. Faster and more relevant than grep or find for locating WHERE code lives. " +
 					"Query with plain keywords, concepts, partial filenames, or symbol names (e.g. \"auth login\", \"jwt token refresh\", \"payment handler\", \"createUser\"). " +
 					"Results are ranked by relevance score (symbol matches +4, synonyms +3, basename +7, exact match +15). " +
-					"Content fallback available via --hybrid flag: when results are sparse, ripgrep scans file contents for the query tokens and merges unmatched files at score=1. " +
+					"Set hybrid=true to enable content fallback via ripgrep when index results are sparse. " +
 					"Use this instead of grep when you need to find which file handles a concept — grep finds what's INSIDE files, this finds WHICH files matter. " +
 					"Do not use for searching file contents (use grep) or file metadata like size/date/permissions (use find).",
 			}, func(ctx context.Context, req *mcp.CallToolRequest, args searchToolArgs) (*mcp.CallToolResult, any, error) {
@@ -382,10 +386,11 @@ Setup: Add to your AI client's MCP config:
 					typeFilter = "all"
 				}
 				results := manager.Search(args.Query, SearchOptions{
-					Limit:        limit,
-					MinScore:     1,
-					TypeFilter:   typeFilter,
-					IncludeDebug: args.Explain,
+					Limit:          limit,
+					MinScore:       1,
+					TypeFilter:     typeFilter,
+					IncludeDebug:   args.Explain,
+					ContentFallback: args.Hybrid,
 				})
 				var sb strings.Builder
 				if len(results) == 0 {
@@ -468,6 +473,7 @@ Setup: Add to your AI client's MCP config:
 	cmd.Flags().IntVar(&flags.SynonymsMax, "synonyms-max", 0, "Max synonyms per name (0 = use synonyms value)")
 	cmd.Flags().StringVar(&flags.SynonymCache, "synonym-cache", ".ctxt/ctx_cache.json", "Path to persistent synonym cache JSON")
 	cmd.Flags().StringSliceVar(&flags.ExtraIgnores, "ignore", nil, "Additional ignore entries (name or relative path)")
+	cmd.Flags().StringVar(&flags.SymbolExtractor, "symbol-extractor", "auto", "Symbol extraction engine: auto, treesitter, regex")
 	cmd.Flags().BoolVarP(&flags.Verbose, "verbose", "v", false, "Enable verbose logging")
 	cmd.Flags().DurationVar(&debounce, "debounce", defaultDebounce, "Debounce interval for coalescing fs events")
 	cmd.Flags().BoolVar(&llmOnWatch, "llm-on-watch", false, "Enable live LLM synonym generation during MCP watch")

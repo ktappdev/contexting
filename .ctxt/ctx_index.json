@@ -1,6 +1,6 @@
 {
   "root_path": "/Users/kentaylor/developer/llm-search-thing/contexting",
-  "generated_at": "2026-07-11T04:37:27.295547Z",
+  "generated_at": "2026-07-11T05:45:54.303731Z",
   "model": "deepseek/deepseek-v4-flash",
   "tree": {
     "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting",
@@ -107,26 +107,26 @@
           "go"
         ],
         "symbols": [
-          "EngineResult",
-          "unixFindEngine",
+          "rgEngine",
           "hybridEngine",
+          "tokensMatchPath",
           "computeNoiseRatio",
-          "SearchEngine",
+          "isKnownEngine",
+          "EngineResult",
           "EngineSummary",
           "ctxtEngine",
+          "fdEngine",
           "grepEngine",
-          "tokensMatchPath",
-          "hasNullByte",
+          "tokensMatchContent",
           "countTokens",
           "knownEngines",
-          "fdEngine",
+          "hasNullByte",
+          "countRelevantPaths",
+          "SearchEngine",
+          "unixFindEngine",
           "combinedEngine",
           "computeHitAtK",
-          "countRelevantPaths",
-          "instantiateEngines",
-          "rgEngine",
-          "tokensMatchContent",
-          "isKnownEngine"
+          "instantiateEngines"
         ]
       },
       "bench_report.go": {
@@ -146,25 +146,25 @@
           "go"
         ],
         "symbols": [
-          "groupCasesByCategory",
-          "FullReport",
-          "computeBenchMisses",
-          "groupResultsByCategory",
-          "CategoryReport",
-          "fullReportWithLoad",
-          "printBenchTable",
-          "percentileTimes",
-          "percentile",
-          "computeCategorySummaries",
           "categoryReportToJSON",
-          "computeEngineSummaries",
+          "BenchMiss",
+          "CategoryReport",
+          "FullReport",
+          "fullReportWithLoad",
+          "percentileTimes",
+          "computeBenchMisses",
           "printCategoryReport",
           "BenchOutput",
-          "BenchMiss",
-          "printBenchSummary",
+          "printBenchTable",
           "resultsToJSONBench",
+          "computeEngineSummaries",
+          "printBenchSummary",
           "caseMatched",
-          "pathMatchesExpected"
+          "percentile",
+          "pathMatchesExpected",
+          "groupResultsByCategory",
+          "groupCasesByCategory",
+          "computeCategorySummaries"
         ]
       },
       "bench_results": {
@@ -235,29 +235,29 @@
           "go"
         ],
         "symbols": [
-          "TestBenchGrepMatchesContent",
-          "TestBenchEmptyQueryIsFailed",
-          "TestSummaryHitAtK",
-          "TestNoiseRatioAllRelevant",
-          "TestPrintCategoryReport",
           "writeCasesBench",
-          "TestBenchCombinedIsSuperset",
-          "TestComputeHitAtK",
-          "TestCountRelevantPaths",
-          "TestBenchOutputIndexLoadMs",
-          "buildFixtureBench",
-          "TestBenchEnginesRespectIgnores",
+          "TestBenchEmptyQueryIsFailed",
           "TestBenchJSONOutput",
           "TestEngineResultTokenCounting",
-          "TestNoiseRatioEmptyResults",
-          "TestSummaryNoiseRatio",
+          "TestNoiseRatioAllRelevant",
           "TestCategoryReportFallback",
-          "TestBenchContextingFindsExpected",
-          "TestBenchFindMatchesBasename",
+          "buildFixtureBench",
           "TestBenchLoadEvalCasesRoundTrip",
+          "TestComputeHitAtK",
+          "TestSummaryNoiseRatio",
+          "TestBenchOutputIndexLoadMs",
+          "TestCategoryReportJSON",
+          "TestBenchFindMatchesBasename",
           "TestCountTokens",
+          "TestSummaryHitAtK",
+          "TestCountRelevantPaths",
           "TestNoiseRatioMixed",
-          "TestCategoryReportJSON"
+          "TestPrintCategoryReport",
+          "TestBenchEnginesRespectIgnores",
+          "TestBenchContextingFindsExpected",
+          "TestBenchGrepMatchesContent",
+          "TestBenchCombinedIsSuperset",
+          "TestNoiseRatioEmptyResults"
         ]
       },
       "bin": {
@@ -334,13 +334,13 @@
           "go"
         ],
         "symbols": [
+          "TestLoadCasesV1Array",
+          "TestLoadCasesV2Object",
           "TestLoadCasesV2MissingVersion",
           "TestLoadCasesV2EmptyCategories",
           "TestLoadCasesAutoDetectsV1",
           "TestLoadCasesAutoDetectsV2",
-          "TestEvalCaseV1UnmarshalIgnoresNewFields",
-          "TestLoadCasesV1Array",
-          "TestLoadCasesV2Object"
+          "TestEvalCaseV1UnmarshalIgnoresNewFields"
         ]
       },
       "cmd": {
@@ -661,14 +661,14 @@
           "go"
         ],
         "symbols": [
-          "configPath",
-          "noConfigPrompt",
-          "createConfig",
-          "configJustCreated",
           "agentMode",
           "logToStderr",
           "agentUnsafeCommands",
-          "NewRootCommand"
+          "NewRootCommand",
+          "configPath",
+          "noConfigPrompt",
+          "createConfig",
+          "configJustCreated"
         ]
       },
       "config.go": {
@@ -689,15 +689,15 @@
           "go"
         ],
         "symbols": [
-          "ContextingConfig",
-          "InitConfig",
-          "WatchConfig",
-          "EvalConfig",
-          "BenchConfig",
-          "CommonConfig",
           "SearchConfig",
+          "EvalConfig",
           "LLMConfig",
-          "LoadContextingConfig"
+          "BenchConfig",
+          "LoadContextingConfig",
+          "ContextingConfig",
+          "CommonConfig",
+          "InitConfig",
+          "WatchConfig"
         ]
       },
       "config_apply.go": {
@@ -743,10 +743,10 @@
           "bootstrap"
         ],
         "symbols": [
-          "askYesNo",
-          "isInteractiveTerminal",
           "ensureStarterConfigPrompt",
-          "writeStarterConfig"
+          "writeStarterConfig",
+          "askYesNo",
+          "isInteractiveTerminal"
         ]
       },
       "config_bootstrap_test.go": {
@@ -807,10 +807,10 @@
           "go"
         ],
         "symbols": [
-          "TestWatchPersistIntervalDuration",
           "TestLoadContextingConfig",
           "TestApplyCommonConfigRespectsCLIOverride",
-          "TestWatchDebounceDuration"
+          "TestWatchDebounceDuration",
+          "TestWatchPersistIntervalDuration"
         ]
       },
       "context.json": {
@@ -1312,20 +1312,20 @@
           "go"
         ],
         "symbols": [
-          "checkIndexFile",
-          "checkCacheFile",
-          "DoctorFail",
-          "DoctorCheck",
-          "DoctorReport",
-          "checkAPIKey",
-          "checkWriteAccess",
           "defaultCommonFlags",
           "applyCommonConfigNoCLI",
           "DoctorStatus",
           "DoctorPass",
           "DoctorWarn",
+          "DoctorFail",
+          "DoctorCheck",
+          "DoctorReport",
           "DoctorOptions",
-          "RunDoctor"
+          "checkIndexFile",
+          "RunDoctor",
+          "checkCacheFile",
+          "checkAPIKey",
+          "checkWriteAccess"
         ]
       },
       "doctor_test.go": {
@@ -1379,16 +1379,16 @@
         ],
         "symbols": [
           "CaseFile",
-          "LoadCasesAuto",
+          "CaseCategory",
+          "LoadEvalCases",
+          "isSpace",
           "EvaluateSearch",
-          "firstMatchRank",
-          "normalizeEvalPath",
           "EvalCase",
           "EvalSummary",
-          "CaseCategory",
           "EvalResult",
-          "LoadEvalCases",
-          "isSpace"
+          "LoadCasesAuto",
+          "firstMatchRank",
+          "normalizeEvalPath"
         ]
       },
       "eval_report.go": {
@@ -1406,9 +1406,9 @@
           "go"
         ],
         "symbols": [
+          "printEvalSummary",
           "printFailedCases",
-          "resultsToJSONEval",
-          "printEvalSummary"
+          "resultsToJSONEval"
         ]
       },
       "eval_test.go": {
@@ -1511,16 +1511,16 @@
           "go"
         ],
         "symbols": [
-          "BuildIgnoreMap",
-          "shouldIgnorePath",
-          "defaultDotWhitelist",
-          "EmbedDotWhitelist",
           "BuildIgnoreMapForRoot",
+          "shouldIgnorePath",
+          "dotWhitelistKey",
+          "defaultDotWhitelist",
+          "defaultIgnores",
+          "BuildDotWhitelist",
           "normalizeIgnorePattern",
           "isDotPath",
-          "dotWhitelistKey",
-          "defaultIgnores",
-          "BuildDotWhitelist"
+          "EmbedDotWhitelist",
+          "BuildIgnoreMap"
         ]
       },
       "index_manager.go": {
@@ -1538,17 +1538,17 @@
           "go"
         ],
         "symbols": [
-          "PersistChange",
           "NewIndexManager",
-          "fsEntry",
-          "collectSnapshotPaths",
-          "IndexManagerOptions",
-          "ApplyResult",
-          "IndexManager",
-          "collectFilesystemState",
           "WatchPersistMode",
           "PersistShutdown",
-          "PersistInterval"
+          "IndexManagerOptions",
+          "IndexManager",
+          "fsEntry",
+          "collectFilesystemState",
+          "collectSnapshotPaths",
+          "PersistInterval",
+          "PersistChange",
+          "ApplyResult"
         ]
       },
       "index_manager_test.go": {
@@ -1584,11 +1584,11 @@
           "go"
         ],
         "symbols": [
-          "BuildOptions",
           "BuildResult",
           "BuildIndex",
           "missingNames",
-          "cloneSynonymMap"
+          "cloneSynonymMap",
+          "BuildOptions"
         ]
       },
       "indexer_test.go": {
@@ -1703,8 +1703,8 @@
           "client"
         ],
         "symbols": [
-          "QueryMemorySearch",
-          "defaultClientTimeout"
+          "defaultClientTimeout",
+          "QueryMemorySearch"
         ]
       },
       "memory_search_server.go": {
@@ -1725,15 +1725,15 @@
           "server"
         ],
         "symbols": [
-          "defaultShutdownTimeout",
+          "defaultReadHeaderTimeout",
           "defaultSearchLogQueryMax",
           "MemorySearchLogOptions",
-          "memorySearchResponse",
-          "defaultReadHeaderTimeout",
-          "memorySearchServer",
           "memorySearchRequest",
-          "startMemorySearchServer",
-          "formatSearchLogQuery"
+          "formatSearchLogQuery",
+          "defaultShutdownTimeout",
+          "memorySearchServer",
+          "memorySearchResponse",
+          "startMemorySearchServer"
         ]
       },
       "memory_search_server_test.go": {
@@ -1772,14 +1772,14 @@
           "go"
         ],
         "symbols": [
-          "Node",
+          "dedupeStrings",
           "MaxFileCount",
+          "CollectNamesForLLM",
+          "ComputeStats",
+          "Node",
           "IndexStats",
           "BuildTree",
-          "CollectNamesForLLM",
           "AssignSynonymsToTree",
-          "ComputeStats",
-          "dedupeStrings",
           "walkTree"
         ]
       },
@@ -1800,12 +1800,12 @@
           "go"
         ],
         "symbols": [
+          "splitRelPath",
+          "isExistingDirectory",
           "stringSlicesEqual",
           "removeNodeByRelPath",
           "upsertNodeByRelPath",
-          "buildNodeSynonyms",
-          "splitRelPath",
-          "isExistingDirectory"
+          "buildNodeSynonyms"
         ]
       },
       "node_test.go": {
@@ -1847,22 +1847,22 @@
           "go"
         ],
         "symbols": [
-          "defaultSynonymsMax",
-          "Choice",
-          "GenerateSynonymsBatch",
-          "OpenRouterRequest",
-          "SynonymResponse",
-          "GetAPIKey",
-          "GenerateSynonymsBatchWithContext",
-          "sanitizeJSON",
           "defaultSynonyms",
+          "OpenRouterRequest",
+          "Message",
+          "GetAPIKey",
           "GenerateSynonymsForNamesWithContext",
+          "defaultSynonymsMax",
+          "SynonymResponse",
           "GenerateSynonymsForNames",
+          "GenerateSynonymsBatchWithContext",
+          "defaultModel",
           "defaultHTTPTimeout",
           "defaultEndpoint",
-          "Message",
+          "Choice",
+          "sanitizeJSON",
           "OpenRouterResponse",
-          "defaultModel"
+          "GenerateSynonymsBatch"
         ]
       },
       "openrouter_test.go": {
@@ -1880,10 +1880,10 @@
           "go"
         ],
         "symbols": [
+          "TestGetAPIKey",
           "TestGenerateSynonymsBatchValidation",
           "TestGenerateSynonymsForNamesHandlesEmptyList",
-          "TestOpenRouterConstants",
-          "TestGetAPIKey"
+          "TestOpenRouterConstants"
         ]
       },
       "paths.go": {
@@ -1922,20 +1922,20 @@
           "go"
         ],
         "symbols": [
+          "TestResolveConfigPath_ConfigInDotCtx_UnixPrefix",
+          "TestResolveConfigPath_ConfigInDotCtx_JustDotCtx",
+          "TestResolveConfigPath_ConfigInDotCtx_NestedDotCtx",
+          "TestResolveConfigPath_ConfigInDotCtx_BackslashPrefix",
+          "TestResolveConfigPath_ConfigInDotCtx_MixedSeparators",
+          "TestResolveProjectPath_EmptyPath",
+          "TestResolveProjectPath_AbsolutePath",
+          "TestResolveProjectPath_EmptyProjectRoot",
+          "TestResolveProjectPath_RelativePath",
+          "TestResolveConfigPath_EmptyPath",
           "TestResolveConfigPath_AbsolutePath",
           "TestResolveConfigPath_EmptyConfigFile",
           "TestResolveConfigPath_ConfigNotInDotCtx",
-          "TestResolveConfigPath_ConfigInDotCtx_BackslashPrefix",
-          "TestResolveConfigPath_ConfigInDotCtx_JustDotCtx",
-          "TestResolveProjectPath_EmptyPath",
-          "TestResolveProjectPath_AbsolutePath",
-          "TestResolveConfigPath_ConfigInDotCtx_NoPrefix",
-          "TestResolveConfigPath_ConfigInDotCtx_UnixPrefix",
-          "TestResolveConfigPath_ConfigInDotCtx_NestedDotCtx",
-          "TestResolveConfigPath_ConfigInDotCtx_MixedSeparators",
-          "TestResolveProjectPath_EmptyProjectRoot",
-          "TestResolveProjectPath_RelativePath",
-          "TestResolveConfigPath_EmptyPath"
+          "TestResolveConfigPath_ConfigInDotCtx_NoPrefix"
         ]
       },
       "runtime_state.go": {
@@ -1955,9 +1955,9 @@
           "go"
         ],
         "symbols": [
-          "LoadRuntimeState",
           "RuntimeState",
-          "SaveRuntimeState"
+          "SaveRuntimeState",
+          "LoadRuntimeState"
         ]
       },
       "runtime_state_test.go": {
@@ -1996,17 +1996,17 @@
           "go"
         ],
         "symbols": [
-          "SearchResult",
-          "SearchHints",
-          "isExitCode1",
-          "resultsToJSON",
-          "SearchResponse",
           "SearchOptions",
           "SearchHintsWithOptions",
-          "hasSegmentPrefix",
+          "isExitCode1",
           "passesTypeFilter",
+          "searchResponseToJSON",
+          "SearchResult",
+          "SearchResponse",
+          "SearchHints",
+          "hasSegmentPrefix",
           "tokenize",
-          "searchResponseToJSON"
+          "resultsToJSON"
         ]
       },
       "search_summary.go": {
@@ -2025,12 +2025,12 @@
           "go"
         ],
         "symbols": [
+          "DirectorySummary",
+          "SummarizeDirectories",
           "directoryForResultPath",
           "tokenFromMatch",
           "printDirectorySummaries",
-          "directorySummariesToJSON",
-          "DirectorySummary",
-          "SummarizeDirectories"
+          "directorySummariesToJSON"
         ]
       },
       "search_summary_test.go": {
@@ -2068,16 +2068,16 @@
           "go"
         ],
         "symbols": [
-          "TestSearchHintsReturnsStrongMatches",
-          "TestSearchHintsTypeFilter",
           "TestTokenizeFiltersLowSignalWords",
-          "TestSearchCommandValidatesIndexRootPath",
-          "TestQueryMemorySearchRejectsMismatchedRoot",
-          "findSubstring",
-          "TestSearchHintsNoTokens",
           "TestSearchCommandValidatesRuntimeRootPath",
+          "TestQueryMemorySearchRejectsMismatchedRoot",
           "contains",
-          "TestContextIndexMarshalsWithRootPath"
+          "findSubstring",
+          "TestContextIndexMarshalsWithRootPath",
+          "TestSearchHintsReturnsStrongMatches",
+          "TestSearchHintsNoTokens",
+          "TestSearchHintsTypeFilter",
+          "TestSearchCommandValidatesIndexRootPath"
         ]
       },
       "signals.go": {
@@ -2152,19 +2152,55 @@
           "go"
         ],
         "symbols": [
-          "tsPatternsWhitespace",
-          "extractSvelteSymbols",
-          "tokenizeIdentifier",
-          "extractGoSymbols",
-          "extractByRegex",
-          "jsPatterns",
-          "tsPatterns",
           "extractVueSymbols",
           "extractAstroSymbols",
+          "extractGoSymbols",
+          "jsPatterns",
+          "tsPatterns",
+          "jsPatternsWhitespace",
+          "extractSvelteSymbols",
+          "tokenizeIdentifier",
           "extractSymbols",
+          "extractByRegex",
           "extractByRegexContent",
           "extractScriptBlock",
-          "jsPatternsWhitespace"
+          "tsPatternsWhitespace"
+        ]
+      },
+      "symbols_treesitter.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/symbols_treesitter.go",
+        "type": "file",
+        "synonyms": [
+          "symbols",
+          "treesitter",
+          "go"
+        ],
+        "symbols": [
+          "javascriptQuery",
+          "typescriptQuery",
+          "rustQuery",
+          "extractWithQueryForLanguage",
+          "extractAstroSymbolsTreeSitter",
+          "extractAstroFrontmatter",
+          "SymbolsExtractorMode",
+          "pythonQuery",
+          "extractSymbolsTreeSitter",
+          "extractWithQuery",
+          "extractSvelteSymbolsTreeSitter"
+        ]
+      },
+      "symbols_treesitter_test.go": {
+        "full_path": "/Users/kentaylor/developer/llm-search-thing/contexting/symbols_treesitter_test.go",
+        "type": "file",
+        "synonyms": [
+          "symbols",
+          "treesitter",
+          "test",
+          "go"
+        ],
+        "symbols": [
+          "TestTreeSitterExtraction",
+          "writeFile"
         ]
       },
       "synonyms.go": {
@@ -2182,15 +2218,15 @@
           "go"
         ],
         "symbols": [
-          "sanitizeSynonyms",
           "isSourceExtension",
           "splitNonAlnum",
+          "camelBoundary",
           "genericSynonymStopwords",
           "lowSignalTokens",
+          "sanitizeSynonyms",
           "lexicalSynonyms",
           "splitIdentifierTokens",
-          "isLowSignalToken",
-          "camelBoundary"
+          "isLowSignalToken"
         ]
       },
       "synonyms_test.go": {
@@ -2207,10 +2243,10 @@
           "go"
         ],
         "symbols": [
-          "TestLexicalSynonymsSplitsIdentifiers",
-          "TestSanitizeSynonymsFiltersGenericAndCaps",
           "TestSanitizeSynonymsDropsAllLowSignalPhrase",
-          "TestDefaultSynonymsMax"
+          "TestDefaultSynonymsMax",
+          "TestLexicalSynonymsSplitsIdentifiers",
+          "TestSanitizeSynonymsFiltersGenericAndCaps"
         ]
       },
       "toml_test.go": {
@@ -2227,12 +2263,12 @@
           "go"
         ],
         "symbols": [
-          "TestConfig",
-          "TestTOMLDecode",
           "TestTOMLDecodeFromFile",
           "TestTOMLEncode",
           "TestTOMLDecodeEmpty",
-          "TestTOMLDecodeInvalid"
+          "TestTOMLDecodeInvalid",
+          "TestConfig",
+          "TestTOMLDecode"
         ]
       },
       "watch_helpers.go": {
@@ -2251,14 +2287,14 @@
           "go"
         ],
         "symbols": [
-          "shouldSkipInternalOutput",
           "logChangeSummary",
           "summarizeOp",
           "parsePersistMode",
           "tickerChan",
           "syncWatchDirectories",
           "shouldSkipEvent",
-          "isInsideProject"
+          "isInsideProject",
+          "shouldSkipInternalOutput"
         ]
       },
       "watch_test.go": {

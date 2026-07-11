@@ -44,6 +44,9 @@ func newWatchCommand() *cobra.Command {
 				return err
 			}
 			applyCommonConfig(cmd, &flags, cfg.Common)
+			if flags.SymbolExtractor != "" {
+				SymbolsExtractorMode = flags.SymbolExtractor
+			}
 			if cfg.Watch.UseLLM != nil && !cmd.Flags().Changed("llm-on-watch") {
 				llmOnWatch = *cfg.Watch.UseLLM
 			}
@@ -375,6 +378,7 @@ func newWatchCommand() *cobra.Command {
 	cmd.Flags().IntVar(&flags.SynonymsMax, "synonyms-max", 0, "Max synonyms per name (0 = use synonyms value)")
 	cmd.Flags().StringVar(&flags.SynonymCache, "synonym-cache", ".ctxt/ctx_cache.json", "Path to persistent synonym cache JSON")
 	cmd.Flags().StringSliceVar(&flags.ExtraIgnores, "ignore", nil, "Additional ignore entries (name or relative path)")
+	cmd.Flags().StringVar(&flags.SymbolExtractor, "symbol-extractor", "auto", "Symbol extraction engine: auto, treesitter, regex")
 	cmd.Flags().BoolVarP(&flags.Verbose, "verbose", "v", false, "Enable verbose logging")
 	cmd.Flags().DurationVar(&debounce, "debounce", defaultDebounce, "Debounce interval for coalescing fs events")
 	cmd.Flags().BoolVar(&llmOnWatch, "llm-on-watch", true, "Enable live LLM synonym generation during watch (on by default)")

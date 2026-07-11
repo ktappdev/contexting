@@ -11,9 +11,14 @@ func applyCommonConfig(cmd *cobra.Command, flags *CommonFlags, cfg CommonConfig)
 	applyIntFlag(cmd, "synonyms", &flags.SynonymsPerName, cfg.SynonymsPerName)
 	applyIntFlag(cmd, "synonyms-min", &flags.SynonymsMin, cfg.SynonymsMin)
 	applyIntFlag(cmd, "synonyms-max", &flags.SynonymsMax, cfg.SynonymsMax)
+	applyStringFlag(cmd, "symbol-extractor", &flags.SymbolExtractor, cfg.SymbolExtractor)
 	applyStringSliceFlag(cmd, "ignore", &flags.ExtraIgnores, cfg.ExtraIgnores)
 	if cfg.Verbose != nil {
 		applyBoolFlag(cmd, "verbose", &flags.Verbose, *cfg.Verbose)
+	}
+	// Set the global mode from config when the user didn't pass the flag.
+	if cfg.SymbolExtractor != "" && !cmd.Flags().Changed("symbol-extractor") {
+		SymbolsExtractorMode = cfg.SymbolExtractor
 	}
 }
 

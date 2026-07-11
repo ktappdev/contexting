@@ -56,10 +56,10 @@ func GetAPIKey() (string, error) {
 }
 
 func GenerateSynonymsBatch(names []string, apiKey string, model string, endpoint string, temperature float64, maxTokens int, synonymsPerName int) (SynonymResponse, error) {
-	return GenerateSynonymsBatchWithContext(context.Background(), names, apiKey, model, endpoint, temperature, maxTokens, synonymsPerName, synonymsPerName, nil)
+	return GenerateSynonymsBatchWithContext(context.Background(), names, apiKey, model, endpoint, temperature, maxTokens, synonymsPerName, synonymsPerName, nil, nil)
 }
 
-func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKey string, model string, endpoint string, temperature float64, maxTokens int, synonymsMin int, synonymsMax int, symbols map[string][]string) (SynonymResponse, error) {
+func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKey string, model string, endpoint string, temperature float64, maxTokens int, synonymsMin int, synonymsMax int, symbols map[string][]string, imports map[string][]string) (SynonymResponse, error) {
 
 	if len(names) == 0 {
 		return make(SynonymResponse), nil
@@ -84,7 +84,10 @@ func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKe
 			"- Related concepts (terms developers associate with this functionality)\n"+
 			"- Alternative vocabulary (different words for the same concept)\n"+
 			"- Action verbs (what a developer would DO with this code — e.g. \"authenticate\", \"filter\", \"parse\", \"validate\")\n\n"+
-			"The input includes code symbols for each file (in brackets). Use these symbols to understand what the code actually does, and generate synonyms based on the file's real purpose — not just the filename word.\n\n"+
+			"The input may include code symbols (in brackets) AND imports (in brackets) for each file.\n"+
+			"- Symbols reveal what the code defines (function/class/type names). Use them to understand what the code actually does.\n"+
+			"- Imports reveal which external libraries or internal modules the file depends on. Use imports to understand the file's DOMAIN — e.g. \"@clerk/nextjs\" means the file handles Clerk authentication, \"stripe\" means payment processing, \"next/navigation\" means routing, \"@prisma/client\" means database access. This is critical: a file's own symbols may be generic (e.g. POST/GET handlers in a route.ts) while its imports pinpoint the actual domain.\n"+
+			"Generate synonyms that reflect the real domain inferred from symbols AND imports — not just the filename word.\n\n"+
 			"Do NOT include: word variations of the filename, misspellings, file extensions, or trivial modifications.\n"+
 			"Do NOT replace noun synonyms with verb synonyms — include BOTH nouns and verbs.\n\n"+
 			"Examples:\n"+
@@ -93,26 +96,36 @@ func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKe
 			"{\"openrouter.go\": [\"llm\", \"ai model\", \"api client\", \"chat completion\", \"language model\", \"inference\", \"synonym generation\"]}\n"+
 			"{\"index_manager.go\": [\"index\", \"cache\", \"snapshot\", \"search state\", \"live index\", \"in-memory index\", \"persistence\"]}\n"+
 			"{\"watch_helpers.go\": [\"file monitor\", \"fsnotify\", \"file changes\", \"watcher\", \"event handler\", \"live updates\", \"filesystem events\"]}\n"+
-			"{\"handler.go\": [\"process request\", \"handle\", \"serve\", \"respond\", \"route\", \"dispatch\", \"receive\", \"accept\"]}\n\n"+
+			"{\"handler.go\": [\"process request\", \"handle\", \"serve\", \"respond\", \"route\", \"dispatch\", \"receive\", \"accept\"]}\n"+
+			"{\"webhook/route.ts\": [\"clerk webhook\", \"user events\", \"clerk event handler\", \"webhook receiver\", \"clerk user sync\", \"auth webhook\"]}\n\n"+
 			"Return ONLY a valid JSON object where each key is an exact filename from the input list and each value is an array of synonym strings. Generate between %d and %d synonyms per name. No markdown, no prose, no extra text.",
 		synonymsMin, synonymsMax,
 		synonymsMin, synonymsMax,
 	)
 
-	// Build user content with symbols when available
+	// Build user content with symbols and imports when available
 	var lines []string
 	for _, name := range names {
+		var parts []string
+		parts = append(parts, name)
 		if syns, ok := symbols[name]; ok && len(syns) > 0 {
 			// Cap symbols at 10 per file to avoid excessive token use
 			if len(syns) > 10 {
 				syns = syns[:10]
 			}
-			lines = append(lines, fmt.Sprintf("%s [symbols: %s]", name, strings.Join(syns, ", ")))
-		} else {
-			lines = append(lines, name)
+			parts = append(parts, fmt.Sprintf("[symbols: %s]", strings.Join(syns, ", ")))
 		}
+		if imps, ok := imports[name]; ok && len(imps) > 0 {
+			// Cap imports at 5 per file — top dependencies are usually the most
+			// domain-revealing; rest is noise.
+			if len(imps) > 5 {
+				imps = imps[:5]
+			}
+			parts = append(parts, fmt.Sprintf("[imports: %s]", strings.Join(imps, ", ")))
+		}
+		lines = append(lines, strings.Join(parts, " "))
 	}
-	userContent := fmt.Sprintf("File and folder names with their code symbols:\n%s", strings.Join(lines, "\n"))
+	userContent := fmt.Sprintf("File and folder names with their code symbols and imports:\n%s", strings.Join(lines, "\n"))
 
 	reqBody := OpenRouterRequest{
 		Model: model,
@@ -189,10 +202,10 @@ func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKe
 }
 
 func GenerateSynonymsForNames(names []string, apiKey string, batchSize int, model string, endpoint string, temperature float64, maxTokens int, synonymsMin int, synonymsMax int) (SynonymResponse, error) {
-	return GenerateSynonymsForNamesWithContext(context.Background(), names, apiKey, batchSize, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax, 1, nil)
+	return GenerateSynonymsForNamesWithContext(context.Background(), names, apiKey, batchSize, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax, 1, nil, nil)
 }
 
-func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, apiKey string, batchSize int, model string, endpoint string, temperature float64, maxTokens int, synonymsMin int, synonymsMax int, parallelLimit int, symbols map[string][]string) (SynonymResponse, error) {
+func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, apiKey string, batchSize int, model string, endpoint string, temperature float64, maxTokens int, synonymsMin int, synonymsMax int, parallelLimit int, symbols map[string][]string, imports map[string][]string) (SynonymResponse, error) {
 	if len(names) == 0 {
 		return make(SynonymResponse), nil
 	}
@@ -220,7 +233,7 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 	}
 	if batchSize >= len(names) {
 		LogInfof("  Synonyms: processing %d names...", len(names))
-		return GenerateSynonymsBatchWithContext(ctx, names, apiKey, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax, symbols)
+		return GenerateSynonymsBatchWithContext(ctx, names, apiKey, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax, symbols, imports)
 	}
 
 	totalBatches := (len(names) + batchSize - 1) / batchSize
@@ -240,21 +253,27 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 		}
 		batchNames := names[i:end]
 
-		// Filter symbols map for this batch
+		// Filter symbols and imports maps for this batch
 		batchSymbols := make(map[string][]string)
 		for _, name := range batchNames {
 			if syns, ok := symbols[name]; ok {
 				batchSymbols[name] = syns
 			}
 		}
+		batchImports := make(map[string][]string)
+		for _, name := range batchNames {
+			if imps, ok := imports[name]; ok {
+				batchImports[name] = imps
+			}
+		}
 
 		wg.Add(1)
-		go func(batchNum int, batchNames []string, batchSymbols map[string][]string) {
+		go func(batchNum int, batchNames []string, batchSymbols map[string][]string, batchImports map[string][]string) {
 			defer wg.Done()
 			sem <- struct{}{}
 			defer func() { <-sem }()
 
-			synonyms, err := GenerateSynonymsBatchWithContext(ctx, batchNames, apiKey, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax, batchSymbols)
+			synonyms, err := GenerateSynonymsBatchWithContext(ctx, batchNames, apiKey, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax, batchSymbols, batchImports)
 			if err != nil {
 				LogWarnf("  ⚠ Synonyms: batch %d/%d failed: %v", batchNum, totalBatches, err)
 				return
@@ -266,7 +285,7 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 			mu.Unlock()
 			atomic.AddInt32(&completed, 1)
 			LogInfof("  Synonyms: batch %d/%d done (%d names)", batchNum, totalBatches, len(batchNames))
-		}(batchNum, batchNames, batchSymbols)
+		}(batchNum, batchNames, batchSymbols, batchImports)
 	}
 	wg.Wait()
 	LogInfof("  Synonyms: %d names processed", len(result))

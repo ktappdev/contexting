@@ -137,6 +137,7 @@ The MCP server accepts optional flags in the `args` array:
 | `--llm-on-watch` | Enable live LLM synonym generation for new files | false |
 | `--verbose` / `-v` | Enable verbose logging to stderr | disabled |
 | `--debounce` | Filesystem event coalesce interval | 750ms |
+| `--symbol-extractor` | Symbol extraction mode: auto, treesitter, regex | auto |
 
 **Example with flags:**
 ```json
@@ -144,11 +145,20 @@ The MCP server accepts optional flags in the `args` array:
   "mcpServers": {
     "ctxt": {
       "command": "ctxt",
-      "args": ["mcp", "--verbose", "--llm-on-watch"]
+      "args": ["mcp", "--verbose", "--llm-on-watch", "--symbol-extractor", "treesitter"]
     }
   }
 }
-```
+
+### Search Tool Options
+
+The `search` tool accepts additional options for hybrid search:
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `hybrid` | Augment index results with content matching via ripgrep | false |
+| `hybridScore` | Score assigned to content-matched results | 1 |
+| `hybridRoot` | Project root for content matching (defaults to index root) | index root |
 
 ## Troubleshooting
 
@@ -172,6 +182,12 @@ The MCP server accepts optional flags in the `args` array:
 - Set `OPENROUTER_API_KEY` environment variable
 - Or add `api_key` to `.ctxt/ctx_config.toml`
 - Restart the AI client after setting the key
+
+**Index quality varies**
+- The MCP server's index quality depends on the symbol extraction mode chosen at startup
+- Use `--symbol-extractor treesitter` for better accuracy on supported languages (Python, JS/TS, Rust, Svelte, Astro)
+- Use `--symbol-extractor regex` if tree-sitter is unavailable or for unsupported languages (Vue, Ruby)
+- Re-run `ctxt init` with the desired mode before starting the MCP server
 
 **Permission errors**
 - The MCP server can't read files or write the index

@@ -7,13 +7,11 @@ Contexting keeps a live map of your codebase so AI agents can reason about paths
 ## Quick start
 
 ```bash
-go install github.com/ktappdev/contexting@latest
+go install github.com/ktappdev/contexting/cmd/ctxt@latest
 cd your-repo
 ctxt init .
 ctxt watch .
 ```
-
-(The `go install` line above installs a binary named `contexting`; rename it to `ctxt` or use `make install`.)
 
 Set an API key for synonym generation (optional but recommended):
 
@@ -42,11 +40,11 @@ Adjust `batch_size`, `parallel_requests`, and `synonyms_min`/`synonyms_max` to t
 
 `ctxt init` walks the filesystem tree and builds `.ctxt/ctx_index.json` — a single recursive JSON tree where every entry has `full_path`, `type`, optional `symbols`, optional `synonyms`, and nested `children` for directories.
 
-**Symbols:** Every source file gets scanned with language-specific extractors that pull out exported symbols — functions, types, variables, classes, constants. These become a `symbols` array on the file node.
+**Symbols:** Every source file gets scanned with language-specific extractors that pull out exported symbols — functions, types, variables, classes, constants. These become a `symbols` array on the file node. The default extractor is `auto` (tree-sitter with regex fallback). Supported languages: Go (go/parser), Python/JavaScript/TypeScript/Rust/Svelte/Astro (tree-sitter), Vue/Ruby (regex fallback).
 
-**Synonyms:** Each node (file or directory) gets 5–12 LLM-generated synonyms via batched API calls to an OpenRouter-compatible endpoint. For example, `Skeletons.tsx → ["skeletons", "loading", "placeholder", "animation"]`. Names are batched (default 15 per request, 10 parallel) and processed concurrently. The LLM prompt now includes the file's extracted symbols (up to 10 per file) to generate more contextual synonyms — conceptual terms, action verbs, and nouns that relate to the code's purpose.
+**Synonyms:** Each node (file or directory) gets 5–12 LLM-generated synonyms via batched API calls to an OpenRouter-compatible endpoint. For example, `Skeletons.tsx → ["skeletons", "loading", "placeholder", "animation"]`. Names are batched (default 15 per request, 10 parallel) and processed concurrently. The LLM prompt includes the file's extracted symbols (up to 10 per file) and, for JS/TS files, ESM imports to generate more contextual synonyms — conceptual terms, action verbs, and nouns that relate to the code's purpose. For example, a `route.ts` file with `import {clerkClient} from "@clerk/nextjs"` gets synonyms like "clerk webhook handler".
 
-**Bootstrap diff:** On subsequent runs, `init` diffs the filesystem against the existing snapshot using file modification times. Deleted files are removed, new files are added, modified files are re-extracted. No LLM calls for existing synonyms — run `ctxt sync` to fill gaps.
+**Bootstrap diff:** On subsequent runs, `init` diffs the filesystem against the existing snapshot using file modification times. Deleted files are removed, new files are added, modified files are re-extracted. No LLM calls for existing synonyms — run `ctxt sync` to fill gaps. Synonym keys use `parentDir/basename` (e.g., `webhook/route.ts`) instead of bare basenames to prevent duplicate filenames from overwriting each other in the synonym map.
 
 ### Search mechanics
 
@@ -91,6 +89,7 @@ ctxt init . --output .ctxt/ctx_index.json --synonym-cache .ctxt/ctx_cache.json
 Key flags:
 - `--no-config-prompt`, `--create-config` — non-interactive automation
 - `--llm-model`, `--batch-size`, `--synonyms-min`, `--synonyms-max`, `--api-key`, `--ignore`
+- `--symbol-extractor` — symbol extraction mode: `auto` (default, tree-sitter with regex fallback), `treesitter`, or `regex`
 - `-v, --verbose` — show symbol extraction progress and batch completion
 - Always rebuilds the entire tree; use when you need a clean snapshot
 
@@ -139,6 +138,9 @@ Flags:
 - `--memory` (default true) — query live watch index first, fall back to snapshot
 - `--memory-only` — fail if live memory unavailable
 - `--runtime-file` — path to runtime discovery file (default `.ctxt/ctx_runtime.json`)
+- `--hybrid` — augment index results with content matching via ripgrep (default false)
+- `--hybrid-score` — score assigned to content-matched results (default 1)
+- `--hybrid-root` — project root for content matching (defaults to index root)
 
 ### `ctxt eval`
 
@@ -172,7 +174,7 @@ v1 format (bare array) is also supported:
 
 ### `ctxt bench`
 
-Benchmark ctxt against find, grep, and combined engines.
+Benchmark ctxt against find, grep, fd, rg, hybrid, and combined engines.
 
 ```bash
 ctxt bench --cases docs/bench_cases.json --by-category
@@ -181,7 +183,7 @@ ctxt bench --cases docs/bench_cases.json --engines ctxt,find --json
 
 Flags:
 - `--cases` — path to case file (v2 format with categories)
-- `--engines` — comma-separated list: ctxt,find,grep,combined (default: all)
+- `--engines` — comma-separated list: ctxt,find,grep (default); also available: fd, rg, hybrid, combined
 - `--by-category` — group results by category
 - `--json` — output structured JSON
 - `--limit` — max results per engine (default: 10)

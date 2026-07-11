@@ -27,6 +27,7 @@ type CommonConfig struct {
 	SynonymsPerName int      `toml:"synonyms"`
 	SynonymsMin     int      `toml:"synonyms_min"`
 	SynonymsMax     int      `toml:"synonyms_max"`
+	SymbolExtractor string   `toml:"symbol_extractor"` // "auto", "treesitter", "regex"
 	Verbose         *bool    `toml:"verbose"`
 	ExtraIgnores    []string `toml:"ignore"`
 	DotWhitelist    []string `toml:"dot_whitelist"` // Extra dot files to keep (merged with defaults)

@@ -12,6 +12,7 @@ type CommonFlags struct {
 	SynonymsPerName int
 	SynonymsMin     int
 	SynonymsMax     int
+	SymbolExtractor string
 	Verbose         bool
 	ExtraIgnores    []string
 }
