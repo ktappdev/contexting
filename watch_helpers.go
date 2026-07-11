@@ -1,4 +1,4 @@
-package main
+package contexting
 
 import (
 	"errors"
@@ -18,7 +18,7 @@ func syncWatchDirectories(watcher *fsnotify.Watcher, root string, ignored map[st
 	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
-				logWarnf("Skipping inaccessible path: %s", path)
+				LogWarnf("Skipping inaccessible path: %s", path)
 				if d != nil && d.IsDir() {
 					return filepath.SkipDir
 				}
@@ -42,7 +42,7 @@ func syncWatchDirectories(watcher *fsnotify.Watcher, root string, ignored map[st
 		if _, exists := watched[path]; !exists {
 			if err := watcher.Add(path); err != nil {
 				if errors.Is(err, os.ErrNotExist) {
-					logWarnf("Skipping broken symlink: %s", path)
+					LogWarnf("Skipping broken symlink: %s", path)
 					return filepath.SkipDir
 				}
 				return fmt.Errorf("add watch %s: %w", path, err)
@@ -138,13 +138,13 @@ func logChangeSummary(changes map[string]fsnotify.Op, verbose bool) {
 		details = append(details, fmt.Sprintf("%s (%s)", path, summarizeOp(op)))
 	}
 
-	logInfof("Filesystem changes: created=%d modified=%d removed=%d renamed=%d", created, modified, removed, renamed)
+	LogInfof("Filesystem changes: created=%d modified=%d removed=%d renamed=%d", created, modified, removed, renamed)
 	const maxDetails = 10
 	if len(details) <= maxDetails {
-		logInfof("Changed files: %s", strings.Join(details, ", "))
+		LogInfof("Changed files: %s", strings.Join(details, ", "))
 		return
 	}
-	logInfof("Changed files: %s, ... and %d more", strings.Join(details[:maxDetails], ", "), len(details)-maxDetails)
+	LogInfof("Changed files: %s, ... and %d more", strings.Join(details[:maxDetails], ", "), len(details)-maxDetails)
 }
 
 func summarizeOp(op fsnotify.Op) string {

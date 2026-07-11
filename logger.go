@@ -1,4 +1,4 @@
-package main
+package contexting
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 
 const logTimeFormat = "2006-01-02 15:04:05"
 
-func logInfof(format string, args ...any) {
+func LogInfof(format string, args ...any) {
 	if logToStderr {
 		logf(os.Stderr, "INFO", format, args...)
 	} else {
@@ -16,11 +16,11 @@ func logInfof(format string, args ...any) {
 	}
 }
 
-func logWarnf(format string, args ...any) {
+func LogWarnf(format string, args ...any) {
 	logf(os.Stderr, "WARN", format, args...)
 }
 
-func logErrorf(format string, args ...any) {
+func LogErrorf(format string, args ...any) {
 	logf(os.Stderr, "ERROR", format, args...)
 }
 

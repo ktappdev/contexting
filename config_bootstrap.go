@@ -1,4 +1,4 @@
-package main
+package contexting
 
 import (
 	"bufio"
@@ -37,7 +37,7 @@ func ensureStarterConfigPrompt(path string, autoCreate bool) (bool, error) {
 	if err := writeStarterConfig(path, false); err != nil {
 		return false, err
 	}
-	logInfof("Created starter config at %s", path)
+	LogInfof("Created starter config at %s", path)
 	return true, nil
 }
 

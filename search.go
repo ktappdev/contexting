@@ -1,7 +1,8 @@
-package main
+package contexting
 
 import (
 	"encoding/json"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -25,9 +26,12 @@ type SearchResponse struct {
 
 type SearchOptions struct {
 	Limit        int
-	MinScore     int
-	TypeFilter   string
-	IncludeDebug bool
+	MinScore          int
+	TypeFilter        string
+	IncludeDebug      bool
+	ContentFallback   bool   // enable content-based fallback via ripgrep
+	ContentMatchScore int    // score for grep-only files (defaults to 1)
+	ContentRoot       string // project root for rg (empty defaults to index.RootPath)
 }
 
 func SearchHints(index *ContextIndex, query string, limit int) []SearchResult {
@@ -202,11 +206,69 @@ func SearchHintsWithOptions(index *ContextIndex, query string, opts SearchOption
 			results = results[:cutoff]
 		}
 	}
+
+	// Content fallback: run ripgrep to find files by content when enabled
+	if opts.ContentFallback && index != nil {
+		root := opts.ContentRoot
+		if root == "" {
+			root = index.RootPath
+		}
+		score := opts.ContentMatchScore
+		if score <= 0 {
+			score = 1
+		}
+		pattern := strings.Join(tokens, "|")
+		cmd := exec.Command("rg", "--files-with-matches", "--no-heading", "--ignore-case", "-e", pattern, root)
+		cmd.Dir = root
+		out, err := cmd.Output()
+		if err == nil || (err != nil && isExitCode1(err)) {
+			existing := make(map[string]bool, len(results))
+			for _, r := range results {
+				existing[strings.ToLower(filepath.ToSlash(r.Path))] = true
+			}
+			lines := strings.Split(strings.TrimSpace(string(out)), "\n")
+			for _, absPath := range lines {
+				absPath = strings.TrimSpace(absPath)
+				if absPath == "" {
+					continue
+				}
+				rel, relErr := filepath.Rel(root, absPath)
+				if relErr != nil {
+					continue
+				}
+				norm := strings.ToLower(filepath.ToSlash(rel))
+				if existing[norm] {
+					continue
+				}
+				existing[norm] = true
+				results = append(results, SearchResult{
+					Path:  rel,
+					Type:  "file",
+					Score: score,
+					Matches: []string{"content"},
+				})
+			}
+			sort.Slice(results, func(i, j int) bool {
+				if results[i].Score != results[j].Score {
+					return results[i].Score > results[j].Score
+				}
+				return results[i].Path < results[j].Path
+			})
+		}
+	}
+
 	if len(results) > opts.Limit {
 		results = results[:opts.Limit]
 	}
 
 	return results
+}
+
+func isExitCode1(err error) bool {
+	if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
+		return true
+	}
+	return false
 }
 
 func hasSegmentPrefix(segments []string, token string) bool {

@@ -1,14 +1,4 @@
-package main
+package contexting
 
-import (
-	"os"
-)
-
-var version = "0.0.1"
-
-func main() {
-	if err := NewRootCommand().Execute(); err != nil {
-		logErrorf("%v", err)
-		os.Exit(1)
-	}
-}
+// Version is set via ldflags at build time.
+var Version = "0.0.1"

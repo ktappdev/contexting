@@ -1,4 +1,4 @@
-package main
+package contexting
 
 import (
 	"context"
@@ -66,14 +66,14 @@ func startMemorySearchServer(ctx context.Context, manager *IndexManager, runtime
 		var req memorySearchRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			if logOpts.Enabled {
-				logWarnf("Search request rejected: invalid payload")
+				LogWarnf("Search request rejected: invalid payload")
 			}
 			http.Error(w, "invalid request", http.StatusBadRequest)
 			return
 		}
 		results := manager.Search(req.Query, req.Opts)
 		if logOpts.Enabled {
-			logInfof("Search query \"%s\" -> %d results in %dms", formatSearchLogQuery(req.Query, logOpts.QueryMax), len(results), time.Since(start).Milliseconds())
+			LogInfof("Search query \"%s\" -> %d results in %dms", formatSearchLogQuery(req.Query, logOpts.QueryMax), len(results), time.Since(start).Milliseconds())
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(memorySearchResponse{Results: results, GeneratedAt: manager.IndexGeneratedAt()})
@@ -108,7 +108,7 @@ func startMemorySearchServer(ctx context.Context, manager *IndexManager, runtime
 
 	go func() {
 		if err := httpServer.Serve(listener); err != nil && err != http.ErrServerClosed {
-			logErrorf("Memory search server failed: %v", err)
+			LogErrorf("Memory search server failed: %v", err)
 		}
 	}()
 

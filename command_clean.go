@@ -1,4 +1,4 @@
-package main
+package contexting
 
 import (
 	"fmt"
@@ -23,7 +23,7 @@ func newCleanCommand() *cobra.Command {
 			ctxDir := filepath.Join(absRoot, ".ctxt")
 			info, err := os.Stat(ctxDir)
 			if os.IsNotExist(err) {
-				logInfof("No .ctxt/ directory found at %s — nothing to clean.", ctxDir)
+				LogInfof("No .ctxt/ directory found at %s — nothing to clean.", ctxDir)
 				return nil
 			}
 			if err != nil {
@@ -38,7 +38,7 @@ func newCleanCommand() *cobra.Command {
 				if err != nil {
 					return fmt.Errorf("read .ctxt directory: %w", err)
 				}
-				logInfof("Would remove %s (%d entries):", ctxDir, len(entries))
+				LogInfof("Would remove %s (%d entries):", ctxDir, len(entries))
 				for _, e := range entries {
 					fmt.Printf("  %s\n", e.Name())
 				}
@@ -48,7 +48,7 @@ func newCleanCommand() *cobra.Command {
 			if err := os.RemoveAll(ctxDir); err != nil {
 				return fmt.Errorf("remove .ctxt directory: %w", err)
 			}
-			logInfof("Removed %s", ctxDir)
+			LogInfof("Removed %s", ctxDir)
 			return nil
 		},
 	}

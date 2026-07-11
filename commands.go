@@ -1,4 +1,4 @@
-package main
+package contexting
 
 import (
 	"fmt"
@@ -26,7 +26,7 @@ var agentUnsafeCommands = map[string]bool{
 func NewRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:     "ctxt",
-		Version: version,
+		Version: Version,
 		Short: "Index codebases with code symbols and LLM-generated synonyms for AI context",
 		Long:  "Contexting (command: ctxt) builds a filesystem index of code symbols (functions, classes, types, variables) and optional LLM-generated synonyms for improved code search context. Supports Go, Python, JavaScript, TypeScript, Rust, and Ruby.",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {

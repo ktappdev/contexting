@@ -1,4 +1,4 @@
-package main
+package contexting
 
 import (
 	"fmt"
@@ -188,6 +188,9 @@ func newSearchCommand() *cobra.Command {
 	cmd.Flags().IntVar(&dirLimit, "dir-limit", 5, "Maximum number of directories returned in --dir-summary mode")
 	cmd.Flags().IntVar(&drillLimit, "drill-limit", 3, "Maximum top hits shown per directory in --dir-summary mode")
 	cmd.Flags().BoolVar(&opts.IncludeDebug, "explain", false, "Include score breakdown in output")
+	cmd.Flags().BoolVar(&opts.ContentFallback, "hybrid", false, "Augment index results with content matching via ripgrep")
+	cmd.Flags().IntVar(&opts.ContentMatchScore, "hybrid-score", 1, "Score for content-matched results (default 1)")
+	cmd.Flags().StringVar(&opts.ContentRoot, "hybrid-root", "", "Project root for content matching (defaults to index root)")
 	cmd.Flags().BoolVar(&useMemory, "memory", true, "Query live in-memory watch index when available")
 	cmd.Flags().BoolVar(&memoryOnly, "memory-only", false, "Require live memory search and fail instead of falling back to snapshot")
 	cmd.Flags().StringVar(&runtimeFile, "runtime-file", "", "Path to runtime memory-search state file (defaults near index path)")

@@ -1,8 +1,9 @@
-package main
+package contexting
 
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -84,50 +85,43 @@ func (ctxtEngine) Search(query string, expectAny []string, index *ContextIndex, 
 	}
 }
 
-type findEngine struct{}
+type unixFindEngine struct{}
 
-func (findEngine) Name() string { return "find" }
+func (unixFindEngine) Name() string { return "find" }
 
-func (findEngine) Search(query string, expectAny []string, index *ContextIndex, _ SearchOptions, _ int) EngineResult {
+func (unixFindEngine) Search(query string, expectAny []string, index *ContextIndex, _ SearchOptions, _ int) EngineResult {
 	start := time.Now()
+	_, lookErr := exec.LookPath("find")
+	if lookErr != nil {
+		return EngineResult{EngineName: "find", Error: "find binary not found in PATH"}
+	}
 	ignored, err := BuildIgnoreMapForRoot(index.RootPath, nil)
 	if err != nil {
-		return EngineResult{
-			EngineName: "find",
-			Error:      fmt.Sprintf("build ignore map: %v", err),
-		}
+		return EngineResult{EngineName: "find", Error: fmt.Sprintf("build ignore map: %v", err)}
 	}
+	cmd := exec.Command("find", index.RootPath, "-type", "f")
+	cmd.Dir = index.RootPath
+	out, runErr := cmd.Output()
+	if runErr != nil {
+		return EngineResult{EngineName: "find", Error: fmt.Sprintf("find command failed: %v", runErr)}
+	}
+	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
 	queryTokens := tokenize(query)
-	results := make([]string, 0)
-	err = filepath.WalkDir(index.RootPath, func(path string, d os.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
+	results := make([]string, 0, len(lines))
+	for _, absPath := range lines {
+		absPath = strings.TrimSpace(absPath)
+		if absPath == "" {
+			continue
 		}
-		rel, walkErr := filepath.Rel(index.RootPath, path)
-		if walkErr != nil {
-			return walkErr
+		rel, relErr := filepath.Rel(index.RootPath, absPath)
+		if relErr != nil {
+			continue
 		}
-		if rel == "." {
-			return nil
+		if shouldIgnorePath(rel, filepath.Base(rel), ignored) {
+			continue
 		}
-		if shouldIgnorePath(rel, d.Name(), ignored) {
-			if d.IsDir() {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-		if d.IsDir() {
-			return nil
-		}
-		if tokensMatchPath(rel, d.Name(), queryTokens) {
+		if tokensMatchPath(rel, "", queryTokens) {
 			results = append(results, rel)
-		}
-		return nil
-	})
-	if err != nil {
-		return EngineResult{
-			EngineName: "find",
-			Error:      fmt.Sprintf("walk dir: %v", err),
 		}
 	}
 	sort.Strings(results)
@@ -135,18 +129,52 @@ func (findEngine) Search(query string, expectAny []string, index *ContextIndex, 
 	chars, tokens := countTokens(results)
 	noiseRatio := computeNoiseRatio(results, expectAny)
 	return EngineResult{
-		EngineName: "find",
-		Found:      firstRank > 0,
-		Rank:       -1,
-		TotalHits:  len(results),
-		Paths:      results,
-		TimeMs:     time.Since(start).Milliseconds(),
-		Chars:      chars,
-		Tokens:     tokens,
-		HitAt1:     hit1,
-		HitAt3:     hit3,
-		HitAt5:     hit5,
-		NoiseRatio: noiseRatio,
+		EngineName: "find", Found: firstRank > 0, Rank: -1, TotalHits: len(results),
+		Paths: results, TimeMs: time.Since(start).Milliseconds(),
+		Chars: chars, Tokens: tokens, HitAt1: hit1, HitAt3: hit3, HitAt5: hit5, NoiseRatio: noiseRatio,
+	}
+}
+
+type fdEngine struct{}
+
+func (fdEngine) Name() string { return "fd" }
+
+func (fdEngine) Search(query string, expectAny []string, index *ContextIndex, _ SearchOptions, _ int) EngineResult {
+	start := time.Now()
+	_, lookErr := exec.LookPath("fd")
+	if lookErr != nil {
+		return EngineResult{EngineName: "fd", Error: "fd binary not found in PATH"}
+	}
+	cmd := exec.Command("fd", "--absolute-path", "--type", "f", "--search-path", index.RootPath)
+	cmd.Dir = index.RootPath
+	out, runErr := cmd.Output()
+	if runErr != nil {
+		return EngineResult{EngineName: "fd", Error: fmt.Sprintf("fd command failed: %v", runErr)}
+	}
+	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
+	queryTokens := tokenize(query)
+	results := make([]string, 0, len(lines))
+	for _, absPath := range lines {
+		absPath = strings.TrimSpace(absPath)
+		if absPath == "" {
+			continue
+		}
+		rel, relErr := filepath.Rel(index.RootPath, absPath)
+		if relErr != nil {
+			continue
+		}
+		if tokensMatchPath(rel, filepath.Base(rel), queryTokens) {
+			results = append(results, rel)
+		}
+	}
+	sort.Strings(results)
+	hit1, hit3, hit5, firstRank := computeHitAtK(results, expectAny)
+	chars, tokens := countTokens(results)
+	noiseRatio := computeNoiseRatio(results, expectAny)
+	return EngineResult{
+		EngineName: "fd", Found: firstRank > 0, Rank: -1, TotalHits: len(results),
+		Paths: results, TimeMs: time.Since(start).Milliseconds(),
+		Chars: chars, Tokens: tokens, HitAt1: hit1, HitAt3: hit3, HitAt5: hit5, NoiseRatio: noiseRatio,
 	}
 }
 
@@ -233,8 +261,68 @@ func (grepEngine) Search(query string, expectAny []string, index *ContextIndex, 
 	}
 }
 
+type rgEngine struct{}
+
+func (rgEngine) Name() string { return "rg" }
+
+func (rgEngine) Search(query string, expectAny []string, index *ContextIndex, _ SearchOptions, _ int) EngineResult {
+	start := time.Now()
+	_, lookErr := exec.LookPath("rg")
+	if lookErr != nil {
+		return EngineResult{EngineName: "rg", Error: "rg binary not found in PATH"}
+	}
+	queryTokens := tokenize(query)
+	if len(queryTokens) == 0 {
+		return EngineResult{EngineName: "rg", Found: false, Rank: -1, TimeMs: time.Since(start).Milliseconds()}
+	}
+	pattern := strings.Join(queryTokens, "|")
+	cmd := exec.Command("rg", "--files-with-matches", "--no-heading", "--ignore-case", "-e", pattern, index.RootPath)
+	cmd.Dir = index.RootPath
+	out, runErr := cmd.Output()
+	if runErr != nil {
+		if exitErr, ok := runErr.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
+			out = []byte{}
+		} else {
+			return EngineResult{EngineName: "rg", Error: fmt.Sprintf("rg command failed: %v", runErr)}
+		}
+	}
+	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
+	results := make([]string, 0, len(lines))
+	for _, absPath := range lines {
+		absPath = strings.TrimSpace(absPath)
+		if absPath == "" {
+			continue
+		}
+		rel, relErr := filepath.Rel(index.RootPath, absPath)
+		if relErr != nil {
+			continue
+		}
+		results = append(results, rel)
+	}
+	sort.Strings(results)
+	hit1, hit3, hit5, firstRank := computeHitAtK(results, expectAny)
+	chars, tokens := countTokens(results)
+	noiseRatio := computeNoiseRatio(results, expectAny)
+	return EngineResult{
+		EngineName: "rg", Found: firstRank > 0, Rank: -1, TotalHits: len(results),
+		Paths: results, TimeMs: time.Since(start).Milliseconds(),
+		Chars: chars, Tokens: tokens, HitAt1: hit1, HitAt3: hit3, HitAt5: hit5, NoiseRatio: noiseRatio,
+	}
+}
+
+type hybridEngine struct{}
+
+func (hybridEngine) Name() string { return "hybrid" }
+
+func (hybridEngine) Search(query string, expectAny []string, index *ContextIndex, opts SearchOptions, _ int) EngineResult {
+	opts.ContentFallback = true
+	res := ctxtEngine{}.Search(query, expectAny, index, opts, 0)
+	res.EngineName = "hybrid"
+	return res
+}
+
 type combinedEngine struct {
-	find findEngine
+	find unixFindEngine
 	grep grepEngine
 }
 
@@ -379,7 +467,7 @@ func countRelevantPaths(paths []string, expectAny []string) int {
 
 // knownEngines returns the list of supported engine names in default order.
 func knownEngines() []string {
-	return []string{"ctxt", "find", "grep", "combined"}
+	return []string{"ctxt", "find", "grep", "combined", "fd", "rg", "hybrid"}
 }
 
 // isKnownEngine reports whether name is a supported engine.
@@ -400,11 +488,17 @@ func instantiateEngines(names []string) []SearchEngine {
 		case "ctxt":
 			out = append(out, ctxtEngine{})
 		case "find":
-			out = append(out, findEngine{})
+			out = append(out, unixFindEngine{})
 		case "grep":
 			out = append(out, grepEngine{})
 		case "combined":
 			out = append(out, combinedEngine{})
+		case "fd":
+			out = append(out, fdEngine{})
+		case "rg":
+			out = append(out, rgEngine{})
+		case "hybrid":
+			out = append(out, hybridEngine{})
 		}
 	}
 	return out

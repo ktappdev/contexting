@@ -1,4 +1,4 @@
-package main
+package contexting
 
 import (
 	"bytes"
@@ -219,12 +219,12 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 		}
 	}
 	if batchSize >= len(names) {
-		logInfof("  Synonyms: processing %d names...", len(names))
+		LogInfof("  Synonyms: processing %d names...", len(names))
 		return GenerateSynonymsBatchWithContext(ctx, names, apiKey, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax, symbols)
 	}
 
 	totalBatches := (len(names) + batchSize - 1) / batchSize
-	logInfof("  Synonyms: %d names in %d batches (parallel=%d)", len(names), totalBatches, parallelLimit)
+	LogInfof("  Synonyms: %d names in %d batches (parallel=%d)", len(names), totalBatches, parallelLimit)
 
 	result := make(SynonymResponse)
 	sem := make(chan struct{}, parallelLimit)
@@ -256,7 +256,7 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 
 			synonyms, err := GenerateSynonymsBatchWithContext(ctx, batchNames, apiKey, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax, batchSymbols)
 			if err != nil {
-				logWarnf("  ⚠ Synonyms: batch %d/%d failed: %v", batchNum, totalBatches, err)
+				LogWarnf("  ⚠ Synonyms: batch %d/%d failed: %v", batchNum, totalBatches, err)
 				return
 			}
 			mu.Lock()
@@ -265,11 +265,11 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 			}
 			mu.Unlock()
 			atomic.AddInt32(&completed, 1)
-			logInfof("  Synonyms: batch %d/%d done (%d names)", batchNum, totalBatches, len(batchNames))
+			LogInfof("  Synonyms: batch %d/%d done (%d names)", batchNum, totalBatches, len(batchNames))
 		}(batchNum, batchNames, batchSymbols)
 	}
 	wg.Wait()
-	logInfof("  Synonyms: %d names processed", len(result))
+	LogInfof("  Synonyms: %d names processed", len(result))
 
 	return result, nil
 }

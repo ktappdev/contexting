@@ -1,4 +1,4 @@
-package main
+package contexting
 
 import "os"
 
@@ -107,5 +107,5 @@ func emitSynonymWarning(err error) {
 	if isCanceledError(err) {
 		return
 	}
-	logWarnf("synonym generation failed, continuing without synonyms: %v", err)
+	LogWarnf("synonym generation failed, continuing without synonyms: %v", err)
 }

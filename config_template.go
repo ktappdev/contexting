@@ -1,4 +1,4 @@
-package main
+package contexting
 
 const starterConfigTemplate = `[common]
 output = ".ctxt/ctx_index.json"

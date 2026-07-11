@@ -1,4 +1,4 @@
-package main
+package contexting
 
 import (
 	"fmt"
@@ -55,15 +55,15 @@ func printDoctorReport(report DoctorReport) {
 		case DoctorFail:
 			prefix = "[FAIL]"
 		}
-		logInfof("%s %s: %s", prefix, check.Name, check.Message)
+		LogInfof("%s %s: %s", prefix, check.Name, check.Message)
 		if check.Suggestion != "" {
-			logInfof("fix: %s", check.Suggestion)
+			LogInfof("fix: %s", check.Suggestion)
 		}
 	}
 
 	if report.Healthy {
-		logInfof("Doctor status: healthy")
+		LogInfof("Doctor status: healthy")
 	} else {
-		logWarnf("Doctor status: issues found")
+		LogWarnf("Doctor status: issues found")
 	}
 }

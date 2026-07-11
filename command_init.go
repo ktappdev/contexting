@@ -1,4 +1,4 @@
-package main
+package contexting
 
 import (
 	"bufio"
@@ -82,13 +82,13 @@ func newInitCommand() *cobra.Command {
 				ignored[filepath.Base(outputPath)] = true
 			}
 			llmEndpoint, llmModel, llmKey, llmTemp, llmMaxTokens, llmProvider := resolveLLMConfig(flags, cfg.LLM)
-			logInfof("LLM: provider=%s model=%s endpoint=%s api_key=%s", llmProvider, llmModel, llmEndpoint, maskAPIKey(llmKey))
+			LogInfof("LLM: provider=%s model=%s endpoint=%s api_key=%s", llmProvider, llmModel, llmEndpoint, maskAPIKey(llmKey))
 			cache, err := LoadSynonymCache(cachePath)
 			if err != nil {
 				return err
 			}
 			if llmKey == "" {
-				logWarnf("LLM API key not configured; continuing without synonyms")
+				LogWarnf("LLM API key not configured; continuing without synonyms")
 			}
 			ctx, stop := signalAwareContext()
 			defer stop()
@@ -126,8 +126,8 @@ func newInitCommand() *cobra.Command {
 				return err
 			}
 
-			logInfof("Indexed %d nodes (%d files, %d directories). Synonyms on %d nodes.", result.Stats.TotalNodes, result.Stats.TotalFiles, result.Stats.TotalDirs, result.Stats.SynonymNodes)
-			logInfof("Collected %d unique names. Wrote %s", result.Stats.CollectedNames, outputPath)
+			LogInfof("Indexed %d nodes (%d files, %d directories). Synonyms on %d nodes.", result.Stats.TotalNodes, result.Stats.TotalFiles, result.Stats.TotalDirs, result.Stats.SynonymNodes)
+			LogInfof("Collected %d unique names. Wrote %s", result.Stats.CollectedNames, outputPath)
 			return nil
 		},
 	}

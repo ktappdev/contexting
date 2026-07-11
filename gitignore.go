@@ -1,4 +1,4 @@
-package main
+package contexting
 
 import (
 	"bufio"
@@ -58,7 +58,7 @@ func EnsureAndLoadGitignore(root string) ([]string, error) {
 			if err := createStarterGitignore(gitignorePath); err != nil {
 				return nil, err
 			}
-			logInfof("Created starter .gitignore at %s", gitignorePath)
+			LogInfof("Created starter .gitignore at %s", gitignorePath)
 		} else {
 			return nil, fmt.Errorf("stat .gitignore: %w", err)
 		}

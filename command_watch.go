@@ -1,4 +1,4 @@
-package main
+package contexting
 
 import (
 	"context"
@@ -72,7 +72,7 @@ func newWatchCommand() *cobra.Command {
 				return err
 			}
 			if persistMode != PersistShutdown {
-				logWarnf("Persistence mode %q requested, but watch now runs shutdown-only persistence. Using shutdown mode.", persistMode)
+				LogWarnf("Persistence mode %q requested, but watch now runs shutdown-only persistence. Using shutdown mode.", persistMode)
 				persistMode = PersistShutdown
 			}
 			if persistInterval <= 0 {
@@ -119,13 +119,13 @@ func newWatchCommand() *cobra.Command {
 			}
 
 			llmEndpoint, llmModel, llmKey, llmTemp, llmMaxTokens, llmProvider := resolveLLMConfig(flags, cfg.LLM)
-			logInfof("LLM: provider=%s model=%s endpoint=%s api_key=%s", llmProvider, llmModel, llmEndpoint, maskAPIKey(llmKey))
+			LogInfof("LLM: provider=%s model=%s endpoint=%s api_key=%s", llmProvider, llmModel, llmEndpoint, maskAPIKey(llmKey))
 			if !llmOnWatch {
 				llmKey = ""
-				logInfof("Watch LLM mode is off (default). Using cache + lexical synonyms only.")
+				LogInfof("Watch LLM mode is off (default). Using cache + lexical synonyms only.")
 			}
 			if llmOnWatch && llmKey == "" {
-				logWarnf("LLM API key not configured; continuing without synonyms")
+				LogWarnf("LLM API key not configured; continuing without synonyms")
 			}
 
 			ctx, stop := signalAwareContext()
@@ -152,12 +152,12 @@ func newWatchCommand() *cobra.Command {
 			bootstrapStats, err := manager.Bootstrap(ctx)
 			if err != nil {
 				if isCanceledError(err) {
-					logInfof("Startup indexing canceled.")
+					LogInfof("Startup indexing canceled.")
 					return nil
 				}
 				return err
 			}
-			logInfof("In-memory index ready: %d nodes (%d files, %d directories).", bootstrapStats.TotalNodes, bootstrapStats.TotalFiles, bootstrapStats.TotalDirs)
+			LogInfof("In-memory index ready: %d nodes (%d files, %d directories).", bootstrapStats.TotalNodes, bootstrapStats.TotalFiles, bootstrapStats.TotalDirs)
 
 			watcher, err := fsnotify.NewWatcher()
 			if err != nil {
@@ -170,8 +170,8 @@ func newWatchCommand() *cobra.Command {
 				return err
 			}
 
-			logInfof("Watching %s for changes...", absRoot)
-			logInfof("Watch settings: debounce=%s verbose=%t persist=%s output=%s cache=%s", debounce.String(), flags.Verbose, persistMode, outputPath, cachePath)
+			LogInfof("Watching %s for changes...", absRoot)
+			LogInfof("Watch settings: debounce=%s verbose=%t persist=%s output=%s cache=%s", debounce.String(), flags.Verbose, persistMode, outputPath, cachePath)
 
 			if searchLogQueryMax <= 0 {
 				searchLogQueryMax = defaultSearchLogQueryMax
@@ -186,13 +186,13 @@ func newWatchCommand() *cobra.Command {
 			defer func() {
 				_ = memoryServer.Close()
 			}()
-			logInfof("Memory search endpoint ready at %s", memoryServer.Address())
+			LogInfof("Memory search endpoint ready at %s", memoryServer.Address())
 
 			var persistTicker *time.Ticker
 			if persistMode == PersistInterval {
 				persistTicker = time.NewTicker(persistInterval)
 				defer persistTicker.Stop()
-				logInfof("Periodic flush enabled: interval=%s", persistInterval.String())
+				LogInfof("Periodic flush enabled: interval=%s", persistInterval.String())
 			}
 
 			pendingChanges := make(map[string]fsnotify.Op)
@@ -240,21 +240,21 @@ func newWatchCommand() *cobra.Command {
 						result, applyErr := manager.ApplyChanges(ctx, changes)
 						if applyErr != nil {
 							if !isCanceledError(applyErr) {
-								logErrorf("Apply changes failed: %v", applyErr)
+								LogErrorf("Apply changes failed: %v", applyErr)
 							}
 							continue
 						}
 						emitSynonymWarning(result.SynonymError)
 						if result.Changed {
 							if flags.Verbose {
-								logInfof("In-memory index updated: %d nodes (%d files, %d directories).", result.Stats.TotalNodes, result.Stats.TotalFiles, result.Stats.TotalDirs)
+								LogInfof("In-memory index updated: %d nodes (%d files, %d directories).", result.Stats.TotalNodes, result.Stats.TotalFiles, result.Stats.TotalDirs)
 							}
 							if persistMode == PersistChange {
 								flushed, flushErr := manager.FlushIfDirty()
 								if flushErr != nil {
-									logErrorf("Change-triggered flush failed: %v", flushErr)
+									LogErrorf("Change-triggered flush failed: %v", flushErr)
 								} else if flushed && flags.Verbose {
-									logInfof("Saved snapshot after change to %s", outputPath)
+									LogInfof("Saved snapshot after change to %s", outputPath)
 								}
 							}
 						}
@@ -279,19 +279,19 @@ func newWatchCommand() *cobra.Command {
 						logChangeSummary(remaining, flags.Verbose)
 						result, applyErr := manager.ApplyChanges(context.Background(), remaining)
 						if applyErr != nil {
-							logErrorf("Final apply failed: %v", applyErr)
+							LogErrorf("Final apply failed: %v", applyErr)
 						} else {
 							emitSynonymWarning(result.SynonymError)
 							if result.Changed {
 								if flags.Verbose {
-									logInfof("In-memory index updated: %d nodes (%d files, %d directories).", result.Stats.TotalNodes, result.Stats.TotalFiles, result.Stats.TotalDirs)
+									LogInfof("In-memory index updated: %d nodes (%d files, %d directories).", result.Stats.TotalNodes, result.Stats.TotalFiles, result.Stats.TotalDirs)
 								}
 								if persistMode == PersistChange {
 									flushed, flushErr := manager.FlushIfDirty()
 									if flushErr != nil {
-										logErrorf("Final change-triggered flush failed: %v", flushErr)
+										LogErrorf("Final change-triggered flush failed: %v", flushErr)
 									} else if flushed && flags.Verbose {
-										logInfof("Saved snapshot after final change to %s", outputPath)
+										LogInfof("Saved snapshot after final change to %s", outputPath)
 									}
 								}
 							}
@@ -299,20 +299,20 @@ func newWatchCommand() *cobra.Command {
 					}
 					flushed, flushErr := manager.FlushIfDirty()
 					if flushErr != nil {
-						logErrorf("Failed to flush snapshot on shutdown: %v", flushErr)
-						logInfof("Stopping watcher.")
+						LogErrorf("Failed to flush snapshot on shutdown: %v", flushErr)
+						LogInfof("Stopping watcher.")
 						return flushErr
 					}
 					if flushed {
-						logInfof("Flushed snapshot to %s and %s", outputPath, cachePath)
+						LogInfof("Flushed snapshot to %s and %s", outputPath, cachePath)
 					} else {
-						logInfof("No snapshot flush needed.")
+						LogInfof("No snapshot flush needed.")
 					}
-					logInfof("Stopping watcher.")
+					LogInfof("Stopping watcher.")
 					return nil
 				case err := <-watcher.Errors:
 					if err != nil {
-						logErrorf("Watcher error: %v", err)
+						LogErrorf("Watcher error: %v", err)
 					}
 				case event, ok := <-watcher.Events:
 					if !ok {
@@ -327,12 +327,12 @@ func newWatchCommand() *cobra.Command {
 					}
 					addPending(relName, event.Op)
 					if flags.Verbose {
-						logInfof("Event: %s %s", event.Op, event.Name)
+						LogInfof("Event: %s %s", event.Op, event.Name)
 					}
 
 					if event.Op&(fsnotify.Create|fsnotify.Rename) != 0 {
 						if err := syncWatchDirectories(watcher, absRoot, ignored, watchedDirs); err != nil {
-							logErrorf("Sync watch dirs failed: %v", err)
+							LogErrorf("Sync watch dirs failed: %v", err)
 						}
 					}
 
@@ -347,11 +347,11 @@ func newWatchCommand() *cobra.Command {
 				case <-tickerChan(persistTicker):
 					flushed, flushErr := manager.FlushIfDirty()
 					if flushErr != nil {
-						logErrorf("Periodic flush failed: %v", flushErr)
+						LogErrorf("Periodic flush failed: %v", flushErr)
 						continue
 					}
 					if flushed {
-						logInfof("Periodic flush wrote snapshot to %s", outputPath)
+						LogInfof("Periodic flush wrote snapshot to %s", outputPath)
 					}
 				case <-timer.C:
 					if !dirty {

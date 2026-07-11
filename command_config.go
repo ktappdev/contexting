@@ -1,4 +1,4 @@
-package main
+package contexting
 
 import "github.com/spf13/cobra"
 
@@ -26,7 +26,7 @@ func newConfigInitCommand() *cobra.Command {
 			if err := writeStarterConfig(target, force); err != nil {
 				return err
 			}
-			logInfof("Created starter config at %s", target)
+			LogInfof("Created starter config at %s", target)
 			return nil
 		},
 	}

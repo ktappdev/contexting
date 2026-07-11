@@ -1,4 +1,4 @@
-package main
+package contexting
 
 import (
 	"path/filepath"

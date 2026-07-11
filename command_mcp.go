@@ -1,4 +1,4 @@
-package main
+package contexting
 
 import (
 	"context"
@@ -38,7 +38,17 @@ func newMCPCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "mcp [path]",
-		Short: "Watch a directory and serve search queries via MCP over stdio",
+		Short: "Start MCP server — watch directory and expose search+status tools over stdio for AI assistants",
+		Long: `Starts a Model Context Protocol (MCP) server that AI assistants (Claude Desktop, Cursor, etc.) can use to search your codebase.
+
+Exposes two tools:
+  search - Concept-based ranked file search using the precomputed index (symbols, synonyms, paths).
+  status - Index health check (file count, generation time, root path).
+
+The server watches for file changes and keeps the index current. All communication is via stdin/stdout JSON-RPC — no network, fully local.
+
+Setup: Add to your AI client's MCP config:
+  {"command": "ctxt", "args": ["mcp"]}`,
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// MCP uses stdout for JSON-RPC; all logging must go to stderr.
@@ -85,7 +95,7 @@ func newMCPCommand() *cobra.Command {
 				return err
 			}
 			if persistMode != PersistShutdown {
-				logWarnf("Persistence mode %q requested, but MCP now runs shutdown-only persistence. Using shutdown mode.", persistMode)
+				LogWarnf("Persistence mode %q requested, but MCP now runs shutdown-only persistence. Using shutdown mode.", persistMode)
 				persistMode = PersistShutdown
 			}
 			if persistInterval <= 0 {
@@ -129,13 +139,13 @@ func newMCPCommand() *cobra.Command {
 			}
 
 			llmEndpoint, llmModel, llmKey, llmTemp, llmMaxTokens, llmProvider := resolveLLMConfig(flags, cfg.LLM)
-			logInfof("LLM: provider=%s model=%s endpoint=%s api_key=%s", llmProvider, llmModel, llmEndpoint, maskAPIKey(llmKey))
+			LogInfof("LLM: provider=%s model=%s endpoint=%s api_key=%s", llmProvider, llmModel, llmEndpoint, maskAPIKey(llmKey))
 			if !llmOnWatch {
 				llmKey = ""
-				logInfof("MCP LLM mode is off. Using cache + lexical synonyms only.")
+				LogInfof("MCP LLM mode is off. Using cache + lexical synonyms only.")
 			}
 			if llmOnWatch && llmKey == "" {
-				logWarnf("LLM API key not configured; continuing without synonyms")
+				LogWarnf("LLM API key not configured; continuing without synonyms")
 			}
 
 			ctx, stop := signalAwareContext()
@@ -162,12 +172,12 @@ func newMCPCommand() *cobra.Command {
 			bootstrapStats, err := manager.Bootstrap(ctx)
 			if err != nil {
 				if isCanceledError(err) {
-					logInfof("Startup indexing canceled.")
+					LogInfof("Startup indexing canceled.")
 					return nil
 				}
 				return err
 			}
-			logInfof("In-memory index ready: %d nodes (%d files, %d directories).", bootstrapStats.TotalNodes, bootstrapStats.TotalFiles, bootstrapStats.TotalDirs)
+			LogInfof("In-memory index ready: %d nodes (%d files, %d directories).", bootstrapStats.TotalNodes, bootstrapStats.TotalFiles, bootstrapStats.TotalDirs)
 
 			watcher, err := fsnotify.NewWatcher()
 			if err != nil {
@@ -180,8 +190,8 @@ func newMCPCommand() *cobra.Command {
 				return err
 			}
 
-			logInfof("Watching %s for changes...", absRoot)
-			logInfof("MCP settings: debounce=%s verbose=%t persist=%s output=%s cache=%s http=%t", debounce.String(), flags.Verbose, persistMode, outputPath, cachePath, enableHTTP)
+			LogInfof("Watching %s for changes...", absRoot)
+			LogInfof("MCP settings: debounce=%s verbose=%t persist=%s output=%s cache=%s http=%t", debounce.String(), flags.Verbose, persistMode, outputPath, cachePath, enableHTTP)
 
 			var memoryServer *memorySearchServer
 			if enableHTTP {
@@ -199,14 +209,14 @@ func newMCPCommand() *cobra.Command {
 				defer func() {
 					_ = memoryServer.Close()
 				}()
-				logInfof("Memory search endpoint ready at %s", memoryServer.Address())
+				LogInfof("Memory search endpoint ready at %s", memoryServer.Address())
 			}
 
 			var persistTicker *time.Ticker
 			if persistMode == PersistInterval {
 				persistTicker = time.NewTicker(persistInterval)
 				defer persistTicker.Stop()
-				logInfof("Periodic flush enabled: interval=%s", persistInterval.String())
+				LogInfof("Periodic flush enabled: interval=%s", persistInterval.String())
 			}
 
 			pendingChanges := make(map[string]fsnotify.Op)
@@ -254,21 +264,21 @@ func newMCPCommand() *cobra.Command {
 						result, applyErr := manager.ApplyChanges(ctx, changes)
 						if applyErr != nil {
 							if !isCanceledError(applyErr) {
-								logErrorf("Apply changes failed: %v", applyErr)
+								LogErrorf("Apply changes failed: %v", applyErr)
 							}
 							continue
 						}
 						emitSynonymWarning(result.SynonymError)
 						if result.Changed {
 							if flags.Verbose {
-								logInfof("In-memory index updated: %d nodes (%d files, %d directories).", result.Stats.TotalNodes, result.Stats.TotalFiles, result.Stats.TotalDirs)
+								LogInfof("In-memory index updated: %d nodes (%d files, %d directories).", result.Stats.TotalNodes, result.Stats.TotalFiles, result.Stats.TotalDirs)
 							}
 							if persistMode == PersistChange {
 								flushed, flushErr := manager.FlushIfDirty()
 								if flushErr != nil {
-									logErrorf("Change-triggered flush failed: %v", flushErr)
+									LogErrorf("Change-triggered flush failed: %v", flushErr)
 								} else if flushed && flags.Verbose {
-									logInfof("Saved snapshot after change to %s", outputPath)
+									LogInfof("Saved snapshot after change to %s", outputPath)
 								}
 							}
 						}
@@ -292,7 +302,7 @@ func newMCPCommand() *cobra.Command {
 						return
 					case err := <-watcher.Errors:
 						if err != nil {
-							logErrorf("Watcher error: %v", err)
+							LogErrorf("Watcher error: %v", err)
 						}
 					case event, ok := <-watcher.Events:
 						if !ok {
@@ -307,12 +317,12 @@ func newMCPCommand() *cobra.Command {
 						}
 						addPending(relName, event.Op)
 						if flags.Verbose {
-							logInfof("Event: %s %s", event.Op, event.Name)
+							LogInfof("Event: %s %s", event.Op, event.Name)
 						}
 
 						if event.Op&(fsnotify.Create|fsnotify.Rename) != 0 {
 							if err := syncWatchDirectories(watcher, absRoot, ignored, watchedDirs); err != nil {
-								logErrorf("Sync watch dirs failed: %v", err)
+								LogErrorf("Sync watch dirs failed: %v", err)
 							}
 						}
 
@@ -327,11 +337,11 @@ func newMCPCommand() *cobra.Command {
 					case <-tickerChan(persistTicker):
 						flushed, flushErr := manager.FlushIfDirty()
 						if flushErr != nil {
-							logErrorf("Periodic flush failed: %v", flushErr)
+							LogErrorf("Periodic flush failed: %v", flushErr)
 							continue
 						}
 						if flushed {
-							logInfof("Periodic flush wrote snapshot to %s", outputPath)
+							LogInfof("Periodic flush wrote snapshot to %s", outputPath)
 						}
 					case <-timer.C:
 						if !dirty {
@@ -345,14 +355,16 @@ func newMCPCommand() *cobra.Command {
 
 			server := mcp.NewServer(&mcp.Implementation{
 				Name:    "ctxt",
-				Version: version,
+				Version: Version,
 			}, nil)
 
 			mcp.AddTool(server, &mcp.Tool{
 				Name: "search",
 				Description: "Search a codebase for files using concept-based ranked search. Faster and more relevant than grep or find for locating WHERE code lives. " +
 					"Query with plain keywords, concepts, partial filenames, or symbol names (e.g. \"auth login\", \"jwt token refresh\", \"payment handler\", \"createUser\"). " +
-					"Results are ranked by relevance score, not alphabetical. Use this instead of grep when you need to find which file handles a concept — grep finds what's INSIDE files, this finds WHICH files matter. " +
+					"Results are ranked by relevance score (symbol matches +4, synonyms +3, basename +7, exact match +15). " +
+					"Content fallback available via --hybrid flag: when results are sparse, ripgrep scans file contents for the query tokens and merges unmatched files at score=1. " +
+					"Use this instead of grep when you need to find which file handles a concept — grep finds what's INSIDE files, this finds WHICH files matter. " +
 					"Do not use for searching file contents (use grep) or file metadata like size/date/permissions (use find).",
 			}, func(ctx context.Context, req *mcp.CallToolRequest, args searchToolArgs) (*mcp.CallToolResult, any, error) {
 				if args.Query == "" {
@@ -417,7 +429,7 @@ func newMCPCommand() *cobra.Command {
 				}, nil, nil
 			})
 
-			logInfof("MCP server ready on stdio.")
+			LogInfof("MCP server ready on stdio.")
 			serverErr := server.Run(ctx, &mcp.StdioTransport{})
 
 			remaining := drainPending()
@@ -425,19 +437,19 @@ func newMCPCommand() *cobra.Command {
 				logChangeSummary(remaining, flags.Verbose)
 				result, applyErr := manager.ApplyChanges(context.Background(), remaining)
 				if applyErr != nil {
-					logErrorf("Final apply failed: %v", applyErr)
+					LogErrorf("Final apply failed: %v", applyErr)
 				} else {
 					emitSynonymWarning(result.SynonymError)
 				}
 			}
 			flushed, flushErr := manager.FlushIfDirty()
 			if flushErr != nil {
-				logErrorf("Failed to flush snapshot on shutdown: %v", flushErr)
+				LogErrorf("Failed to flush snapshot on shutdown: %v", flushErr)
 			}
 			if flushed {
-				logInfof("Flushed snapshot to %s and %s", outputPath, cachePath)
+				LogInfof("Flushed snapshot to %s and %s", outputPath, cachePath)
 			}
-			logInfof("Stopping MCP server.")
+			LogInfof("Stopping MCP server.")
 			if serverErr != nil {
 				return fmt.Errorf("mcp server: %w", serverErr)
 			}

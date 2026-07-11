@@ -1,4 +1,4 @@
-package main
+package contexting
 
 import (
 	"fmt"
@@ -42,7 +42,7 @@ func newSyncCommand() *cobra.Command {
 			cachePath := resolveProjectPath(absRoot, flags.SynonymCache)
 
 			llmEndpoint, llmModel, llmKey, llmTemp, llmMaxTokens, llmProvider := resolveLLMConfig(flags, cfg.LLM)
-			logInfof("LLM: provider=%s model=%s endpoint=%s api_key=%s", llmProvider, llmModel, llmEndpoint, maskAPIKey(llmKey))
+			LogInfof("LLM: provider=%s model=%s endpoint=%s api_key=%s", llmProvider, llmModel, llmEndpoint, maskAPIKey(llmKey))
 			if llmKey == "" {
 				return fmt.Errorf("LLM API key not configured; cannot generate synonyms")
 			}

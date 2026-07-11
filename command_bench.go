@@ -1,4 +1,4 @@
-package main
+package contexting
 
 import (
 	"fmt"
@@ -104,7 +104,7 @@ func newBenchCommand() *cobra.Command {
 				if needCtxt {
 					return err
 				}
-				logWarnf("index load failed, ctxt engine will be skipped: %v", err)
+				LogWarnf("index load failed, ctxt engine will be skipped: %v", err)
 				indexLoadMs = 0
 				index = &ContextIndex{RootPath: absRoot}
 			} else {
@@ -185,8 +185,8 @@ func newBenchCommand() *cobra.Command {
 	cmd.Flags().StringVarP(&casesPath, "cases", "c", "", "Path to eval cases JSON")
 	cmd.Flags().IntVarP(&opts.Limit, "limit", "n", 10, "Number of ranked search results per query")
 	cmd.Flags().IntVar(&opts.MinScore, "min-score", 1, "Minimum score required for candidate results")
-	cmd.Flags().StringVar(&engines, "engines", "ctxt,find,grep", "Comma-separated list of engines to benchmark")
-	cmd.Flags().IntVar(&grepMaxBytes, "grep-max-bytes", 1048576, "Maximum file size in bytes for grep engine to read")
+	cmd.Flags().StringVar(&engines, "engines", "ctxt,find,grep", "Engines to benchmark: ctxt,find,fd,grep,rg,hybrid,combined")
+	cmd.Flags().IntVar(&grepMaxBytes, "grep-max-bytes", 1048576, "Max file size in bytes for grep/rg engines")
 	cmd.Flags().BoolVar(&jsonOut, "json", false, "Print full benchmark report as JSON")
 	cmd.Flags().BoolVar(&byCategory, "by-category", true, "Group report by category (for v2 case files)")
 

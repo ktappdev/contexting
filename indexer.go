@@ -1,4 +1,4 @@
-package main
+package contexting
 
 import (
 	"context"
@@ -81,14 +81,14 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 	if stats.TotalFiles >= MaxFileCount/2 {
 		extraMsg = " (large repo - consider more ignore patterns)"
 	}
-	logInfof("✓ Built tree: %d files, %d directories%s", stats.TotalFiles, stats.TotalDirs, extraMsg)
+	LogInfof("✓ Built tree: %d files, %d directories%s", stats.TotalFiles, stats.TotalDirs, extraMsg)
 
 	names := CollectNamesForLLM(tree)
 	combined := cloneSynonymMap(opts.SynonymCache)
 	missing := missingNames(names, combined)
 
 	if len(names) > 0 {
-		logInfof("  %d names to process (%d cached, %d new)", len(names), len(names)-len(missing), len(missing))
+		LogInfof("  %d names to process (%d cached, %d new)", len(names), len(names)-len(missing), len(missing))
 	}
 
 	// Check batch count in main goroutine so interactive prompt works
@@ -109,7 +109,7 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 		}
 		totalBatches := (len(missing) + batchSize - 1) / batchSize
 		if totalBatches > 9 {
-			logWarnf("Project has %d unique names requiring %d batches (>9). This project may be too large for reliable synonym generation.", len(missing), totalBatches)
+			LogWarnf("Project has %d unique names requiring %d batches (>9). This project may be too large for reliable synonym generation.", len(missing), totalBatches)
 			if isInteractiveTerminal() {
 				continueAnyway, err := askYesNo("Continue anyway? [y/N] ", false)
 				if err != nil {
@@ -139,7 +139,7 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 		node.Symbols = syms
 		count++
 		if count%100 == 0 && opts.Verbose {
-			logInfof("  Extracting symbols: %d/%d files", count, stats.TotalFiles)
+			LogInfof("  Extracting symbols: %d/%d files", count, stats.TotalFiles)
 		}
 	})
 	symbolCount = count
@@ -172,8 +172,8 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 	// Assign synonyms after goroutines complete
 	AssignSynonymsToTree(tree, combined, opts.SynonymsMax)
 
-	logInfof("✓ Generated synonyms for %d names", len(names))
-	logInfof("✓ Extracted symbols from %d files", symbolCount)
+	LogInfof("✓ Generated synonyms for %d names", len(names))
+	LogInfof("✓ Extracted symbols from %d files", symbolCount)
 
 	stats = ComputeStats(tree)
 	stats.CollectedNames = len(names)

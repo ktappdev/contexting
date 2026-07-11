@@ -1,4 +1,4 @@
-package main
+package contexting
 
 import (
 	"context"
@@ -206,7 +206,7 @@ func (m *IndexManager) Bootstrap(ctx context.Context) (IndexStats, error) {
 			// Diff snapshot against filesystem to catch changes made while not running
 			fsState, fsErr := collectFilesystemState(m.rootPath, m.ignored)
 			if fsErr != nil {
-				logWarnf("Unable to scan filesystem for staleness check: %v — falling back to full rebuild", fsErr)
+				LogWarnf("Unable to scan filesystem for staleness check: %v — falling back to full rebuild", fsErr)
 			} else {
 				snapPaths := collectSnapshotPaths(m.index.Tree)
 				changesDetected := false
@@ -261,13 +261,13 @@ func (m *IndexManager) Bootstrap(ctx context.Context) (IndexStats, error) {
 				if changesDetected {
 					m.dirty = true
 					m.index.GeneratedAt = time.Now().UTC()
-					logWarnf("########################################")
-					logWarnf("# Bootstrap diff: +%d new, -%d deleted, %d modified", newCount, deletedCount, modifiedCount)
+					LogWarnf("########################################")
+					LogWarnf("# Bootstrap diff: +%d new, -%d deleted, %d modified", newCount, deletedCount, modifiedCount)
 					if len(newNamesNeedSynonyms) > 0 {
-						logWarnf("# Run: ctxt sync")
-						logWarnf("# to generate synonyms for %d new names", len(newNamesNeedSynonyms))
+						LogWarnf("# Run: ctxt sync")
+						LogWarnf("# to generate synonyms for %d new names", len(newNamesNeedSynonyms))
 					}
-					logWarnf("########################################")
+					LogWarnf("########################################")
 				}
 			}
 
@@ -277,7 +277,7 @@ func (m *IndexManager) Bootstrap(ctx context.Context) (IndexStats, error) {
 		}
 	}
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		logWarnf("Unable to load existing context snapshot: %v", err)
+		LogWarnf("Unable to load existing context snapshot: %v", err)
 	}
 
 	result, buildErr := BuildIndex(BuildOptions{
