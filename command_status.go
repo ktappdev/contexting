@@ -34,6 +34,13 @@ func newStatusCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "status",
 		Short: "Show project status: paths, index health, watch state",
+		Long: `Shows current project status — index file path, file count, last generation time, watch state, and synonym cache info.
+
+Use this to verify that 'ctxt init' or 'ctxt watch' is working correctly.
+
+Examples:
+  ctxt status                     Pretty-printed status (default)
+  ctxt status --root /path/to/project   Check a different project`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var absConfigPath string
 			if configPath != "" {

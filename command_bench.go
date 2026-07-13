@@ -23,6 +23,24 @@ func newBenchCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "bench",
 		Short: "Benchmark search engines against a query case set",
+		Long: `Benchmarks ctxt and other search engines against a set of query cases to measure search quality. Each case defines a query, expected file paths, and an optional intent category.
+
+Metrics reported:
+  Hit@1 — fraction of queries where the first result is an expected file
+  Hit@3/Hit@5 — fraction where expected file appears in top 3/5 results
+  Recall — fraction of expected files found across all results
+  Noise — fraction of results that aren't expected files
+  Tokens — estimated token count for results (lower = less context for LLMs)
+
+7 engines available: ctxt, find, fd, grep, rg, hybrid, combined (default: ctxt,find,grep).
+
+Use 'ctxt eval' for per-query debugging; use 'ctxt bench' for aggregate comparison.
+
+Examples:
+  ctxt bench --cases docs/bench_cases.json                    Run with default engines
+  ctxt bench --cases bench.json --engines ctxt,rg,hybrid      Compare specific engines
+  ctxt bench --cases cases.json --json --output results.json  JSON export
+  ctxt bench --cases cases.json --limit 20                    More results per query`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var absConfigPath string
 			if configPath != "" {

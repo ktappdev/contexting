@@ -15,6 +15,21 @@ func newInitCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "init [path]",
 		Short: "Build context index and write context JSON",
+		Long: `Builds the ctxt search index for your project. Walks the directory tree, extracts symbols from source files using tree-sitter (Go/JS/TS/Python/Rust/Svelte/Astro) or regex fallback (Vue/Ruby/C/etc.), and optionally generates LLM synonyms for conceptual search.
+
+Creates two files:
+  .ctxt/ctx_index.json    — the searchable index (files, symbols, synonyms, tree)
+  .ctxt/ctx_cache.json    — persistent synonym cache (avoids redundant LLM calls)
+
+With an LLM API key, ctxt sends filenames + extracted imports to the LLM to generate domain-accurate synonyms. Without one, falls back to lexical splitting (pascalCase → "pascal case", snake_case → "snake case").
+
+Examples:
+  ctxt init .                                    Basic setup
+  ctxt init . --model openai/gpt-4o              Use specific LLM model
+  ctxt init . --symbol-extractor treesitter      Force tree-sitter (no regex fallback)
+  ctxt init . --symbol-extractor regex           Regex-only extraction
+  ctxt init . --synonyms 8                       Generate up to 8 synonyms per name
+  ctxt init . -v                                 Verbose — see what's being extracted`,
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var absConfigPath string

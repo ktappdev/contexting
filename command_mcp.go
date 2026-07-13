@@ -364,7 +364,9 @@ Setup: Add to your AI client's MCP config:
 
 			mcp.AddTool(server, &mcp.Tool{
 				Name: "search",
-				Description: "Search a codebase for files using concept-based ranked search. Faster and more relevant than grep or find for locating WHERE code lives. " +
+				Description: "Before searching, ensure an index exists. Run `ctxt init .` in your project directory to build the index. For live updates while coding, run `ctxt watch .`. Use `ctxt status` to check index health. " +
+					"Then use this search tool to find files by concept. " +
+					"Search a codebase for files using concept-based ranked search. Faster and more relevant than grep or find for locating WHERE code lives. " +
 					"Query with plain keywords, concepts, partial filenames, or symbol names (e.g. \"auth login\", \"jwt token refresh\", \"payment handler\", \"createUser\"). " +
 					"Results are ranked by relevance score (symbol matches +4, synonyms +3, basename +7, exact match +15). " +
 					"Set hybrid=true to enable content fallback via ripgrep when index results are sparse. " +
@@ -418,7 +420,7 @@ Setup: Add to your AI client's MCP config:
 				Name: "status",
 				Description: "Check the health and coverage of the ctxt codebase index. " +
 					"Returns total indexed files, directories, index generation time, and root path. " +
-					"Use this to verify the index is built and current before searching, or to diagnose why search results may be empty or stale.",
+					"Use this FIRST before searching to verify the index exists and is current. If no index exists, tell the user to run `ctxt init .` in their project directory.",
 			}, func(ctx context.Context, req *mcp.CallToolRequest, _ statusToolArgs) (*mcp.CallToolResult, any, error) {
 				stats := manager.SnapshotStats()
 				root := manager.RootPath()

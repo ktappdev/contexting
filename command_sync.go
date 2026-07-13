@@ -12,7 +12,12 @@ func newSyncCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "sync [path]",
-		Short: "Generate synonyms for names that are missing or short",
+		Short: "Regenerate synonyms — extracts ESM imports and sends them to the LLM for domain-accurate naming",
+		Long: `Regenerate synonyms for code symbols. Extracts ESM imports from each file and sends them to the LLM alongside symbol names, enabling domain-accurate synonym generation.
+
+For example, a file importing "@clerk/nextjs" and "stripe" might get synonyms like "clerk webhook handler" or "payment processing route".
+
+Requires an existing index (run 'ctxt init' first).`,
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var absConfigPath string

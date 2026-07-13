@@ -25,7 +25,23 @@ func newSearchCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "search-hints [query]",
-		Short: "Find top matching paths from context JSON",
+		Short: "Find files by concept — query your codebase with natural language",
+		Long: `Queries the precomputed ctxt index (files + symbols + LLM synonyms) with natural language and returns ranked file paths.
+
+How it works:
+  • Your query is tokenized and matched against filenames, symbols (functions, classes, types), and synonyms
+  • Each match is scored by type: synonym=20, symbol=10, path=1
+  • Results are ranked by total score and returned
+
+Requires an existing index (run 'ctxt init .' first).
+
+Examples:
+  ctxt search-hints "auth middleware"           Find auth-related files
+  ctxt search-hints "payment" --json            JSON output for scripting
+  ctxt search-hints "login" --hybrid            Add ripgrep content fallback
+  ctxt search-hints "database" --explain        Show score breakdown
+  ctxt search-hints "upload" --type files       Files only (no directories)
+  ctxt search-hints "config" --limit 20         More results`,
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var absConfigPath string

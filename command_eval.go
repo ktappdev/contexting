@@ -16,6 +16,14 @@ func newEvalCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "eval",
 		Short: "Evaluate search quality against expected query/path cases",
+		Long: `Evaluates search quality query-by-query. Useful for debugging why a specific query missed its expected file.
+
+Unlike 'ctxt bench' (which aggregates), 'ctxt eval' prints per-query results showing exactly which files matched, their scores, and whether the expected file was found.
+
+Examples:
+  ctxt eval --cases docs/bench_cases.json          Quick evaluation
+  ctxt eval --cases cases.json --explain           Show score breakdown per query
+  ctxt eval --cases cases.json --json              JSON output`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var absConfigPath string
 		if configPath != "" {

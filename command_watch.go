@@ -29,6 +29,22 @@ func newWatchCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "watch [path]",
 		Short: "Watch a directory, keep index in memory, and flush snapshot on shutdown",
+		Long: `Watches your project for file changes and keeps the search index live in memory. When files are added, modified, or deleted, the index updates automatically.
+
+Key behaviors:
+  • Detects new files → extracts symbols + regenerates synonyms (if LLM enabled)
+  • Detects modified files → re-extracts symbols, updates synonyms if name changed
+  • Detects deleted files → removes node from the in-memory tree
+  • Persists snapshot on shutdown (or at intervals with --persist=interval)
+  • Serves memory search queries for tools that use --memory mode
+
+This is the recommended development workflow — init once, then watch while you code.
+
+Examples:
+  ctxt watch .                                   Basic watch
+  ctxt watch . --llm-on-watch=false              Skip live LLM synonym generation
+  ctxt watch . --debounce 1s                     Longer debounce for busy projects
+  ctxt watch . --persist interval --persist-interval 60s   Periodic snapshot saves`,
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var absConfigPath string

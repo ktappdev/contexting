@@ -13,6 +13,17 @@ func newDoctorCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "doctor",
 		Short: "Check project/config/index health and print actionable fixes",
+		Long: `Checks project health — config validity, index freshness, gitignore presence, write access. Prints actionable fixes when issues are found.
+
+Checks:
+  • Config file exists and is valid TOML
+  • Index file exists and matches current project structure
+  • .gitignore includes .ctxt/ directory
+  • Write access to the project directory
+
+Examples:
+  ctxt doctor                     Basic health check
+  ctxt doctor --json               JSON output for scripting`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.ConfigPath = configPath
 			report := RunDoctor(opts)

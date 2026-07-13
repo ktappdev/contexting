@@ -15,6 +15,14 @@ func newCleanCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "clean",
 		Short: "Remove .ctxt/ directory and all ctxt files from a project",
+		Long: `Removes all ctxt files from the project — .ctxt/ directory, index, config, and cache. Like a factory reset.
+
+Use 'ctxt init .' afterwards to rebuild from scratch.
+
+Examples:
+  ctxt clean                      Remove everything
+  ctxt clean --dry-run            Preview what would be removed
+  ctxt clean --root /path/to/project   Clean a different project`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			absRoot, err := filepath.Abs(rootPath)
 			if err != nil {
