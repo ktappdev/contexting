@@ -23,7 +23,8 @@ jobs:
         run: |
           if ! test_output=$(go test -timeout 5m ./... 2>&1); then
             printf '%s\n' "$test_output"
-            annotation=${test_output//'%'/'%25'}
+            annotation=$(printf '%s\n' "$test_output" | tail -80)
+            annotation=${annotation//'%'/'%25'}
             annotation=${annotation//$'\r'/'%0D'}
             annotation=${annotation//$'\n'/'%0A'}
             echo "::error title=go test failed::$annotation"
