@@ -18,7 +18,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - name: Resolve release tag
@@ -30,7 +30,7 @@ jobs:
           fi
           test "$(git rev-parse "$REQUESTED_TAG^{commit}")" = "$(git rev-parse HEAD)"
           echo "RELEASE_TAG=$REQUESTED_TAG" >> "$GITHUB_ENV"
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: '1.26.x'
       - run: go run ./internal/dist -version "$RELEASE_TAG"
