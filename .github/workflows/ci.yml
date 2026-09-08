@@ -32,7 +32,9 @@ jobs:
           fi
           printf '%s\n' "$test_output"
       - run: go vet ./...
-      - run: go test -race -timeout 5m ./...
+      - name: Race test
+        if: runner.os != 'Windows'
+        run: go test -race -timeout 5m ./...
       - run: go build ./cmd/ctxt
   analysis:
     runs-on: ubuntu-latest

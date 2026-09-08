@@ -15,6 +15,8 @@ govulncheck ./...
 The CI workflow installs pinned analysis tools. Tests use local fake LLM
 servers and do not require API credentials. Full tests build a CLI and exercise
 MCP and watch subprocesses; `go test -short ./...` skips that lifecycle test.
+Race instrumentation runs on Linux and macOS; Windows runs the full ordinary
+suite, vet, and build checks.
 
 Do not commit generated indexes, binaries, API keys or private fixtures.
 See SECURITY.md for data handling and AGENTS.md for architecture.
