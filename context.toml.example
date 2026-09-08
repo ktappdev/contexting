@@ -1,10 +1,10 @@
 [common]
 output = ".ctxt/ctx_index.json"
 synonym_cache = ".ctxt/ctx_cache.json"
-llm_model = "meta-llama/llama-3.1-8b-instruct"  # any OpenAI-compatible model name
-batch_size = 15             # names per batch; 15 works well for 8B models
-synonyms_min = 4            # min synonyms per name
-synonyms_max = 8            # max synonyms per name
+llm_model = "deepseek/deepseek-v4-flash"
+batch_size = 8              # names per batch; 0 enables smart batching
+synonyms_min = 5            # min synonyms per name
+synonyms_max = 12           # max synonyms per name
 ignore = [".git", ".venv", "site-packages", "__pycache__", "node_modules", "vendor", "dist", "migrations", "pb_migrations", "alembic", "flyway"]
 # Extra dot files to keep (merged with built-in defaults like .prettierrc, .editorconfig, etc.)
 dot_whitelist = []
@@ -16,16 +16,16 @@ provider = "openrouter"
 # API endpoint - OpenAI-compatible
 endpoint = "https://openrouter.ai/api/v1/chat/completions"
 # Model to use
-model = "meta-llama/llama-3.1-8b-instruct"
+model = "deepseek/deepseek-v4-flash"
 # API key (not needed if using env var)
 api_key = ""
 # Environment variable containing API key
 api_key_env = "OPENROUTER_API_KEY"
 # Sampling parameters
-temperature = 0.3
+temperature = 0.9
 max_tokens = 0
 # Concurrent LLM requests (1 = sequential, 2+ = parallel batches)
-parallel_requests = 4
+parallel_requests = 10
 
 [init]
 root = "."
@@ -33,10 +33,9 @@ root = "."
 [watch]
 root = "."
 debounce = "750ms"
-llm = true
+llm = false
 persist = "shutdown"
-persist_interval = "45s"
-search_log = true
+search_log = false
 search_log_query_max = 120
 max_batch_size = 0
 

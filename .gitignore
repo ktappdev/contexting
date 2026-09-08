@@ -4,3 +4,12 @@ contexting
 ctx.json
 syns.json
 /.ctxt
+/.ctxt-writer/
+/dist/
+/bin/
+/ctxt
+/ctxt.exe
+/context.json
+/context.toml
+.DS_Store
+.picode/

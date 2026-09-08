@@ -161,12 +161,12 @@ When a previous report exists, add a "Comparison" section after "Key Findings" s
 
 1. **Run the benchmark and capture output:**
    ```bash
-   contexting bench --cases docs/bench_cases.json --no-config-prompt > /tmp/bench_text.txt
+   ctxt bench --cases docs/bench_cases.json --no-config-prompt > /tmp/bench_text.txt
    ```
 
 2. **Run with JSON for structured data:**
    ```bash
-   contexting bench --cases docs/bench_cases.json --no-config-prompt --json > /tmp/bench_json.txt
+   ctxt bench --cases docs/bench_cases.json --no-config-prompt --json > /tmp/bench_json.txt
    ```
 
 3. **Determine the next incrementing number:**

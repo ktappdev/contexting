@@ -19,7 +19,8 @@ This file is for developers and AI agents working on the codebase. For user-faci
 
 ## Versioning
 
-- **Hardcoded fallback**: `main.go` line ~3: `var Version = "0.0.1"`
+- **Local fallback**: untagged direct builds report `dev`
+- **Tagged Go installs**: derive the module version from Go build metadata
 - **`make install`**: Overrides via `-ldflags "-X github.com/ktappdev/contexting.Version=..."` using `git describe --tags`
 - **Without tags**: Falls back to commit hash (e.g., `af85edb-dirty`)
 
@@ -27,7 +28,7 @@ This file is for developers and AI agents working on the codebase. For user-faci
 
 ```bash
 git tag v0.0.2 && make install
-ctxt version  # → 0.0.2
+ctxt version  # → 0.0.2 (ctxt --version also works)
 ```
 
 ## Project Structure
@@ -97,8 +98,9 @@ ctxt version  # → 0.0.2
 | Config format | TOML (`.ctxt/ctx_config.toml`) |
 | Output format | JSON (`.ctxt/ctx_index.json`) |
 | Atomic writes | Temp file + rename (see `io_atomic.go`) |
-| No file locking | Between processes (init vs watch can conflict) |
+| Writer guard | CLI writers are serialized per project via `.ctxt-writer/` |
 | Default model | `deepseek/deepseek-v4-flash` |
+| Supported release targets | Linux/macOS/Windows on amd64 and arm64 |
 | Synonyms | 5–12 per name |
 | Temperature | `0.9` |
 | Parallel requests | `10` |
@@ -110,7 +112,8 @@ ctxt version  # → 0.0.2
 ### Flag Defaults
 
 - `--verbose` (default: false) — gates steady-state change summaries
-- `--search-log` (default: true) — gates search query logging
+- `--llm-on-watch` (default: false) — opts into LLM calls during watch
+- `--search-log` (default: false) — gates potentially sensitive query logging
 - `--by-category` (default: true) — group bench results by category
 - `--engines` (default: `"ctxt,find,grep"`) — engines to benchmark. Also available: `fd`, `rg`, `hybrid`, `combined`
 - `--hybrid` (search flag, default: false) — enable content fallback via ripgrep when index results are sparse
@@ -132,7 +135,7 @@ Default ignores: `.venv`, `site-packages`, `__pycache__`, `node_modules`, `.env*
 ## Key Conventions for AI Agents
 
 1. **Naming — The CLI binary and command is `ctxt` (lowercase), not `contexting`. The project name is Contexting (capitalized). All user-facing command strings, error messages, help text, MCP server names, bench engine names, and doc examples MUST use `ctxt`. Only use `Contexting` when referring to the project in prose.**
-2. **Never assume file locking** — `init` and `watch` can conflict
+2. **Writer guard scope** — CLI writers are serialized locally; library callers and network filesystems require their own coordination
 3. **Atomic writes only** — use temp+rename pattern in `io_atomic.go`
 4. **Config precedence** — CLI flags > `.ctxt/ctx_config.toml` > hardcoded defaults
 5. **Config paths** — Relative paths resolve from config file location
@@ -143,6 +146,8 @@ Default ignores: `.venv`, `site-packages`, `__pycache__`, `node_modules`, `.env*
 10. **Scoring** — Exact basename +15 (highest), confidence gap truncation reduces noise
 11. **Hybrid search** — Use `--hybrid` on `search-hints` to fill gaps in index results. Ripgrep scans file contents for query tokens and merges unmatched files at score=1. Useful when the index misses files whose content literally contains the query words but whose symbols/synonyms don't connect. Add `--memory=false` if using a snapshot (non-watch) index.
 12. **`--agent` flag** — Blocks `init`/`watch`/`sync`/`clean` for safety in automated flows
+13. **Symlinks** — Entries are excluded; directory symlinks are never followed
+14. **Index size** — Initial indexing fails above 10,000 files rather than saving a partial index
 
 ## Bench Engines
 

@@ -664,7 +664,7 @@
             <p>
                 The system is configured through <code class="inline-code">ctx_config.toml</code> plus CLI flags.
                 Config is loaded from <code class="inline-code">.ctx/ctx_config.toml</code> by default.
-                Run <code class="inline-code">contexting config init</code> to generate a starter file.
+                Run <code class="inline-code">ctxt config init</code> to generate a starter file.
             </p>
 
             <h3 id="config-file">ctx_config.toml</h3>
@@ -673,10 +673,10 @@
             <pre><code><span class="cmt"># ctx_config.toml — top-level config file</span>
 
 [common]
-output = ".ctx/ctx_index.json"              <span class="cmt"># Index output path</span>
+output = ".ctxt/ctx_index.json"              <span class="cmt"># Index output path</span>
 synonym_cache = ".ctx/ctx_cache.json"
-llm_model = "openai/gpt-oss-safeguard-20b"  <span class="cmt"># Default LLM model (overridden by [llm])</span>
-batch_size = 0                              <span class="cmt"># 0 = send all names per request</span>
+llm_model = "deepseek/deepseek-v4-flash"    <span class="cmt"># Default LLM model (overridden by [llm])</span>
+batch_size = 8                              <span class="cmt"># 0 = smart batching</span>
 synonyms = 10                               <span class="cmt"># Desired synonyms per name</span>
 ignore = [".git", "node_modules", ...]      <span class="cmt"># Extra ignore patterns</span>
 verbose = true
@@ -684,7 +684,7 @@ verbose = true
 [llm]
 provider = "openrouter"                     <span class="cmt"># Cosmetic label for logs</span>
 endpoint = "https://openrouter.ai/api/v1/chat/completions"
-model = "openai/gpt-oss-safeguard-20b"
+model = "deepseek/deepseek-v4-flash"
 api_key = ""                                <span class="cmt"># Raw key (alternative to env var)</span>
 api_key_env = "OPENROUTER_API_KEY"          <span class="cmt"># Env var containing API key</span>
 temperature = 0.0
@@ -696,10 +696,9 @@ root = "."
 [watch]
 root = "."
 debounce = "750ms"
-llm = true                                  <span class="cmt"># Use LLM for synonyms during watch</span>
-persist = "shutdown"                        <span class="cmt"># When to persist: shutdown|interval|change</span>
-persist_interval = "45s"
-search_log = true
+llm = false                                 <span class="cmt"># Opt into LLM synonyms during watch</span>
+persist = "shutdown"                        <span class="cmt"># Persist on graceful shutdown</span>
+search_log = false
 search_log_query_max = 120
 max_batch_size = 0
 
@@ -736,7 +735,7 @@ json = false</code></pre>
             <pre><code><span class="kw">type</span> LLMConfig <span class="kw">struct</span> {
     Provider    <span class="typ">string</span>  <span class="cmt">// Log label (cosmetic)</span>
     Endpoint    <span class="typ">string</span>  <span class="cmt">// API URL, e.g. https://openrouter.ai/api/v1/chat/completions</span>
-    Model       <span class="typ">string</span>  <span class="cmt">// Model name, e.g. openai/gpt-oss-safeguard-20b</span>
+    Model       <span class="typ">string</span>  <span class="cmt">// OpenAI-compatible model name</span>
     APIKey      <span class="typ">string</span>  <span class="cmt">// Raw API key (use api_key_env for security)</span>
     APIKeyEnv   <span class="typ">string</span>  <span class="cmt">// Env var name, e.g. OPENROUTER_API_KEY</span>
     Temperature <span class="typ">float64</span> <span class="cmt">// Sampling temperature (0 = deterministic)</span>
@@ -748,7 +747,7 @@ json = false</code></pre>
                 <tr><th>Config Source</th><th>Example</th></tr>
                 <tr>
                     <td>Hardcoded defaults</td>
-                    <td><code class="inline-code">endpoint = "https://openrouter.ai/api/v1/chat/completions"</code>, <code class="inline-code">model = "openai/gpt-oss-safeguard-20b"</code></td>
+                    <td><code class="inline-code">endpoint = "https://openrouter.ai/api/v1/chat/completions"</code>, <code class="inline-code">model = "deepseek/deepseek-v4-flash"</code></td>
                 </tr>
                 <tr>
                     <td><code class="inline-code">[llm]</code> section in ctx_config.toml</td>
@@ -756,16 +755,20 @@ json = false</code></pre>
                 </tr>
                 <tr>
                     <td>CLI flags (<code class="inline-code">--llm-endpoint</code>, <code class="inline-code">--llm-model</code>, <code class="inline-code">--api-key</code>)</td>
-                    <td><code class="inline-code">contexting init --llm-endpoint http://localhost:8080/v1</code></td>
+                    <td><code class="inline-code">ctxt init --llm-endpoint http://localhost:8080/v1</code></td>
                 </tr>
             </table>
 
             <div class="callout callout-info">
                 <div class="callout-title">API Key Resolution</div>
                 <p style="margin: 0;">
-                    Keys resolved in order: CLI <code class="inline-code">--api-key</code> flag → <code class="inline-code">LLMConfig.APIKeyEnv</code> env var →
-                    <code class="inline-code">LLMConfig.APIKey</code> in config file. Falls back to <code class="inline-code">OPENROUTER_API_KEY</code>
-                    env var if <code class="inline-code">api_key_env</code> is empty. If no key found, synonym generation is skipped.
+                    Keys resolve in order: CLI <code class="inline-code">--api-key</code> flag →
+                    <code class="inline-code">api_key</code> in config →
+                    <code class="inline-code">api_key_env</code> environment variable →
+                    <code class="inline-code">LLM_API_KEY</code> →
+                    <code class="inline-code">OPENROUTER_API_KEY</code>. If no key is found,
+                    synonym generation is skipped. <code class="inline-code">--offline</code>
+                    disables requests regardless of configured keys.
                 </p>
             </div>
 
@@ -793,7 +796,7 @@ api_key_env = "OPENAI_API_KEY"</code></pre>
                 <tr>
                     <td><code class="inline-code">--llm-model</code></td>
                     <td><code class="inline-code">init</code>, <code class="inline-code">watch</code></td>
-                    <td><code class="inline-code">openai/gpt-oss-safeguard-20b</code></td>
+                    <td><code class="inline-code">deepseek/deepseek-v4-flash</code></td>
                     <td>LLM model for synonym generation</td>
                 </tr>
                 <tr>
@@ -1626,13 +1629,13 @@ defaultIgnores = [
             <ul>
                 <li><strong>Cause:</strong> Repository has >10,000 files after applying ignore patterns</li>
                 <li><strong>Fix:</strong> Add more patterns to <code class="inline-code">.gitignore</code> or use <code class="inline-code">--ignore</code> flag</li>
-                <li><strong>Example:</strong> <code class="inline-code">contexting init --ignore "generated" --ignore "*.min.js"</code></li>
+                <li><strong>Example:</strong> <code class="inline-code">ctxt init --ignore "generated" --ignore "*.min.js"</code></li>
                 <li><strong>Override:</strong> Edit <code class="inline-code">MaxFileCount</code> in <code class="inline-code">node.go:26</code> (not recommended)</li>
             </ul>
 
             <h4>Symbols not appearing in search results</h4>
             <ul>
-                <li><strong>Check:</strong> Run <code class="inline-code">contexting init</code> and verify console shows "✓ Extracted symbols from N files"</li>
+                <li><strong>Check:</strong> Run <code class="inline-code">ctxt init</code> and verify console shows "✓ Extracted symbols from N files"</li>
                 <li><strong>Check:</strong> Inspect <code class="inline-code">ctx_index.json</code> — do file nodes have <code class="inline-code">"symbols"</code> field?</li>
                 <li><strong>Check:</strong> Is the file extension supported? (Go, Python, JS/TS, Rust, Ruby)</li>
                 <li><strong>Check:</strong> Are symbols top-level? Nested functions/classes not extracted.</li>
@@ -1654,28 +1657,28 @@ defaultIgnores = [
 
             <h4>Index not updating on file changes</h4>
             <ul>
-                <li><strong>Check:</strong> Is watch mode running? <code class="inline-code">contexting watch</code></li>
+                <li><strong>Check:</strong> Is watch mode running? <code class="inline-code">ctxt watch</code></li>
                 <li><strong>Check:</strong> File path — is it within the indexed root?</li>
                 <li><strong>Check:</strong> Ignored paths — is the file/directory matched by ignore patterns in config or .gitignore?</li>
             </ul>
 
             <h3>Debug Commands</h3>
             <pre><code># Rebuild index with verbose output
-contexting init --verbose
+ctxt init --verbose
 
 # Search with debug breakdown
-contexting search-hints "JWT validation" --explain
+ctxt search-hints "JWT validation" --explain
 
 # Inspect ctx_index.json
-cat .ctx/ctx_index.json | jq '.tree.children["http_client.go"].symbols'
+cat .ctxt/ctx_index.json | jq '.tree.children["http_client.go"].symbols'
 
 # Check index stats
-contexting stats</code></pre>
+ctxt stats</code></pre>
 
             <h3>Performance Profiling</h3>
             <pre><code># Enable Go profiling
 export CONTEXTING_PROFILE=1
-contexting init
+ctxt init
 
 # View profile
 go tool pprof http://localhost:6060/debug/pprof/profile</code></pre>
@@ -1687,61 +1690,61 @@ go tool pprof http://localhost:6060/debug/pprof/profile</code></pre>
             <h3>init</h3>
             <p>Build the search index. Scans the file tree, extracts symbols, generates LLM synonyms.</p>
             <pre><code><span class="cmt"># Basic usage</span>
-contexting init
+ctxt init
 
 <span class="cmt"># With custom LLM endpoint (local model)</span>
-contexting init --llm-endpoint http://localhost:8080/v1 --llm-model llama-3.2 --api-key ""
+ctxt init --llm-endpoint http://localhost:8080/v1 --llm-model llama-3.2 --api-key ""
 
 <span class="cmt"># With extra ignores</span>
-contexting init --ignore generated --ignore "*.pb.go"</code></pre>
+ctxt init --ignore generated --ignore "*.pb.go"</code></pre>
 
             <h3 id="cmd-watch">watch</h3>
             <p>Monitors filesystem changes and keeps the index updated in real-time.</p>
             <pre><code><span class="cmt"># Start watching</span>
-contexting watch
+ctxt watch
 
 <span class="cmt"># With custom LLM config</span>
-contexting watch --llm-endpoint https://api.openai.com/v1 --llm-model gpt-4o-mini
+ctxt watch --llm-endpoint https://api.openai.com/v1 --llm-model gpt-4o-mini
 
 <span class="cmt"># Synonyms off during watch (cache + lexical only)</span>
-contexting watch --llm=false</code></pre>
+ctxt watch --llm-on-watch=false</code></pre>
 
             <div class="callout callout-info">
                 <div class="callout-title">Persist Modes</div>
                 <p style="margin: 0;">
-                    <code class="inline-code">watch</code> writes index on <code class="inline-code">shutdown</code> (default),
-                    periodic <code class="inline-code">interval</code>, or on every <code class="inline-code">change</code>.
-                    Configure via <code class="inline-code">watch.persist</code> in ctx_config.toml.
+                    <code class="inline-code">watch</code> writes the snapshot on graceful
+                    <code class="inline-code">shutdown</code>. Other persistence modes are
+                    rejected so the runtime contract stays explicit.
                 </p>
             </div>
 
             <h3 id="cmd-search">search</h3>
             <p>Query the index with scoring breakdown and debug support.</p>
             <pre><code><span class="cmt"># Basic search</span>
-contexting search-hints "JWT validation"
+ctxt search-hints "JWT validation"
 
 <span class="cmt"># Score breakdown</span>
-contexting search-hints "auth middleware" --explain
+ctxt search-hints "auth middleware" --explain
 
 <span class="cmt"># Filter by type</span>
-contexting search-hints "util" --type files
+ctxt search-hints "util" --type files
 
 <span class="cmt"># JSON output</span>
-contexting search-hints "rate limit" --json
+ctxt search-hints "rate limit" --json
 
 <span class="cmt"># Search across projects</span>
-contexting search-hints "parser" --root /path/to/project</code></pre>
+ctxt search-hints "parser" --root /path/to/project</code></pre>
 
             <h3 id="cmd-eval">eval</h3>
             <p>Evaluate search quality against a set of expected query → path cases. Useful for regression testing and tuning.</p>
             <pre><code><span class="cmt"># Run eval against cases file</span>
-contexting eval --cases ctx_cases.json
+ctxt eval --cases ctx_cases.json
 
 <span class="cmt"># With score breakdown per case</span>
-contexting eval --cases ctx_cases.json --explain
+ctxt eval --cases ctx_cases.json --explain
 
 <span class="cmt"># JSON report</span>
-contexting eval --cases ctx_cases.json --json</code></pre>
+ctxt eval --cases ctx_cases.json --json</code></pre>
 
             <h4>Eval Cases Format</h4>
             <pre><code>[
@@ -1759,26 +1762,26 @@ contexting eval --cases ctx_cases.json --json</code></pre>
             <h3 id="cmd-doctor">doctor</h3>
             <p>Run health checks on the project, config, and index. Reports actionable fixes.</p>
             <pre><code><span class="cmt"># Check everything</span>
-contexting doctor
+ctxt doctor
 
 <span class="cmt"># JSON output for tooling</span>
-contexting doctor --json
+ctxt doctor --json
 
 <span class="cmt"># Override paths</span>
-contexting doctor --root /path/to/project --index ctx_index.json</code></pre>
+ctxt doctor --root /path/to/project --index ctx_index.json</code></pre>
 
             <p>Checks performed: config file exists and valid, index file exists and parsable, root path is valid, synonym cache is readable, write access to project directory.</p>
 
             <h3 id="cmd-config">config</h3>
             <p>Manage ctx_config.toml configuration files.</p>
             <pre><code><span class="cmt"># Generate starter config</span>
-contexting config init
+ctxt config init
 
 <span class="cmt"># Write to specific path</span>
-contexting config init --output /path/to/ctx_config.toml
+ctxt config init --output /path/to/ctx_config.toml
 
 <span class="cmt"># Overwrite existing</span>
-contexting config init --force</code></pre>
+ctxt config init --force</code></pre>
         </section>
 
         <section id="api-reference">

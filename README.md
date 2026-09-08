@@ -6,6 +6,11 @@ Contexting keeps a live map of your codebase so AI agents can reason about paths
 
 ## Quick start
 
+`ctxt` supports Linux, macOS, and Windows on amd64 and arm64. Download the
+archive for your platform from GitHub Releases, verify it against
+`checksums.txt`, and place the binary on your `PATH`. Go users can install
+from source:
+
 ```bash
 go install github.com/ktappdev/contexting/cmd/ctxt@latest
 cd your-repo
@@ -29,10 +34,11 @@ The default uses OpenRouter with `deepseek/deepseek-v4-flash` — fast, nearly f
 
 - **OpenRouter** (default) — access to dozens of models, free tier available
 - **Local** — point `endpoint` at any local server (Ollama, llama.cpp, vLLM)
-- **OpenAI / Anthropic** — set `provider`, `endpoint`, and `api_key`
+- **Other OpenAI-compatible APIs** — set `endpoint`, `model`, and `api_key_env`
 - **No LLM** — skip the `[llm]` section entirely or set `api_key = ""`
 
 Adjust `batch_size`, `parallel_requests`, and `synonyms_min`/`synonyms_max` to trade off speed vs. coverage for your model.
+Remote LLM endpoints must use HTTPS; HTTP is accepted only on loopback.
 
 ## How it works
 
@@ -42,7 +48,7 @@ Adjust `batch_size`, `parallel_requests`, and `synonyms_min`/`synonyms_max` to t
 
 **Symbols:** Every source file gets scanned with language-specific extractors that pull out exported symbols — functions, types, variables, classes, constants. These become a `symbols` array on the file node. The default extractor is `auto` (tree-sitter with regex fallback). Supported languages: Go (go/parser), Python/JavaScript/TypeScript/Rust/Svelte/Astro (tree-sitter), Vue/Ruby (regex fallback).
 
-**Synonyms:** Each node (file or directory) gets 5–12 LLM-generated synonyms via batched API calls to an OpenRouter-compatible endpoint. For example, `Skeletons.tsx → ["skeletons", "loading", "placeholder", "animation"]`. Names are batched (default 15 per request, 10 parallel) and processed concurrently. The LLM prompt includes the file's extracted symbols (up to 10 per file) and, for JS/TS files, ESM imports to generate more contextual synonyms — conceptual terms, action verbs, and nouns that relate to the code's purpose. For example, a `route.ts` file with `import {clerkClient} from "@clerk/nextjs"` gets synonyms like "clerk webhook handler".
+**Synonyms:** Each node (file or directory) gets 5–12 LLM-generated synonyms via batched API calls to an OpenAI-compatible endpoint. For example, `Skeletons.tsx → ["skeletons", "loading", "placeholder", "animation"]`. Names are smart-batched (up to 60 per request, 10 parallel by default). The prompt includes extracted symbols and, for JS/TS files, ESM imports to generate contextual terms. Use `--offline` to guarantee that no LLM requests are made.
 
 **Bootstrap diff:** On subsequent runs, `init` diffs the filesystem against the existing snapshot using file modification times. Deleted files are removed, new files are added, modified files are re-extracted. No LLM calls for existing synonyms — run `ctxt sync` to fill gaps. Synonym keys use `parentDir/basename` (e.g., `webhook/route.ts`) instead of bare basenames to prevent duplicate filenames from overwriting each other in the synonym map.
 
@@ -73,7 +79,7 @@ Results are ranked by total score. Low-signal short/common words are filtered fr
 
 ### Watch mode
 
-`ctxt watch` runs as a daemon, maintaining the index in memory. It watches for filesystem changes via debounced events (750ms default), re-extracts symbols for modified files, and serves a `.ctxt/ctx_runtime.json` that `search-hints --memory` reads for live results. The on-disk snapshot is flushed every 45s (`persist_interval`) and on graceful shutdown. This gives sub-second updates during active development.
+`ctxt watch` maintains the index in memory. It watches for filesystem changes via debounced events (750ms default), re-extracts symbols for modified files, and serves a loopback endpoint advertised by `.ctxt/ctx_runtime.json`. The on-disk snapshot is flushed on graceful shutdown.
 
 ## Commands
 
@@ -114,11 +120,10 @@ ctxt watch . --debounce 750ms --verbose
 ```
 
 Key flags:
-- `--llm-on-watch` (default true) — live synonym enrichment for new files
-- `--search-log` (default true) — log memory search requests
+- `--llm-on-watch` (default false) — opt into live remote synonym enrichment
+- `--search-log` (default false) — log memory search requests; queries may be sensitive
 - `--search-log-query-max` (default 120) — truncate logged queries
-- `--persist` (default "shutdown") — when to flush: `shutdown`, `interval`, `never`
-- `--persist-interval` (default "45s") — flush interval when persist=interval
+- `--persist` (default "shutdown") — snapshots flush on graceful shutdown
 - Starts a local memory-search endpoint and writes `.ctxt/ctx_runtime.json`
 - Events applied via a single worker; logs show changed files per cycle
 
@@ -235,7 +240,7 @@ ctxt config init --output .ctxt/ctx_config.toml
 output = ".ctxt/ctx_index.json"
 synonym_cache = ".ctxt/ctx_cache.json"
 llm_model = "deepseek/deepseek-v4-flash"
-batch_size = 15              # names per LLM request
+batch_size = 8               # names per LLM request; 0 enables smart batching
 synonyms_min = 5             # min synonyms per name
 synonyms_max = 12            # max synonyms per name
 ignore = [".git", ".venv", "site-packages", "__pycache__", "node_modules", "vendor", "dist", "migrations", "pb_migrations", "alembic", "flyway"]
@@ -253,15 +258,21 @@ parallel_requests = 10       # concurrent LLM batches
 
 **LLM config resolution:** flag → config `api_key` → config `api_key_env` → `LLM_API_KEY` → `OPENROUTER_API_KEY`.
 
-**Supported providers:** Any OpenAI-compatible API — OpenRouter (default), OpenAI, Anthropic, local endpoints. Set `provider`, `endpoint`, and `model` in `[llm]`.
+**Supported providers:** OpenRouter (default) and APIs that implement the
+OpenAI chat-completions request/response shape. The `provider` value labels
+the configuration; `endpoint` and `model` control the request.
 
 ## Ignore system
 
-Contexting respects `.gitignore` by default. Additional ignores come from:
+Contexting loads common `.gitignore` patterns by default. Additional ignores come from:
 
 1. **Built-in defaults** — `.git`, `.venv`, `site-packages`, `__pycache__`, `node_modules`, `vendor`, `dist`, `migrations`, `pb_migrations`, `alembic`, `flyway`
 2. **`.gitignore` patterns** — loaded from the project root
 3. **`ignore` in config** — extra patterns merged with defaults
+
+Ignore sources are additive. Negated `.gitignore` rules (`!path`) are not
+supported, so a later rule cannot re-include an earlier ignored path. Symlink
+entries are not followed or indexed.
 
 **Dot files** are skipped by default (any path segment starting with `.`). whitelisted dot files (`.env`, `.prettierrc`, `.editorconfig`, etc.) are kept. Add more via `dot_whitelist` in config.
 
@@ -277,15 +288,17 @@ search-hints → load .ctxt/ctx_index.json (or query live memory) → score toke
 
 ## File formats
 
-- **`.ctxt/ctx_index.json`** — root path, timestamp, tree with `full_path`, `type`, `symbols`, `synonyms`, `children`
-- **`.ctxt/ctx_cache.json`** — basename → synonyms cache for reuse across runs
+- **`.ctxt/ctx_index.json`** — schema version, root path, timestamp, and indexed tree
+- **`.ctxt/ctx_cache.json`** — directory or parent/file key → synonyms for reuse
 - **`.ctxt/ctx_config.toml`** — config-driven defaults
 - **`.ctxt/ctx_runtime.json`** — live watch discovery for memory search
 - **Bench/eval case files** — v2 format with categories (path-intent, symbol-lookup, concept-synonym, exact-file, narrow-scope, vague-intent); v1 bare array format is backward compatible
 
 ## Project size guard
 
-Projects with more than ~9 synonym batches (>135 names at batch_size=15) trigger a warning. LLM reliability drops at scale. Use `ctxt sync` for targeted generation on large projects.
+Initial indexing supports up to 10,000 files after ignores. Larger projects
+fail with an actionable error instead of producing a partial index. Add ignore
+patterns and retry. At 5,000 files, ctxt warns that narrower ignores may help.
 
 ## Testing
 
@@ -298,5 +311,9 @@ go test ./...
 - `ctxt doctor --json` for diagnostics
 - If `.ctxt/ctx_index.json` is stale, restart watch or run `ctxt init`
 - If you changed ignore rules, run `ctxt init` or restart `watch` to rebuild
-- Synonym generation requires `OPENROUTER_API_KEY` or `--api-key`. Disable with `--llm-on-watch=false` or `watch.llm = false`
+- Synonym generation requires the configured key environment or `--api-key`.
+  Use `--offline` to disable every LLM request regardless of configuration.
 - Watch mode must be stopped gracefully (Ctrl+C) to flush the snapshot
+- If a writer crashes, verify no ctxt writer remains before removing the
+  empty `.ctxt-writer` directory.
+- See [SECURITY.md](SECURITY.md) before enabling a remote LLM on private code.
