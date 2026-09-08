@@ -156,10 +156,7 @@ Examples:
 			out.IndexLoadMs = indexLoadMs
 
 			// Check if cases have categories
-			hasCategories := false
-			if len(cases) > 0 && cases[0].Category != "" {
-				hasCategories = true
-			}
+			hasCategories := len(cases) > 0 && cases[0].Category != ""
 
 			if jsonOut {
 				if byCategory && hasCategories {

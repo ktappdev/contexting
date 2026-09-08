@@ -13,7 +13,7 @@ import (
 
 // Server-side timeouts
 const defaultReadHeaderTimeout = 3 * time.Second // Timeout for reading HTTP request headers (prevents slowloris)
-const defaultShutdownTimeout = 2 * time.Second  // Timeout for graceful HTTP server shutdown
+const defaultShutdownTimeout = 2 * time.Second   // Timeout for graceful HTTP server shutdown
 
 const defaultSearchLogQueryMax = 120
 
@@ -61,6 +61,11 @@ func startMemorySearchServer(ctx context.Context, manager *IndexManager, runtime
 			return
 		}
 		defer r.Body.Close()
+		r.Body = http.MaxBytesReader(w, r.Body, 64<<10)
+		if r.Header.Get("Origin") != "" {
+			http.Error(w, "browser origins are not allowed", http.StatusForbidden)
+			return
+		}
 		start := time.Now()
 
 		var req memorySearchRequest
@@ -82,6 +87,9 @@ func startMemorySearchServer(ctx context.Context, manager *IndexManager, runtime
 	httpServer := &http.Server{
 		Handler:           mux,
 		ReadHeaderTimeout: defaultReadHeaderTimeout,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       30 * time.Second,
 	}
 
 	server := &memorySearchServer{

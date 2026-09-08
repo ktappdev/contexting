@@ -79,7 +79,7 @@ func upsertNodeByRelPath(root *Node, absRoot string, relPath string, isDir bool,
 	if isDir {
 		nodeType = "directory"
 	}
-	nodeSynonyms := buildNodeSynonyms(name, cache, maxSynonyms)
+	nodeSynonyms := buildNodeSynonyms(llmSynonymKey(&Node{FullPath: fullPath, Type: nodeType}), cache, maxSynonyms)
 
 	node, ok := parent.Children[name]
 	if !ok {
@@ -104,6 +104,7 @@ func upsertNodeByRelPath(root *Node, absRoot string, relPath string, isDir bool,
 	}
 	if node.Type != nodeType {
 		node.Type = nodeType
+		node.Children = make(map[string]*Node)
 		changed = true
 		if nodeType == "directory" {
 			node.Symbols = nil
@@ -162,9 +163,12 @@ func splitRelPath(relPath string) []string {
 }
 
 func isExistingDirectory(path string) (isDir bool, mtime int64, err error) {
-	info, err := os.Stat(path)
+	info, err := os.Lstat(path)
 	if err != nil {
 		return false, 0, err
+	}
+	if info.Mode()&os.ModeSymlink != 0 {
+		return false, 0, os.ErrNotExist
 	}
 	return info.IsDir(), info.ModTime().UnixNano(), nil
 }

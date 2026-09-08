@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -15,21 +18,21 @@ import (
 )
 
 const (
-	defaultModel           = "deepseek/deepseek-v4-flash"
-	defaultSynonyms        = 5
-	defaultSynonymsMax     = 12
-	defaultHTTPTimeout     = 45 * time.Second // HTTP client timeout for API requests
+	defaultModel       = "deepseek/deepseek-v4-flash"
+	defaultSynonyms    = 5
+	defaultSynonymsMax = 12
+	defaultHTTPTimeout = 180 * time.Second // HTTP client timeout for API requests (3 min for large batches)
 )
 
 var defaultEndpoint = "https://openrouter.ai/api/v1/chat/completions"
 
 type OpenRouterRequest struct {
 	Model       string          `json:"model"`
-	Messages   []Message       `json:"messages"`
-	Format     json.RawMessage `json:"response_format,omitempty"`
-	Temperature *float64       `json:"temperature,omitempty"`
-	MaxTokens  *int            `json:"max_tokens,omitempty"`
-	Reasoning  json.RawMessage `json:"reasoning,omitempty"`
+	Messages    []Message       `json:"messages"`
+	Format      json.RawMessage `json:"response_format,omitempty"`
+	Temperature *float64        `json:"temperature,omitempty"`
+	MaxTokens   *int            `json:"max_tokens,omitempty"`
+	Reasoning   json.RawMessage `json:"reasoning,omitempty"`
 }
 
 type Message struct {
@@ -60,6 +63,29 @@ func GenerateSynonymsBatch(names []string, apiKey string, model string, endpoint
 }
 
 func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKey string, model string, endpoint string, temperature float64, maxTokens int, synonymsMin int, synonymsMax int, symbols map[string][]string, imports map[string][]string) (SynonymResponse, error) {
+	for attempt := 0; ; attempt++ {
+		result, err := generateSynonymsAttempt(ctx, names, apiKey, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax, symbols, imports)
+		var status *llmStatusError
+		if err == nil || attempt == 2 || !errors.As(err, &status) || (status.code != 429 && status.code < 500) {
+			return result, err
+		}
+		timer := time.NewTimer(time.Duration(attempt+1) * time.Second)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return nil, ctx.Err()
+		case <-timer.C:
+		}
+	}
+}
+
+type llmStatusError struct{ code int }
+
+func (e *llmStatusError) Error() string {
+	return fmt.Sprintf("LLM request failed with HTTP status %d", e.code)
+}
+
+func generateSynonymsAttempt(ctx context.Context, names []string, apiKey string, model string, endpoint string, temperature float64, maxTokens int, synonymsMin int, synonymsMax int, symbols map[string][]string, imports map[string][]string) (SynonymResponse, error) {
 
 	if len(names) == 0 {
 		return make(SynonymResponse), nil
@@ -69,6 +95,16 @@ func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKe
 	}
 	if endpoint == "" {
 		endpoint = defaultEndpoint
+	}
+	parsedEndpoint, err := url.ParseRequestURI(endpoint)
+	if err != nil || parsedEndpoint.Host == "" || (parsedEndpoint.Scheme != "https" && parsedEndpoint.Scheme != "http") {
+		return nil, fmt.Errorf("invalid LLM endpoint: use an HTTP or HTTPS URL")
+	}
+	if parsedEndpoint.User != nil {
+		return nil, fmt.Errorf("invalid LLM endpoint: embedded credentials are not supported")
+	}
+	if parsedEndpoint.Scheme == "http" && !isLoopbackHost(parsedEndpoint.Hostname()) {
+		return nil, fmt.Errorf("insecure remote LLM endpoint: use HTTPS (HTTP is allowed only for loopback)")
 	}
 	if synonymsMax <= 0 {
 		synonymsMax = defaultSynonymsMax
@@ -168,21 +204,20 @@ func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKe
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
-		return nil, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+		return nil, &llmStatusError{code: resp.StatusCode}
 	}
 
 	var apiResp OpenRouterResponse
-	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 8<<20)).Decode(&apiResp); err != nil {
 		return nil, fmt.Errorf("decode response: %w", err)
 	}
 	if len(apiResp.Choices) == 0 {
-		return make(SynonymResponse), nil
+		return nil, fmt.Errorf("LLM returned no choices")
 	}
 
 	content := strings.TrimSpace(apiResp.Choices[0].Message.Content)
 	if content == "" {
-		return make(SynonymResponse), nil
+		return nil, fmt.Errorf("LLM returned empty content")
 	}
 
 	var synonyms SynonymResponse
@@ -194,11 +229,28 @@ func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKe
 		}
 	}
 
-	for name, values := range synonyms {
-		synonyms[name] = dedupeStrings(values)
+	filtered := make(SynonymResponse)
+	var missing []string
+	for _, name := range names {
+		values := sanitizeSynonyms(synonyms[name], synonymsMax)
+		if len(values) == 0 {
+			missing = append(missing, name)
+			continue
+		}
+		filtered[name] = values
 	}
+	if len(missing) > 0 {
+		return filtered, fmt.Errorf("LLM omitted synonyms for %d requested names", len(missing))
+	}
+	return filtered, nil
+}
 
-	return synonyms, nil
+func isLoopbackHost(host string) bool {
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }
 
 func GenerateSynonymsForNames(names []string, apiKey string, batchSize int, model string, endpoint string, temperature float64, maxTokens int, synonymsMin int, synonymsMax int) (SynonymResponse, error) {
@@ -244,6 +296,7 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	var completed int32
+	var batchErrors []error
 
 	for i := 0; i < len(names); i += batchSize {
 		batchNum := i/batchSize + 1
@@ -270,15 +323,18 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 		wg.Add(1)
 		go func(batchNum int, batchNames []string, batchSymbols map[string][]string, batchImports map[string][]string) {
 			defer wg.Done()
-			sem <- struct{}{}
+			select {
+			case sem <- struct{}{}:
+			case <-ctx.Done():
+				return
+			}
 			defer func() { <-sem }()
 
 			synonyms, err := GenerateSynonymsBatchWithContext(ctx, batchNames, apiKey, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax, batchSymbols, batchImports)
-			if err != nil {
-				LogWarnf("  ⚠ Synonyms: batch %d/%d failed: %v", batchNum, totalBatches, err)
-				return
-			}
 			mu.Lock()
+			if err != nil {
+				batchErrors = append(batchErrors, fmt.Errorf("batch %d: %w", batchNum, err))
+			}
 			for name, values := range synonyms {
 				result[name] = values
 			}
@@ -290,7 +346,7 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 	wg.Wait()
 	LogInfof("  Synonyms: %d names processed", len(result))
 
-	return result, nil
+	return result, errors.Join(append(batchErrors, ctx.Err())...)
 }
 
 // sanitizeJSON fixes common LLM JSON output issues.

@@ -30,6 +30,10 @@ func TestSaveAndLoadContextIndex(t *testing.T) {
 	if err := SaveContextIndex(output, index); err != nil {
 		t.Fatalf("SaveContextIndex returned error: %v", err)
 	}
+	index.Model = "replacement-model"
+	if err := SaveContextIndex(output, index); err != nil {
+		t.Fatalf("SaveContextIndex overwrite returned error: %v", err)
+	}
 
 	loaded, err := LoadContextIndex(output)
 	if err != nil {
@@ -39,7 +43,7 @@ func TestSaveAndLoadContextIndex(t *testing.T) {
 	if loaded.RootPath != index.RootPath {
 		t.Fatalf("expected root path %s, got %s", index.RootPath, loaded.RootPath)
 	}
-	if loaded.Model != index.Model {
+	if loaded.Model != "replacement-model" {
 		t.Fatalf("expected model %s, got %s", index.Model, loaded.Model)
 	}
 	if loaded.Tree == nil || loaded.Tree.Children["main.go"] == nil {

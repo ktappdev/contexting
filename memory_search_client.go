@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net"
 	"net/http"
 	"time"
 )
@@ -22,6 +24,9 @@ func QueryMemorySearch(runtimeFile string, query string, opts SearchOptions, exp
 	}
 	if state.RootPath != expectedRoot {
 		return memorySearchResponse{}, fmt.Errorf("runtime state root path mismatch: expected %s, got %s. Use --root to specify the project directory or run from the project root", expectedRoot, state.RootPath)
+	}
+	if err := validateRuntimeAddress(state.Address); err != nil {
+		return memorySearchResponse{}, err
 	}
 
 	reqBody, err := json.Marshal(memorySearchRequest{Query: query, Opts: opts})
@@ -48,8 +53,20 @@ func QueryMemorySearch(runtimeFile string, query string, opts SearchOptions, exp
 	}
 
 	var payload memorySearchResponse
-	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 8<<20)).Decode(&payload); err != nil {
 		return memorySearchResponse{}, fmt.Errorf("decode memory search response: %w", err)
 	}
 	return payload, nil
+}
+
+func validateRuntimeAddress(address string) error {
+	host, port, err := net.SplitHostPort(address)
+	if err != nil || port == "" {
+		return fmt.Errorf("runtime state has invalid address: restart watch server")
+	}
+	ip := net.ParseIP(host)
+	if ip == nil || !ip.IsLoopback() {
+		return fmt.Errorf("runtime state address is not loopback: restart watch server")
+	}
+	return nil
 }

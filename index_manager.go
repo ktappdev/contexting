@@ -130,6 +130,7 @@ func collectFilesystemState(rootPath string, ignored map[string]bool) (map[strin
 	}
 
 	state := make(map[string]fsEntry)
+	fileCount := 0
 	err = filepath.WalkDir(absRoot, func(path string, d os.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
@@ -140,6 +141,9 @@ func collectFilesystemState(rootPath string, ignored map[string]bool) (map[strin
 			return err
 		}
 		if rel == "." {
+			return nil
+		}
+		if d.Type()&os.ModeSymlink != 0 {
 			return nil
 		}
 
@@ -154,6 +158,10 @@ func collectFilesystemState(rootPath string, ignored map[string]bool) (map[strin
 		if d.IsDir() {
 			state[normalized] = fsEntry{isDir: true}
 		} else {
+			fileCount++
+			if fileCount > MaxFileCount {
+				return fmt.Errorf("project exceeds %d files; add ignore patterns", MaxFileCount)
+			}
 			info, err := d.Info()
 			if err != nil {
 				return nil // skip files we can't stat
@@ -232,7 +240,7 @@ func (m *IndexManager) Bootstrap(ctx context.Context) (IndexStats, error) {
 							changesDetected = true
 							newCount++
 							if !entry.isDir {
-								name := filepath.Base(relPath)
+								name := pathSuffix(filepath.Join(absRoot, relPath))
 								if _, cached := m.cache[name]; !cached {
 									newNamesNeedSynonyms[name] = struct{}{}
 								}
@@ -308,7 +316,12 @@ func (m *IndexManager) Bootstrap(ctx context.Context) (IndexStats, error) {
 
 func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsnotify.Op) (ApplyResult, error) {
 	m.mu.Lock()
-	defer m.mu.Unlock()
+	locked := true
+	defer func() {
+		if locked {
+			m.mu.Unlock()
+		}
+	}()
 
 	if !m.loaded || m.index == nil || m.index.Tree == nil {
 		return ApplyResult{}, fmt.Errorf("index manager not bootstrapped")
@@ -322,6 +335,28 @@ func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsno
 	}
 
 	missingNames := make(map[string]struct{})
+	// Directory creation can arrive after its children were populated. Reconcile
+	// the filesystem on creates so those children are not missed by fsnotify.
+	for _, op := range changes {
+		if op&fsnotify.Create != 0 {
+			state, err := collectFilesystemState(m.rootPath, m.ignored)
+			if err != nil {
+				return result, err
+			}
+			merged := make(map[string]fsnotify.Op, len(changes)+len(state))
+			for path, event := range changes {
+				merged[path] = event
+			}
+			snapshot := collectSnapshotPaths(m.index.Tree)
+			for path, entry := range state {
+				if node, ok := snapshot[path]; !ok || (node.Type == "directory") != entry.isDir || (!entry.isDir && node.ModTime != entry.mtime) {
+					merged[path] |= fsnotify.Create
+				}
+			}
+			changes = merged
+			break
+		}
+	}
 	paths := make([]string, 0, len(changes))
 	for path := range changes {
 		paths = append(paths, path)
@@ -335,6 +370,9 @@ func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsno
 
 		op := changes[relPath]
 		absPath := filepath.Join(m.rootPath, filepath.FromSlash(relPath))
+		if !isInsideProject(absPath, m.rootPath) {
+			return result, fmt.Errorf("change path is outside project: %s", relPath)
+		}
 		baseName := filepath.Base(absPath)
 
 		if op&(fsnotify.Remove|fsnotify.Rename) != 0 {
@@ -356,7 +394,9 @@ func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsno
 		}
 
 		if shouldIgnorePath(relPath, baseName, m.ignored) {
-			_ = removeNodeByRelPath(m.index.Tree, relPath)
+			if removeNodeByRelPath(m.index.Tree, relPath) {
+				result.Changed = true
+			}
 			continue
 		}
 
@@ -365,8 +405,12 @@ func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsno
 		}
 
 		if m.useLLM {
-			if _, ok := m.cache[baseName]; !ok {
-				missingNames[baseName] = struct{}{}
+			key := baseName
+			if !isDir {
+				key = pathSuffix(absPath)
+			}
+			if _, ok := m.cache[key]; !ok {
+				missingNames[key] = struct{}{}
 			}
 		}
 	}
@@ -392,7 +436,7 @@ func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsno
 			// of all its call sites' dependencies.
 			seenImports := make(map[string]struct{})
 			walkTree(m.index.Tree, func(node *Node) {
-				if node.Type != "file" || filepath.Base(node.FullPath) != name {
+				if node.Type != "file" || llmSynonymKey(node) != name {
 					return
 				}
 				if len(node.Symbols) > 0 {
@@ -418,13 +462,19 @@ func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsno
 			}
 		}
 
-		synonyms, err := GenerateSynonymsForNamesWithContext(ctx, names, m.activeAPIKey(), m.maxBatchSize, m.model, m.endpoint, m.temperature, m.maxTokens, m.synonymsMin, m.synonymsMax, 1, symbolsMap, importsMap)
+		apiKey := m.activeAPIKey()
+		m.mu.Unlock()
+		locked = false
+		synonyms, err := GenerateSynonymsForNamesWithContext(ctx, names, apiKey, m.maxBatchSize, m.model, m.endpoint, m.temperature, m.maxTokens, m.synonymsMin, m.synonymsMax, 1, symbolsMap, importsMap)
+		m.mu.Lock()
+		locked = true
 		if err != nil {
 			result.SynonymError = err
-		} else {
-			for name, values := range synonyms {
-				m.cache[name] = sanitizeSynonyms(values, m.synonymsMax)
-			}
+		}
+		for name, values := range synonyms {
+			m.cache[name] = sanitizeSynonyms(values, m.synonymsMax)
+		}
+		if len(synonyms) > 0 {
 			AssignSynonymsToTree(m.index.Tree, m.cache, m.synonymsMax)
 			result.Changed = true
 		}

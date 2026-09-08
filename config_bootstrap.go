@@ -54,7 +54,7 @@ func writeStarterConfig(path string, force bool) error {
 		return fmt.Errorf("create config directory: %w", err)
 	}
 
-	return writeFileAtomic(path, []byte(starterConfigTemplate), 0o644)
+	return writeFileAtomic(path, []byte(starterConfigTemplate), 0o600)
 }
 
 func askYesNo(prompt string, defaultYes bool) (bool, error) {

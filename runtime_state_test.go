@@ -28,3 +28,16 @@ func TestSaveAndLoadRuntimeState(t *testing.T) {
 		t.Fatalf("runtime state mismatch: got %+v want %+v", loaded, state)
 	}
 }
+
+func TestRuntimeAddressMustBeLoopback(t *testing.T) {
+	for _, address := range []string{"127.0.0.1:1234", "[::1]:1234"} {
+		if err := validateRuntimeAddress(address); err != nil {
+			t.Fatalf("rejected %s: %v", address, err)
+		}
+	}
+	for _, address := range []string{"example.com:80", "192.0.2.1:80", "bad"} {
+		if err := validateRuntimeAddress(address); err == nil {
+			t.Fatalf("accepted %s", address)
+		}
+	}
+}

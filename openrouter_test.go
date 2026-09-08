@@ -31,11 +31,6 @@ func TestGetAPIKey(t *testing.T) {
 }
 
 func TestGenerateSynonymsBatchValidation(t *testing.T) {
-	if _, err := GenerateSynonymsBatch([]string{"src"}, "", defaultModel, "", 0, 0, 4); err != nil {
-		// empty API key is allowed now, but HTTP call will fail
-		// just verify it doesn't panic
-	}
-
 	resp, err := GenerateSynonymsBatch(nil, "sk-test", defaultModel, "", 0, 0, 4)
 	if err != nil {
 		t.Fatalf("expected no error for empty names, got %v", err)

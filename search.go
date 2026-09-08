@@ -348,14 +348,6 @@ func tokenize(input string) []string {
 	return dedupeStrings(expanded)
 }
 
-func resultsToJSON(results []SearchResult) (string, error) {
-	bytes, err := json.MarshalIndent(results, "", "  ")
-	if err != nil {
-		return "", err
-	}
-	return string(bytes), nil
-}
-
 func searchResponseToJSON(resp SearchResponse) (string, error) {
 	bytes, err := json.MarshalIndent(resp, "", "  ")
 	if err != nil {

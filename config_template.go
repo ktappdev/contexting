@@ -3,8 +3,8 @@ package contexting
 const starterConfigTemplate = `[common]
 output = ".ctxt/ctx_index.json"
 synonym_cache = ".ctxt/ctx_cache.json"
-llm_model = "deepseek/deepseek-v4-flash"  # any OpenAI-compatible model name
-batch_size = 15             # names per batch; 15 works well for 8B models
+llm_model = "deepseek/deepseek-v4-flash"
+batch_size = 8               # names per batch; smaller = faster individual requests
 synonyms_min = 5            # min synonyms per name
 synonyms_max = 12           # max synonyms per name
 symbol_extractor = "auto"  # "auto", "treesitter", or "regex"
@@ -14,17 +14,18 @@ ignore = [".git", ".venv", "site-packages", "__pycache__", "node_modules", "vend
 verbose = true
 
 [llm]
-parallel_requests = 10  # concurrent LLM requests (1 = sequential)
+parallel_requests = 10   # concurrent LLM requests (1 = sequential)
 temperature = 0.9
 provider = "openrouter"
 endpoint = "https://openrouter.ai/api/v1/chat/completions"
 model = "deepseek/deepseek-v4-flash"
-# api_key = "sk-or-v1-..."            # or use api_key_env for security
-api_key_env = "OPENROUTER_API_KEY"     # read key from env var
+# api_key = "sk-..."                    # or use api_key_env for security
+api_key_env = "OPENROUTER_API_KEY"      # read key from env var
 # max_tokens = 512
-# provider = "local"
-# endpoint = "https://llama.kentaylor.dev/v1/chat/completions"
-# model = "qwen3.5-0.8b"
+# provider = "openrouter"
+# endpoint = "https://openrouter.ai/api/v1/chat/completions"
+# model = "deepseek/deepseek-v4-flash"
+# api_key_env = "OPENROUTER_API_KEY"
 
 [init]
 root = "."
@@ -32,10 +33,9 @@ root = "."
 [watch]
 root = "."
 debounce = "750ms"
-llm = true
+llm = false
 persist = "shutdown"
-persist_interval = "45s"
-search_log = true
+search_log = false
 search_log_query_max = 120 # Matches defaultSearchLogQueryMax in memory_search_server.go
 max_batch_size = 0
 

@@ -30,10 +30,14 @@ func writeFileAtomic(path string, data []byte, perm os.FileMode) error {
 		_ = tmpFile.Close()
 		return fmt.Errorf("chmod temp file: %w", err)
 	}
+	if err := tmpFile.Sync(); err != nil {
+		_ = tmpFile.Close()
+		return fmt.Errorf("sync temp file: %w", err)
+	}
 	if err := tmpFile.Close(); err != nil {
 		return fmt.Errorf("close temp file: %w", err)
 	}
-	if err := os.Rename(tmpPath, path); err != nil {
+	if err := replaceFileAtomic(tmpPath, path); err != nil {
 		return fmt.Errorf("replace file: %w", err)
 	}
 

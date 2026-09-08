@@ -19,7 +19,7 @@ func SaveRuntimeState(path string, state RuntimeState) error {
 	if err != nil {
 		return fmt.Errorf("marshal runtime state: %w", err)
 	}
-	if err := writeFileAtomic(path, append(bytes, '\n'), 0o644); err != nil {
+	if err := writeFileAtomic(path, append(bytes, '\n'), 0o600); err != nil {
 		return fmt.Errorf("write runtime state: %w", err)
 	}
 	return nil

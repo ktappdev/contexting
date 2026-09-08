@@ -22,8 +22,8 @@ type BuildOptions struct {
 	Endpoint         string
 	Temperature      float64
 	MaxTokens        int
-	ParallelRequests int // Concurrent LLM requests (default 1 = sequential)
-	Verbose          bool   // Enable verbose progress output
+	ParallelRequests int  // Concurrent LLM requests (default 1 = sequential)
+	Verbose          bool // Enable verbose progress output
 }
 
 type BuildResult struct {
@@ -172,10 +172,9 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 		generated, err := GenerateSynonymsForNamesWithContext(opts.Ctx, missing, opts.APIKey, batchSize, opts.Model, opts.Endpoint, opts.Temperature, opts.MaxTokens, opts.SynonymsMin, opts.SynonymsMax, opts.ParallelRequests, symbolsMap, importsMap)
 		if err != nil {
 			synonymErr = err
-		} else {
-			for name, values := range generated {
-				combined[name] = sanitizeSynonyms(values, opts.SynonymsMax)
-			}
+		}
+		for name, values := range generated {
+			combined[name] = sanitizeSynonyms(values, opts.SynonymsMax)
 		}
 	}
 
@@ -189,6 +188,7 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 	stats.CollectedNames = len(names)
 
 	index := &ContextIndex{
+		SchemaVersion: CurrentIndexSchema,
 		RootPath:    absRoot,
 		GeneratedAt: time.Now().UTC(),
 		Model:       opts.Model,

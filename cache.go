@@ -40,7 +40,7 @@ func SaveSynonymCache(path string, cache SynonymResponse) error {
 	if err != nil {
 		return fmt.Errorf("marshal synonym cache: %w", err)
 	}
-	if err := writeFileAtomic(path, append(bytes, '\n'), 0o644); err != nil {
+	if err := writeFileAtomic(path, append(bytes, '\n'), 0o600); err != nil {
 		return fmt.Errorf("write synonym cache: %w", err)
 	}
 	return nil

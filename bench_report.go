@@ -260,20 +260,6 @@ func pathMatchesExpected(resultPath, expected string) bool {
 	return normalizedResult == normalizedExpected || strings.HasSuffix(normalizedResult, normalizedExpected)
 }
 
-// groupResultsByCategory groups EngineResults by their corresponding case's Category.
-// Returns map of category -> [][]EngineResult (maintaining per-case structure).
-func groupResultsByCategory(results [][]EngineResult, cases []EvalCase) map[string][][]EngineResult {
-	grouped := make(map[string][][]EngineResult)
-	for caseIdx, c := range cases {
-		category := c.Category
-		if category == "" {
-			category = "(uncategorized)"
-		}
-		grouped[category] = append(grouped[category], results[caseIdx])
-	}
-	return grouped
-}
-
 // groupCasesByCategory groups cases by their Category.
 func groupCasesByCategory(cases []EvalCase) map[string][]EvalCase {
 	grouped := make(map[string][]EvalCase)

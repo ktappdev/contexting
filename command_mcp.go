@@ -50,7 +50,7 @@ The server watches for file changes and keeps the index current. All communicati
 
 Setup: Add to your AI client's MCP config:
   {"command": "ctxt", "args": ["mcp"]}`,
-		Args:  cobra.MaximumNArgs(1),
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// MCP uses stdout for JSON-RPC; all logging must go to stderr.
 			logToStderr = true
@@ -99,8 +99,7 @@ Setup: Add to your AI client's MCP config:
 				return err
 			}
 			if persistMode != PersistShutdown {
-				LogWarnf("Persistence mode %q requested, but MCP now runs shutdown-only persistence. Using shutdown mode.", persistMode)
-				persistMode = PersistShutdown
+				return fmt.Errorf("persistence mode %q is unsupported; use --persist=shutdown", persistMode)
 			}
 			if persistInterval <= 0 {
 				persistInterval = 45 * time.Second
@@ -122,6 +121,11 @@ Setup: Add to your AI client's MCP config:
 					return fmt.Errorf("config file not found at %s; run ctxt from the project root directory", absConfigPath)
 				}
 			}
+			releaseWriter, err := acquireWriterGuard(absRoot)
+			if err != nil {
+				return err
+			}
+			defer releaseWriter()
 			outputPath := resolveProjectPath(absRoot, flags.OutputPath)
 			if _, statErr := os.Stat(outputPath); os.IsNotExist(statErr) {
 				return fmt.Errorf("no index found at %s; run 'ctxt init' from the project root first", outputPath)
@@ -143,7 +147,7 @@ Setup: Add to your AI client's MCP config:
 			}
 
 			llmEndpoint, llmModel, llmKey, llmTemp, llmMaxTokens, llmProvider := resolveLLMConfig(flags, cfg.LLM)
-			LogInfof("LLM: provider=%s model=%s endpoint=%s api_key=%s", llmProvider, llmModel, llmEndpoint, maskAPIKey(llmKey))
+			LogInfof("LLM: provider=%s model=%s endpoint=%s api_key=%s", llmProvider, llmModel, endpointForLog(llmEndpoint), maskAPIKey(llmKey))
 			if !llmOnWatch {
 				llmKey = ""
 				LogInfof("MCP LLM mode is off. Using cache + lexical synonyms only.")
@@ -166,7 +170,7 @@ Setup: Add to your AI client's MCP config:
 				SynonymsMin:     flags.SynonymsMin,
 				SynonymsMax:     flags.SynonymsMax,
 				APIKey:          llmKey,
-				UseLLM:          llmOnWatch,
+				UseLLM:          llmOnWatch && llmKey != "",
 				MaxBatchSize:    maxBatchSize,
 				Endpoint:        llmEndpoint,
 				Temperature:     llmTemp,
@@ -359,7 +363,7 @@ Setup: Add to your AI client's MCP config:
 
 			server := mcp.NewServer(&mcp.Implementation{
 				Name:    "ctxt",
-				Version: Version,
+				Version: currentVersion(),
 			}, nil)
 
 			mcp.AddTool(server, &mcp.Tool{
@@ -388,10 +392,10 @@ Setup: Add to your AI client's MCP config:
 					typeFilter = "all"
 				}
 				results := manager.Search(args.Query, SearchOptions{
-					Limit:          limit,
-					MinScore:       1,
-					TypeFilter:     typeFilter,
-					IncludeDebug:   args.Explain,
+					Limit:           limit,
+					MinScore:        1,
+					TypeFilter:      typeFilter,
+					IncludeDebug:    args.Explain,
 					ContentFallback: args.Hybrid,
 				})
 				var sb strings.Builder
@@ -479,9 +483,10 @@ Setup: Add to your AI client's MCP config:
 	cmd.Flags().BoolVarP(&flags.Verbose, "verbose", "v", false, "Enable verbose logging")
 	cmd.Flags().DurationVar(&debounce, "debounce", defaultDebounce, "Debounce interval for coalescing fs events")
 	cmd.Flags().BoolVar(&llmOnWatch, "llm-on-watch", false, "Enable live LLM synonym generation during MCP watch")
-	cmd.Flags().StringVar(&persist, "persist", string(PersistShutdown), "Persistence mode: shutdown|interval|change")
-	cmd.Flags().DurationVar(&persistInterval, "persist-interval", defaultPersistInterval, "Snapshot flush interval when --persist=interval")
-	cmd.Flags().BoolVar(&searchLog, "search-log", true, "Log incoming memory search queries in watch output")
+	cmd.Flags().StringVar(&persist, "persist", string(PersistShutdown), "Persistence mode (only shutdown is supported)")
+	cmd.Flags().DurationVar(&persistInterval, "persist-interval", defaultPersistInterval, "Reserved for compatibility; unused with shutdown persistence")
+	_ = cmd.Flags().MarkHidden("persist-interval")
+	cmd.Flags().BoolVar(&searchLog, "search-log", false, "Log incoming queries (may contain sensitive data)")
 	cmd.Flags().IntVar(&searchLogQueryMax, "search-log-query-max", defaultSearchLogQueryMax, "Maximum query characters shown in search logs")
 	cmd.Flags().BoolVar(&enableHTTP, "http", false, "Also serve HTTP memory search endpoint alongside MCP")
 

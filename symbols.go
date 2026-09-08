@@ -164,21 +164,6 @@ func extractScriptBlock(content string, openPattern, closePattern string) (strin
 	return builder.String(), firstOpeningTag, found
 }
 
-var jsPatterns = []string{
-	`(?m)^(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_][A-Za-z0-9_]*)`,
-	`(?m)^(?:export\s+)?class\s+([A-Za-z_][A-Za-z0-9_]*)`,
-	`(?m)^(?:export\s+)?const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=`,
-}
-
-var tsPatterns = []string{
-	`(?m)^(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_][A-Za-z0-9_]*)`,
-	`(?m)^(?:export\s+)?class\s+([A-Za-z_][A-Za-z0-9_]*)`,
-	`(?m)^(?:export\s+)?const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=`,
-	`(?m)^(?:export\s+)?interface\s+([A-Za-z_][A-Za-z0-9_]*)`,
-	`(?m)^(?:export\s+)?type\s+([A-Za-z_][A-Za-z0-9_]*)`,
-	`(?m)^(?:export\s+)?enum\s+([A-Za-z_][A-Za-z0-9_]*)`,
-}
-
 var jsPatternsWhitespace = []string{
 	`(?m)^\s*(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_][A-Za-z0-9_]*)`,
 	`(?m)^\s*(?:export\s+)?class\s+([A-Za-z_][A-Za-z0-9_]*)`,

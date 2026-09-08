@@ -35,7 +35,7 @@ Key behaviors:
   • Detects new files → extracts symbols + regenerates synonyms (if LLM enabled)
   • Detects modified files → re-extracts symbols, updates synonyms if name changed
   • Detects deleted files → removes node from the in-memory tree
-  • Persists snapshot on shutdown (or at intervals with --persist=interval)
+  • Persists snapshot on graceful shutdown; abrupt termination loses unsaved changes
   • Serves memory search queries for tools that use --memory mode
 
 This is the recommended development workflow — init once, then watch while you code.
@@ -44,8 +44,8 @@ Examples:
   ctxt watch .                                   Basic watch
   ctxt watch . --llm-on-watch=false              Skip live LLM synonym generation
   ctxt watch . --debounce 1s                     Longer debounce for busy projects
-  ctxt watch . --persist interval --persist-interval 60s   Periodic snapshot saves`,
-		Args:  cobra.MaximumNArgs(1),
+  ctxt watch . --persist shutdown                Save snapshot on graceful shutdown`,
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var absConfigPath string
 			if configPath != "" {
@@ -91,8 +91,7 @@ Examples:
 				return err
 			}
 			if persistMode != PersistShutdown {
-				LogWarnf("Persistence mode %q requested, but watch now runs shutdown-only persistence. Using shutdown mode.", persistMode)
-				persistMode = PersistShutdown
+				return fmt.Errorf("persistence mode %q is unsupported; use --persist=shutdown", persistMode)
 			}
 			if persistInterval <= 0 {
 				persistInterval = 45 * time.Second
@@ -114,6 +113,11 @@ Examples:
 					return fmt.Errorf("config file not found at %s; run ctxt from the project root directory", absConfigPath)
 				}
 			}
+			releaseWriter, err := acquireWriterGuard(absRoot)
+			if err != nil {
+				return err
+			}
+			defer releaseWriter()
 			outputPath := resolveProjectPath(absRoot, flags.OutputPath)
 			if _, statErr := os.Stat(outputPath); os.IsNotExist(statErr) {
 				return fmt.Errorf("no index found at %s; run 'ctxt init' from the project root first", outputPath)
@@ -138,7 +142,7 @@ Examples:
 			}
 
 			llmEndpoint, llmModel, llmKey, llmTemp, llmMaxTokens, llmProvider := resolveLLMConfig(flags, cfg.LLM)
-			LogInfof("LLM: provider=%s model=%s endpoint=%s api_key=%s", llmProvider, llmModel, llmEndpoint, maskAPIKey(llmKey))
+			LogInfof("LLM: provider=%s model=%s endpoint=%s api_key=%s", llmProvider, llmModel, endpointForLog(llmEndpoint), maskAPIKey(llmKey))
 			if !llmOnWatch {
 				llmKey = ""
 				LogInfof("Watch LLM mode is off (default). Using cache + lexical synonyms only.")
@@ -161,7 +165,7 @@ Examples:
 				SynonymsMin:     flags.SynonymsMin,
 				SynonymsMax:     flags.SynonymsMax,
 				APIKey:          llmKey,
-				UseLLM:          llmOnWatch,
+				UseLLM:          llmOnWatch && llmKey != "",
 				MaxBatchSize:    maxBatchSize,
 				Endpoint:        llmEndpoint,
 				Temperature:     llmTemp,
@@ -397,10 +401,11 @@ Examples:
 	cmd.Flags().StringVar(&flags.SymbolExtractor, "symbol-extractor", "auto", "Symbol extraction engine: auto, treesitter, regex")
 	cmd.Flags().BoolVarP(&flags.Verbose, "verbose", "v", false, "Enable verbose logging")
 	cmd.Flags().DurationVar(&debounce, "debounce", defaultDebounce, "Debounce interval for coalescing fs events")
-	cmd.Flags().BoolVar(&llmOnWatch, "llm-on-watch", true, "Enable live LLM synonym generation during watch (on by default)")
-	cmd.Flags().StringVar(&persist, "persist", string(PersistShutdown), "Persistence mode: shutdown|interval|change")
-	cmd.Flags().DurationVar(&persistInterval, "persist-interval", defaultPersistInterval, "Snapshot flush interval when --persist=interval")
-	cmd.Flags().BoolVar(&searchLog, "search-log", true, "Log incoming memory search queries in watch output")
+	cmd.Flags().BoolVar(&llmOnWatch, "llm-on-watch", false, "Enable live LLM synonym generation during watch")
+	cmd.Flags().StringVar(&persist, "persist", string(PersistShutdown), "Persistence mode (only shutdown is supported)")
+	cmd.Flags().DurationVar(&persistInterval, "persist-interval", defaultPersistInterval, "Reserved for compatibility; unused with shutdown persistence")
+	_ = cmd.Flags().MarkHidden("persist-interval")
+	cmd.Flags().BoolVar(&searchLog, "search-log", false, "Log incoming queries (may contain sensitive data)")
 	cmd.Flags().IntVar(&searchLogQueryMax, "search-log-query-max", defaultSearchLogQueryMax, "Maximum query characters shown in search logs")
 
 	return cmd

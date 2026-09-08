@@ -53,6 +53,11 @@ Examples:
 				return nil
 			}
 
+			releaseWriter, err := acquireWriterGuard(absRoot)
+			if err != nil {
+				return err
+			}
+			defer releaseWriter()
 			if err := os.RemoveAll(ctxDir); err != nil {
 				return fmt.Errorf("remove .ctxt directory: %w", err)
 			}

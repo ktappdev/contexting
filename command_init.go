@@ -30,7 +30,7 @@ Examples:
   ctxt init . --symbol-extractor regex           Regex-only extraction
   ctxt init . --synonyms 8                       Generate up to 8 synonyms per name
   ctxt init . -v                                 Verbose — see what's being extracted`,
-		Args:  cobra.MaximumNArgs(1),
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var absConfigPath string
 			if configPath != "" {
@@ -84,6 +84,11 @@ Examples:
 			if err != nil {
 				return err
 			}
+			releaseWriter, err := acquireWriterGuard(absRoot)
+			if err != nil {
+				return err
+			}
+			defer releaseWriter()
 			outputPath := resolveProjectPath(absRoot, flags.OutputPath)
 			cachePath := resolveProjectPath(absRoot, flags.SynonymCache)
 
@@ -101,7 +106,7 @@ Examples:
 				ignored[filepath.Base(outputPath)] = true
 			}
 			llmEndpoint, llmModel, llmKey, llmTemp, llmMaxTokens, llmProvider := resolveLLMConfig(flags, cfg.LLM)
-			LogInfof("LLM: provider=%s model=%s endpoint=%s api_key=%s", llmProvider, llmModel, llmEndpoint, maskAPIKey(llmKey))
+			LogInfof("LLM: provider=%s model=%s endpoint=%s api_key=%s", llmProvider, llmModel, endpointForLog(llmEndpoint), maskAPIKey(llmKey))
 			cache, err := LoadSynonymCache(cachePath)
 			if err != nil {
 				return err

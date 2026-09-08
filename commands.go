@@ -12,21 +12,22 @@ var createConfig bool
 var configJustCreated bool
 var agentMode bool
 var logToStderr bool
+var offlineMode bool
 
 // agentUnsafeCommands lists commands that modify project state.
 // When --agent is set, these are blocked to prevent accidental damage.
 var agentUnsafeCommands = map[string]bool{
-	"init":   true,
-	"watch":  true,
-	"sync":   true,
-	"clean":  true,
-	"mcp":    true,
+	"init":  true,
+	"watch": true,
+	"sync":  true,
+	"clean": true,
+	"mcp":   true,
 }
 
 func NewRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:     "ctxt",
-		Version: Version,
+		Version: currentVersion(),
 		Short:   "ctxt — concept-based code search for AI-assisted development",
 		Long: `ctxt builds a searchable index of your codebase — files, symbols (functions/classes/types), and LLM-generated synonyms — letting AI assistants and CLI users find files by what they DO, not what they're named.
 
@@ -48,7 +49,7 @@ Get started:
 			if agentMode && agentUnsafeCommands[cmd.Name()] {
 				return fmt.Errorf("command %q is not available in agent mode; run without --agent or use a human-approved tool", cmd.Name())
 			}
-			if cmd.Name() == "help" || cmd.Name() == "config" || cmd.Name() == "clean" || cmd.Name() == "status" || cmd.Name() == "mcp" || cmd.Parent() != nil && cmd.Parent().Name() == "config" {
+			if cmd.Name() == "help" || cmd.Name() == "version" || cmd.Name() == "config" || cmd.Name() == "clean" || cmd.Name() == "status" || cmd.Name() == "mcp" || cmd.Parent() != nil && cmd.Parent().Name() == "config" {
 				return nil
 			}
 			if noConfigPrompt {
@@ -63,6 +64,7 @@ Get started:
 	rootCmd.PersistentFlags().BoolVar(&noConfigPrompt, "no-config-prompt", false, "Disable interactive starter config prompt when config is missing")
 	rootCmd.PersistentFlags().BoolVar(&createConfig, "create-config", false, "Auto-create starter config when missing (non-interactive)")
 	rootCmd.PersistentFlags().BoolVar(&agentMode, "agent", false, "Agent mode: blocks state-modifying commands (init/watch/sync/clean)")
+	rootCmd.PersistentFlags().BoolVar(&offlineMode, "offline", false, "Disable all LLM requests, including configured API keys")
 
 	// Command groups for organized help output
 	rootCmd.AddGroup(&cobra.Group{ID: "setup", Title: "Setup:"})
@@ -123,6 +125,9 @@ Get started:
 	examplesCmd := newExamplesCommand()
 	examplesCmd.GroupID = "other"
 	rootCmd.AddCommand(examplesCmd)
+	versionCmd := newVersionCommand()
+	versionCmd.GroupID = "other"
+	rootCmd.AddCommand(versionCmd)
 
 	return rootCmd
 }

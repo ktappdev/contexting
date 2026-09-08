@@ -18,7 +18,7 @@ func newSyncCommand() *cobra.Command {
 For example, a file importing "@clerk/nextjs" and "stripe" might get synonyms like "clerk webhook handler" or "payment processing route".
 
 Requires an existing index (run 'ctxt init' first).`,
-		Args:  cobra.MaximumNArgs(1),
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var absConfigPath string
 			if configPath != "" {
@@ -46,11 +46,16 @@ Requires an existing index (run 'ctxt init' first).`,
 			if err != nil {
 				return err
 			}
+			releaseWriter, err := acquireWriterGuard(absRoot)
+			if err != nil {
+				return err
+			}
+			defer releaseWriter()
 			outputPath := resolveProjectPath(absRoot, flags.OutputPath)
 			cachePath := resolveProjectPath(absRoot, flags.SynonymCache)
 
 			llmEndpoint, llmModel, llmKey, llmTemp, llmMaxTokens, llmProvider := resolveLLMConfig(flags, cfg.LLM)
-			LogInfof("LLM: provider=%s model=%s endpoint=%s api_key=%s", llmProvider, llmModel, llmEndpoint, maskAPIKey(llmKey))
+			LogInfof("LLM: provider=%s model=%s endpoint=%s api_key=%s", llmProvider, llmModel, endpointForLog(llmEndpoint), maskAPIKey(llmKey))
 			if llmKey == "" {
 				return fmt.Errorf("LLM API key not configured; cannot generate synonyms")
 			}

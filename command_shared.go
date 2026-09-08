@@ -1,6 +1,9 @@
 package contexting
 
-import "os"
+import (
+	"net/url"
+	"os"
+)
 
 type CommonFlags struct {
 	OutputPath      string
@@ -35,17 +38,6 @@ func (c *CommonFlags) normalize() {
 	if c.SynonymCache == "" {
 		c.SynonymCache = ".ctxt/ctx_cache.json"
 	}
-}
-
-func resolveAPIKey(flagValue string) string {
-	if flagValue != "" {
-		return flagValue
-	}
-	key, err := GetAPIKey()
-	if err != nil {
-		return ""
-	}
-	return key
 }
 
 func resolveLLMConfig(flags CommonFlags, llmCfg LLMConfig) (endpoint, model, apiKey string, temperature float64, maxTokens int, provider string) {
@@ -88,6 +80,9 @@ func resolveLLMConfig(flags CommonFlags, llmCfg LLMConfig) (endpoint, model, api
 		temperature = 0.9
 	}
 	maxTokens = llmCfg.MaxTokens
+	if offlineMode {
+		apiKey = ""
+	}
 	return
 }
 
@@ -95,10 +90,15 @@ func maskAPIKey(key string) string {
 	if key == "" {
 		return "[not set]"
 	}
-	if len(key) <= 8 {
-		return key[:max(1, len(key)/2)] + "..."
+	return "[set]"
+}
+
+func endpointForLog(endpoint string) string {
+	parsed, err := url.Parse(endpoint)
+	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
+		return "[invalid]"
 	}
-	return key[:8] + "..."
+	return parsed.Scheme + "://" + parsed.Host
 }
 
 func emitSynonymWarning(err error) {

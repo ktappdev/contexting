@@ -111,7 +111,7 @@ func RunDoctor(opts DoctorOptions) DoctorReport {
 
 	checkIndexFile(&report, indexPath)
 	checkCacheFile(&report, cachePath)
-	checkAPIKey(&report)
+	checkAPIKey(&report, common, cfg.LLM)
 	if opts.WriteCheck {
 		checkWriteAccess(&report, absRoot)
 	}
@@ -156,12 +156,13 @@ func checkCacheFile(report *DoctorReport, cachePath string) {
 	report.add(DoctorCheck{Name: "cache.parse", Status: DoctorPass, Message: fmt.Sprintf("Cache OK: %d entries", len(cache))})
 }
 
-func checkAPIKey(report *DoctorReport) {
-	if _, err := GetAPIKey(); err != nil {
-		report.add(DoctorCheck{Name: "openrouter.api_key", Status: DoctorWarn, Message: "OPENROUTER_API_KEY not set", Suggestion: "Set env var or use --api-key for LLM synonym generation."})
+func checkAPIKey(report *DoctorReport, flags CommonFlags, cfg LLMConfig) {
+	_, _, key, _, _, _ := resolveLLMConfig(flags, cfg)
+	if key == "" {
+		report.add(DoctorCheck{Name: "llm.api_key", Status: DoctorWarn, Message: "LLM API key not configured; local indexing remains available", Suggestion: "Configure llm.api_key_env for optional LLM synonym generation."})
 		return
 	}
-	report.add(DoctorCheck{Name: "openrouter.api_key", Status: DoctorPass, Message: "OPENROUTER_API_KEY is set."})
+	report.add(DoctorCheck{Name: "llm.api_key", Status: DoctorPass, Message: "Configured LLM API key is available."})
 }
 
 func checkWriteAccess(report *DoctorReport, root string) {

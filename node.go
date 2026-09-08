@@ -50,6 +50,12 @@ func BuildTree(rootPath string, ignored map[string]bool) (*Node, error) {
 			return err
 		}
 		if rel == "." {
+			if !d.IsDir() {
+				return fmt.Errorf("project root must be a directory: %s", absRoot)
+			}
+			return nil
+		}
+		if d.Type()&os.ModeSymlink != 0 {
 			return nil
 		}
 
@@ -79,8 +85,7 @@ func BuildTree(rootPath string, ignored map[string]bool) (*Node, error) {
 		} else {
 			fileCount++
 			if fileCount > MaxFileCount {
-				LogWarnf("File count limit reached (%d). Partial index built with what was scanned. Add ignore patterns to reduce file count.", MaxFileCount)
-				return filepath.SkipAll
+				return fmt.Errorf("project exceeds %d files; add ignore patterns before indexing", MaxFileCount)
 			}
 			if fileCount == MaxFileCount/2 {
 				LogWarnf("Large repository detected (%d files). Consider adding more ignore patterns.", fileCount)
