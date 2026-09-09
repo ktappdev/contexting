@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="Contexting turns a codebase into a live, searchable map for humans and AI agents. Install ctxt, build an index, and search by intent."
+    >
+    <meta name="theme-color" content="#0c1117">
+    <meta property="og:title" content="Contexting — Find the right code faster">
+    <meta
+      property="og:description"
+      content="A live map of your codebase for concept-based search, symbols, synonyms, and MCP-powered AI workflows."
+    >
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ktappdev.github.io/contexting/">
+    <title>Contexting — Find the right code faster</title>
+    <link rel="stylesheet" href="site.css">
+    <script>
+      try {
+        const savedTheme = localStorage.getItem("ctxt-theme");
+        if (savedTheme === "light" || savedTheme === "dark") {
+          document.documentElement.dataset.theme = savedTheme;
+        }
+      } catch (_error) {
+        // The page works without local storage.
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <div class="page-noise" aria-hidden="true"></div>
+    <header class="site-header">
+      <nav class="site-nav shell" aria-label="Main navigation">
+        <a class="brand" href="./" aria-label="Contexting home">
+          <span class="brand-mark" aria-hidden="true">{ }</span>
+          <span>contexting</span>
+        </a>
+        <div class="nav-links">
+          <a href="#how-it-works">How it works</a>
+          <a href="#get-started">Get started</a>
+          <a href="#mcp">MCP</a>
+          <a href="#faq">FAQ</a>
+        </div>
+        <div class="nav-actions">
+          <a class="nav-github" href="https://github.com/ktappdev/contexting">GitHub <span aria-hidden="true">↗</span></a>
+          <button class="theme-toggle" type="button" aria-label="Switch to light theme" title="Switch theme">
+            <span class="theme-icon theme-icon-sun" aria-hidden="true">☼</span>
+            <span class="theme-icon theme-icon-moon" aria-hidden="true">◐</span>
+          </button>
+        </div>
+      </nav>
+    </header>
+
+    <main id="main-content">
+      <section class="hero shell section-pad" aria-labelledby="hero-title">
+        <div class="hero-copy reveal">
+          <p class="eyebrow"><span class="eyebrow-line" aria-hidden="true"></span> The context layer for code</p>
+          <h1 id="hero-title">Find the right file before you start digging.</h1>
+          <p class="hero-lede">
+            Contexting builds a live map of your codebase — paths, symbols, and optional language-aware synonyms — so people and AI agents can search by intent instead of guessing filenames.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#get-started">Install and get started <span aria-hidden="true">↓</span></a>
+            <a class="button button-quiet" href="https://github.com/ktappdev/contexting">View the source <span aria-hidden="true">↗</span></a>
+          </div>
+          <p class="hero-proof"><span class="status-dot" aria-hidden="true"></span> Local-first search <span class="proof-separator">·</span> Optional LLM enrichment <span class="proof-separator">·</span> Open source</p>
+        </div>
+
+        <div class="hero-art reveal" aria-label="Example ctxt search output" role="img">
+          <div class="hero-orbit orbit-one" aria-hidden="true"></div>
+          <div class="hero-orbit orbit-two" aria-hidden="true"></div>
+          <div class="terminal-window">
+            <div class="terminal-topbar">
+              <span class="terminal-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span class="terminal-title">project / search</span>
+              <span class="terminal-command">ctxt</span>
+            </div>
+            <div class="terminal-body">
+              <div class="terminal-line terminal-muted"><span class="prompt">$</span> ctxt search-hints <span class="terminal-string">"session timeout"</span></div>
+              <div class="terminal-line terminal-success"><span aria-hidden="true">✓</span> 3 high-confidence matches</div>
+              <div class="terminal-result terminal-result-top">
+                <span class="result-score">148</span>
+                <span><strong>internal/auth/session.go</strong><small>RefreshSession · SessionTimeout</small></span>
+              </div>
+              <div class="terminal-result">
+                <span class="result-score result-score-soft">52</span>
+                <span><strong>config/session.toml</strong><small>session settings · expiry</small></span>
+              </div>
+              <div class="terminal-result">
+                <span class="result-score result-score-soft">18</span>
+                <span><strong>docs/authentication.md</strong><small>session lifecycle · auth guide</small></span>
+              </div>
+              <div class="terminal-line terminal-muted terminal-cursor"><span class="prompt">$</span> <span class="cursor-block" aria-hidden="true"></span></div>
+            </div>
+          </div>
+          <div class="art-label art-label-left"><span class="label-pulse" aria-hidden="true"></span> intent in</div>
+          <div class="art-label art-label-right">ranked paths <span class="label-arrow" aria-hidden="true">↗</span></div>
+        </div>
+      </section>
+
+      <section class="signal-strip shell reveal" aria-label="Project highlights">
+        <div class="signal-item"><span class="signal-value">1</span><span class="signal-label">portable JSON<br>index</span></div>
+        <div class="signal-item"><span class="signal-value">750<span class="signal-unit">ms</span></span><span class="signal-label">default change<br>debounce</span></div>
+        <div class="signal-item"><span class="signal-value">10k</span><span class="signal-label">initial file<br>guardrail</span></div>
+        <div class="signal-item"><span class="signal-value">127.0.0.1</span><span class="signal-label">local live<br>search endpoint</span></div>
+      </section>
+
+      <section class="story section-pad shell" id="get-started" aria-labelledby="started-title">
+        <div class="section-intro reveal">
+          <p class="eyebrow"><span class="eyebrow-line" aria-hidden="true"></span> A first session</p>
+          <h2 id="started-title">Maya joins an unfamiliar project.</h2>
+          <p>
+            She does not know whether the thing she needs lives in <code>services/</code>, <code>handlers/</code>, or a folder someone named six months ago. Ten minutes later, she has a map, a useful search habit, and a watcher running beside her editor.
+          </p>
+        </div>
+
+        <div class="story-grid">
+          <article class="story-step reveal">
+            <div class="step-number">01</div>
+            <div class="step-content">
+              <p class="step-kicker">Install</p>
+              <h3>Put <code>ctxt</code> on the path.</h3>
+              <p>Use a release archive for a quick start, or install from Go if your toolchain is already set up.</p>
+              <div class="code-card">
+                <button class="copy-button" type="button" data-copy="go install github.com/ktappdev/contexting/cmd/ctxt@latest" aria-label="Copy install command">copy</button>
+                <pre><code>go install github.com/ktappdev/contexting/cmd/ctxt@latest</code></pre>
+              </div>
+              <p class="step-note">Check the binary before moving on: <code>ctxt version</code> or <code>ctxt --version</code>.</p>
+            </div>
+          </article>
+
+          <article class="story-step reveal">
+            <div class="step-number">02</div>
+            <div class="step-content">
+              <p class="step-kicker">Initialize</p>
+              <h3>Build the map once.</h3>
+              <p>From the root of the project, <code>init</code> walks the tree, respects ignore rules, extracts symbols, and saves a snapshot under <code>.ctxt/</code>.</p>
+              <div class="code-card">
+                <button class="copy-button" type="button" data-copy="ctxt init .\nctxt status" aria-label="Copy initialization commands">copy</button>
+                <pre><code>ctxt init .
+ctxt status</code></pre>
+              </div>
+              <p class="step-note">The first run creates a starter <code>.ctxt/ctx_config.toml</code> for settings you want to keep.</p>
+            </div>
+          </article>
+
+          <article class="story-step reveal">
+            <div class="step-number">03</div>
+            <div class="step-content">
+              <p class="step-kicker">Search by intent</p>
+              <h3>Ask for the job, not the filename.</h3>
+              <p>Search combines paths, basenames, symbols, and optional synonyms. Start with the language you would use to describe the work.</p>
+              <div class="code-card">
+                <button class="copy-button" type="button" data-copy="ctxt search-hints &quot;authentication middleware&quot;\nctxt search-hints &quot;session timeout&quot; --explain" aria-label="Copy search commands">copy</button>
+                <pre><code>ctxt search-hints "authentication middleware"
+ctxt search-hints "session timeout" --explain</code></pre>
+              </div>
+              <p class="step-note">Use <code>--json</code> when another tool needs structured results.</p>
+            </div>
+          </article>
+
+          <article class="story-step reveal">
+            <div class="step-number">04</div>
+            <div class="step-content">
+              <p class="step-kicker">Stay current</p>
+              <h3>Let the map follow the work.</h3>
+              <p><code>watch</code> keeps an in-memory index fresh while you code and exposes a local endpoint for live queries. Stop it with Ctrl+C to flush the snapshot.</p>
+              <div class="code-card">
+                <button class="copy-button" type="button" data-copy="ctxt watch . --verbose" aria-label="Copy watch command">copy</button>
+                <pre><code>ctxt watch . --verbose</code></pre>
+              </div>
+              <p class="step-note">Live LLM enrichment is opt-in with <code>--llm-on-watch</code>; query logging is off by default.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="how-it-works section-pad section-dark" id="how-it-works" aria-labelledby="how-title">
+        <div class="shell">
+          <div class="section-intro section-intro-wide reveal">
+            <p class="eyebrow"><span class="eyebrow-line" aria-hidden="true"></span> Under the hood</p>
+            <h2 id="how-title">A map is more useful than a pile of filenames.</h2>
+            <p>
+              Contexting separates indexing from asking. The expensive work happens once; searches stay small, local, and fast. The same index powers the CLI, watch mode, and MCP integrations.
+            </p>
+          </div>
+
+          <div class="pipeline reveal">
+            <div class="pipeline-line" aria-hidden="true"></div>
+            <article class="pipeline-node">
+              <span class="pipeline-index">01</span>
+              <span class="pipeline-icon" aria-hidden="true">⌁</span>
+              <h3>Source tree</h3>
+              <p>Walk files and folders while applying built-in, <code>.gitignore</code>, and config ignores.</p>
+            </article>
+            <article class="pipeline-node">
+              <span class="pipeline-index">02</span>
+              <span class="pipeline-icon" aria-hidden="true">{ }</span>
+              <h3>Symbols</h3>
+              <p>Extract functions, classes, types, variables, and constants with AST or regex fallbacks.</p>
+            </article>
+            <article class="pipeline-node pipeline-node-accent">
+              <span class="pipeline-index">03</span>
+              <span class="pipeline-icon" aria-hidden="true">✦</span>
+              <h3>Synonyms</h3>
+              <p>Optionally expand code names into the concepts people actually search for.</p>
+            </article>
+            <article class="pipeline-node">
+              <span class="pipeline-index">04</span>
+              <span class="pipeline-icon" aria-hidden="true">▣</span>
+              <h3>Index</h3>
+              <p>Persist a versioned JSON tree in <code>.ctxt/ctx_index.json</code>; load it into memory for watch.</p>
+            </article>
+            <article class="pipeline-node">
+              <span class="pipeline-index">05</span>
+              <span class="pipeline-icon" aria-hidden="true">↗</span>
+              <h3>Ranked hints</h3>
+              <p>Return explainable paths to the CLI, scripts, and AI assistants through MCP.</p>
+            </article>
+          </div>
+
+          <div class="mechanics-grid">
+            <article class="mechanics-card reveal">
+              <p class="card-label">What gets matched</p>
+              <h3>One query, many signals.</h3>
+              <p>Exact filenames are strongest, followed by path segments, synonyms, and symbols. A confidence-gap cutoff keeps weak matches from crowding out the useful ones.</p>
+              <div class="match-list">
+                <div><span>exact filename</span><strong>+15</strong></div>
+                <div><span>directory basename</span><strong>+12</strong></div>
+                <div><span>synonym exact</span><strong>+8</strong></div>
+                <div><span>symbol exact</span><strong>+8</strong></div>
+                <div><span>path segment</span><strong>+4</strong></div>
+              </div>
+            </article>
+            <article class="mechanics-card mechanics-card-code reveal">
+              <p class="card-label">What the snapshot looks like</p>
+              <h3>Plain data, easy to inspect.</h3>
+              <pre><code><span class="json-key">"schema_version"</span>: <span class="json-number">1</span>,
+<span class="json-key">"root_path"</span>: <span class="json-string">"/work/project"</span>,
+<span class="json-key">"tree"</span>: {
+  <span class="json-key">"type"</span>: <span class="json-string">"directory"</span>,
+  <span class="json-key">"children"</span>: [
+    {
+      <span class="json-key">"full_path"</span>: <span class="json-string">"auth/session.go"</span>,
+      <span class="json-key">"symbols"</span>: [<span class="json-string">"RefreshSession"</span>]
+    }
+  ]
+}</code></pre>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="install-section section-pad shell" aria-labelledby="install-title">
+        <div class="section-intro reveal">
+          <p class="eyebrow"><span class="eyebrow-line" aria-hidden="true"></span> Choose your path</p>
+          <h2 id="install-title">Start small. Add intelligence when you need it.</h2>
+          <p>Search works without a remote model. Add synonyms when your team uses different words for the same code, or point the client at a local OpenAI-compatible server.</p>
+        </div>
+
+        <div class="install-grid">
+          <article class="install-card install-card-featured reveal">
+            <div class="install-card-top"><span class="card-label">Fastest route</span><span class="card-badge">recommended</span></div>
+            <h3>Download a release</h3>
+            <p>Choose the archive for Linux, macOS, or Windows on amd64 or arm64. Verify it with <code>checksums.txt</code>, then put <code>ctxt</code> on your <code>PATH</code>.</p>
+            <a class="text-link" href="https://github.com/ktappdev/contexting/releases">Open releases <span aria-hidden="true">↗</span></a>
+          </article>
+          <article class="install-card reveal">
+            <div class="install-card-top"><span class="card-label">Go toolchain</span></div>
+            <h3>Install from source</h3>
+            <p>Good for contributors and Go users who want the latest checked-out version.</p>
+            <div class="code-card code-card-compact">
+              <button class="copy-button" type="button" data-copy="go install github.com/ktappdev/contexting/cmd/ctxt@latest" aria-label="Copy Go install command">copy</button>
+              <pre><code>go install github.com/ktappdev/contexting/cmd/ctxt@latest</code></pre>
+            </div>
+          </article>
+          <article class="install-card reveal">
+            <div class="install-card-top"><span class="card-label">Private or offline</span></div>
+            <h3>Keep enrichment local</h3>
+            <p>Use <code>--offline</code> to disable every LLM request, or configure a loopback OpenAI-compatible endpoint. Remote endpoints must use HTTPS.</p>
+            <div class="code-card code-card-compact">
+              <button class="copy-button" type="button" data-copy="ctxt --offline init ." aria-label="Copy offline initialization command">copy</button>
+              <pre><code>ctxt --offline init .</code></pre>
+            </div>
+          </article>
+        </div>
+
+        <div class="config-note reveal">
+          <div class="config-note-icon" aria-hidden="true">⚙</div>
+          <div>
+            <p class="card-label">Configuration that stays with the project</p>
+            <p>On first run, ctxt offers <code>.ctxt/ctx_config.toml</code>. CLI flags win over config, and config wins over defaults. Keep the config checked in if the whole team should share behavior; keep API keys in environment variables.</p>
+          </div>
+          <a class="text-link" href="https://github.com/ktappdev/contexting/blob/main/context.toml.example">See the example <span aria-hidden="true">↗</span></a>
+        </div>
+      </section>
+
+      <section class="mcp-section section-pad section-tint" id="mcp" aria-labelledby="mcp-title">
+        <div class="shell mcp-layout">
+          <div class="section-intro reveal">
+            <p class="eyebrow"><span class="eyebrow-line" aria-hidden="true"></span> For AI assistants</p>
+            <h2 id="mcp-title">Give your agent a map, not a scavenger hunt.</h2>
+            <p>
+              The MCP server starts ctxt as a local process and exposes two focused tools: ranked <code>search</code> and index-health <code>status</code>. Claude Desktop, Cursor, and compatible clients can discover them on startup.
+            </p>
+            <a class="text-link" href="https://github.com/ktappdev/contexting/blob/main/docs/mcp.md">Read the MCP setup guide <span aria-hidden="true">↗</span></a>
+          </div>
+          <div class="mcp-code reveal">
+            <div class="code-card code-card-large">
+              <div class="code-card-heading"><span>mcpServers</span><span class="code-card-status"><i aria-hidden="true"></i> local process</span></div>
+              <button class="copy-button" type="button" data-copy="{\n  &quot;mcpServers&quot;: {\n    &quot;ctxt&quot;: {\n      &quot;command&quot;: &quot;ctxt&quot;,\n      &quot;args&quot;: [&quot;mcp&quot;]\n    }\n  }\n}" aria-label="Copy MCP configuration">copy</button>
+              <pre><code>{
+  <span class="json-key">"mcpServers"</span>: {
+    <span class="json-key">"ctxt"</span>: {
+      <span class="json-key">"command"</span>: <span class="json-string">"ctxt"</span>,
+      <span class="json-key">"args"</span>: [<span class="json-string">"mcp"</span>]
+    }
+  }
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="privacy-section section-pad shell" aria-labelledby="privacy-title">
+        <div class="privacy-callout reveal">
+          <div class="privacy-mark" aria-hidden="true">!</div>
+          <div class="privacy-copy">
+            <p class="eyebrow"><span class="eyebrow-line" aria-hidden="true"></span> Know what leaves the machine</p>
+            <h2 id="privacy-title">Local search by default. LLMs are a choice.</h2>
+            <p>
+              The index and normal search run locally. When synonym generation is enabled, Contexting can send names plus context such as extracted symbols and JavaScript/TypeScript imports to the configured OpenAI-compatible endpoint. Watch-mode LLM calls and query logging are opt-in.
+            </p>
+            <div class="privacy-actions">
+              <a class="button button-dark" href="https://github.com/ktappdev/contexting/blob/main/SECURITY.md">Read security guidance <span aria-hidden="true">↗</span></a>
+              <span class="privacy-inline"><span class="status-dot" aria-hidden="true"></span> <code>ctxt --offline</code> disables all LLM requests</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="faq-section section-pad section-dark" id="faq" aria-labelledby="faq-title">
+        <div class="shell faq-layout">
+          <div class="section-intro reveal">
+            <p class="eyebrow"><span class="eyebrow-line" aria-hidden="true"></span> Before you begin</p>
+            <h2 id="faq-title">The practical questions.</h2>
+            <p>Most projects can start with the three-command path. These details help you choose the right mode once the index becomes part of your workflow.</p>
+          </div>
+          <div class="faq-list reveal">
+            <details open>
+              <summary>Does Contexting work without an API key?</summary>
+              <p>Yes. Symbol extraction and path matching still work. You only lose LLM-generated synonym expansion. Use <code>--offline</code> when you want that behavior to be explicit.</p>
+            </details>
+            <details>
+              <summary>What is the difference between <code>init</code> and <code>watch</code>?</summary>
+              <p><code>init</code> creates or refreshes the on-disk snapshot. <code>watch</code> loads it into memory, applies file changes as they happen, serves live search, and writes the updated snapshot when it shuts down gracefully.</p>
+            </details>
+            <details>
+              <summary>Can it search file contents too?</summary>
+              <p>Concept search is based on indexed paths, symbols, and synonyms. Add <code>--hybrid</code> to let ripgrep provide a content fallback when the indexed results are sparse.</p>
+            </details>
+            <details>
+              <summary>What does it ignore?</summary>
+              <p>Built-in ignores are combined with the project’s <code>.gitignore</code> and extra config patterns. Dot-prefixed paths and symlink entries are skipped by default; negated ignore rules do not re-include a path.</p>
+            </details>
+            <details>
+              <summary>How large can a project be?</summary>
+              <p>Initial indexing is guarded at 10,000 files after ignores. Larger projects should narrow the index with additional ignore patterns rather than receive a misleading partial snapshot.</p>
+            </details>
+            <details>
+              <summary>Which languages are supported?</summary>
+              <p>The current extractors cover Go, Python, JavaScript, TypeScript, Rust, Svelte, Astro, Vue, and Ruby, with tree-sitter or regex fallback depending on the language and extractor mode.</p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="final-cta shell section-pad reveal" aria-labelledby="final-title">
+        <div class="final-cta-inner">
+          <p class="eyebrow"><span class="eyebrow-line" aria-hidden="true"></span> Make the next question cheaper</p>
+          <h2 id="final-title">Your codebase already has the answer.<br><span>Give it a better map.</span></h2>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#get-started">Start with <code>ctxt init .</code> <span aria-hidden="true">↓</span></a>
+            <a class="button button-quiet" href="https://github.com/ktappdev/contexting/releases">Get a release <span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="shell footer-grid">
+        <div>
+          <a class="brand" href="./"><span class="brand-mark" aria-hidden="true">{ }</span><span>contexting</span></a>
+          <p class="footer-tagline">A live map of your codebase for humans and agents.</p>
+        </div>
+        <div class="footer-links">
+          <a href="https://github.com/ktappdev/contexting">Repository <span aria-hidden="true">↗</span></a>
+          <a href="https://github.com/ktappdev/contexting/releases">Releases <span aria-hidden="true">↗</span></a>
+          <a href="https://github.com/ktappdev/contexting/blob/main/docs/mcp.md">MCP guide <span aria-hidden="true">↗</span></a>
+          <a href="https://github.com/ktappdev/contexting/blob/main/SECURITY.md">Security <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="footer-meta">
+          <p>Published with GitHub Pages.</p>
+          <p>MIT licensed · <span id="year">2026</span></p>
+        </div>
+      </div>
+    </footer>
+
+    <div class="copy-toast" role="status" aria-live="polite" aria-atomic="true">Copied</div>
+    <script src="site.js" defer></script>
+  </body>
+</html>

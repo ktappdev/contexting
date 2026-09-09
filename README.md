@@ -4,6 +4,8 @@
 
 Contexting keeps a live map of your codebase so AI agents can reason about paths without hunting through the filesystem manually. It builds a recursive JSON tree of every folder and file, extracts code symbols (functions, classes, types, variables) using language-specific extractors, attaches LLM-generated synonyms, and exposes ranked search hints plus health tooling.
 
+Read the visual [getting started guide](https://ktappdev.github.io/contexting/) for the product story, architecture, installation paths, MCP setup, and privacy notes.
+
 ## Quick start
 
 `ctxt` supports Linux, macOS, and Windows on amd64 and arm64. Download the
