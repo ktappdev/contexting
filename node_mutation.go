@@ -51,12 +51,13 @@ func upsertNodeByRelPath(root *Node, absRoot string, relPath string, isDir bool,
 		next, ok := parent.Children[part]
 		if !ok {
 			next = &Node{
-				FullPath: currPath,
-				Type:     "directory",
-				Children: make(map[string]*Node),
+				FullPath:   currPath,
+				SynonymKey: filepath.ToSlash(strings.Join(parts[:i+1], "/")),
+				Type:       "directory",
+				Children:   make(map[string]*Node),
 			}
 			parent.Children[part] = next
-			next.Synonyms = buildNodeSynonyms(part, cache, maxSynonyms)
+			next.Synonyms = buildNodeSynonyms(next.SynonymKey, part, cache, maxSynonyms)
 			changed = true
 		}
 		if next.Type != "directory" {
@@ -87,7 +88,7 @@ func upsertNodeByRelPath(root *Node, absRoot string, relPath string, isDir bool,
 		}
 		size = info.Size()
 	}
-	nodeSynonyms := buildNodeSynonyms(llmSynonymKey(&Node{FullPath: fullPath, Type: nodeType}), cache, maxSynonyms)
+	nodeSynonyms := buildNodeSynonyms(filepath.ToSlash(relPath), legacySynonymKey(&Node{FullPath: fullPath, Type: nodeType}), cache, maxSynonyms)
 
 	node, ok := parent.Children[name]
 	if !ok {
@@ -96,17 +97,19 @@ func upsertNodeByRelPath(root *Node, absRoot string, relPath string, isDir bool,
 			symList, _ = extractSymbols(fullPath)
 		}
 		parent.Children[name] = &Node{
-			FullPath: fullPath,
-			Type:     nodeType,
-			Synonyms: nodeSynonyms,
-			Symbols:  symList,
-			ModTime:  mtime,
-			Size:     size,
-			Children: make(map[string]*Node),
+			SynonymKey: filepath.ToSlash(relPath),
+			FullPath:   fullPath,
+			Type:       nodeType,
+			Synonyms:   nodeSynonyms,
+			Symbols:    symList,
+			ModTime:    mtime,
+			Size:       size,
+			Children:   make(map[string]*Node),
 		}
 		return true
 	}
 
+	node.SynonymKey = filepath.ToSlash(relPath)
 	if node.FullPath != fullPath {
 		node.FullPath = fullPath
 		changed = true
@@ -146,14 +149,14 @@ func upsertNodeByRelPath(root *Node, absRoot string, relPath string, isDir bool,
 	return changed
 }
 
-func buildNodeSynonyms(name string, cache SynonymResponse, maxSynonyms int) []string {
+func buildNodeSynonyms(name, lexicalName string, cache SynonymResponse, maxSynonyms int) []string {
 	combined := make([]string, 0, maxSynonyms+4)
 	if cache != nil {
 		if syns, ok := cache[name]; ok {
 			combined = append(combined, syns...)
 		}
 	}
-	combined = append(combined, lexicalSynonyms(name)...)
+	combined = append(combined, lexicalSynonyms(lexicalName)...)
 	return sanitizeSynonyms(combined, maxSynonyms)
 }
 

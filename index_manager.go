@@ -65,10 +65,12 @@ type IndexManager struct {
 	temperature     float64
 	maxTokens       int
 
-	index  *ContextIndex
-	cache  SynonymResponse
-	dirty  bool
-	loaded bool
+	index        *ContextIndex
+	cache        SynonymResponse
+	cacheVersion int
+	fingerprints map[string]string
+	dirty        bool
+	loaded       bool
 }
 
 func NewIndexManager(opts IndexManagerOptions) *IndexManager {
@@ -166,7 +168,7 @@ func collectFilesystemState(rootPath string, ignored map[string]bool) (map[strin
 			}
 			info, err := d.Info()
 			if err != nil {
-				return nil // skip files we can't stat
+				return fmt.Errorf("stat %s: %w", path, err)
 			}
 			state[normalized] = fsEntry{mtime: info.ModTime().UnixNano(), size: info.Size()}
 		}
@@ -200,18 +202,24 @@ func (m *IndexManager) Bootstrap(ctx context.Context) (IndexStats, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	cache, err := LoadSynonymCache(m.cachePath)
+	state, err := loadSynonymCacheState(m.cachePath)
 	if err != nil {
 		return IndexStats{}, err
 	}
-	m.cache = cache
+	m.cache = state.Entries
+	m.cacheVersion = state.Version
+	m.fingerprints = state.Fingerprints
 
 	loadedIndex, err := LoadContextIndex(m.outputPath)
 	if err == nil && loadedIndex != nil && loadedIndex.Tree != nil {
 		if absRoot, rootErr := filepath.Abs(m.rootPath); rootErr == nil && loadedIndex.RootPath == absRoot {
+			migrated := state.Version < 2
+			state = migrateSynonymCache(loadedIndex.Tree, state)
+			m.cache = state.Entries
+			m.cacheVersion = state.Version
 			m.index = loadedIndex
 			m.loaded = true
-			m.dirty = false
+			m.dirty = migrated
 
 			// Diff snapshot against filesystem to catch changes made while not running
 			fsState, fsErr := collectFilesystemState(m.rootPath, m.ignored)
@@ -242,7 +250,7 @@ func (m *IndexManager) Bootstrap(ctx context.Context) (IndexStats, error) {
 							changesDetected = true
 							newCount++
 							if !entry.isDir {
-								name := pathSuffix(filepath.Join(absRoot, relPath))
+								name := filepath.ToSlash(relPath)
 								if _, cached := m.cache[name]; !cached {
 									newNamesNeedSynonyms[name] = struct{}{}
 								}
@@ -279,11 +287,13 @@ func (m *IndexManager) Bootstrap(ctx context.Context) (IndexStats, error) {
 					}
 					LogWarnf("########################################")
 				}
+				AssignSynonymsToTree(m.index.Tree, m.cache, m.synonymsMax)
+				stats := ComputeStats(m.index.Tree)
+				stats.CollectedNames = len(CollectNamesForLLM(m.index.Tree))
+				return stats, nil
 			}
-
-			stats := ComputeStats(m.index.Tree)
-			stats.CollectedNames = len(CollectNamesForLLM(m.index.Tree))
-			return stats, nil
+			m.loaded = false
+			m.index = nil
 		}
 	}
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
@@ -291,26 +301,30 @@ func (m *IndexManager) Bootstrap(ctx context.Context) (IndexStats, error) {
 	}
 
 	result, buildErr := BuildIndex(BuildOptions{
-		Ctx:             ctx,
-		RootPath:        m.rootPath,
-		IgnoredPaths:    m.ignored,
-		APIKey:          m.activeAPIKey(),
-		Model:           m.model,
-		BatchSize:       m.batchSize,
-		SynonymsPerName: m.synonymsMax,
-		SynonymsMin:     m.synonymsMin,
-		SynonymsMax:     m.synonymsMax,
-		SynonymCache:    m.cache,
-		MaxBatchSize:    m.maxBatchSize,
-		Endpoint:        m.endpoint,
-		Temperature:     m.temperature,
-		MaxTokens:       m.maxTokens,
+		Ctx:                 ctx,
+		RootPath:            m.rootPath,
+		IgnoredPaths:        m.ignored,
+		APIKey:              m.activeAPIKey(),
+		Model:               m.model,
+		BatchSize:           m.batchSize,
+		SynonymsPerName:     m.synonymsMax,
+		SynonymsMin:         m.synonymsMin,
+		SynonymsMax:         m.synonymsMax,
+		SynonymCache:        m.cache,
+		CacheVersion:        m.cacheVersion,
+		SynonymFingerprints: m.fingerprints,
+		MaxBatchSize:        m.maxBatchSize,
+		Endpoint:            m.endpoint,
+		Temperature:         m.temperature,
+		MaxTokens:           m.maxTokens,
 	})
 	if buildErr != nil {
 		return IndexStats{}, buildErr
 	}
 	m.index = result.Index
 	m.cache = result.SynonymCache
+	m.cacheVersion = 2
+	m.fingerprints = result.SynonymFingerprints
 	m.dirty = true
 	m.loaded = true
 	return result.Stats, nil
@@ -336,7 +350,6 @@ func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsno
 		return result, nil
 	}
 
-	missingNames := make(map[string]struct{})
 	// Directory creation can arrive after its children were populated. Reconcile
 	// the filesystem on creates so those children are not missed by fsnotify.
 	for _, op := range changes {
@@ -406,76 +419,35 @@ func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsno
 		if upsertNodeByRelPath(m.index.Tree, m.rootPath, relPath, isDir, mtime, m.cache, m.synonymsMax) {
 			result.Changed = true
 		}
-
-		if m.useLLM {
-			key := baseName
-			if !isDir {
-				key = pathSuffix(absPath)
-			}
-			if _, ok := m.cache[key]; !ok {
-				missingNames[key] = struct{}{}
-			}
-		}
 	}
 
 	if ctx.Err() != nil {
 		return result, ctx.Err()
 	}
 
-	if m.useLLM && len(missingNames) > 0 {
-		names := make([]string, 0, len(missingNames))
-		for name := range missingNames {
-			names = append(names, name)
-		}
-		sort.Strings(names)
-
-		// Build symbols and imports maps for new names
-		symbolsMap := make(map[string][]string)
-		importsMap := make(map[string][]string)
-		for _, name := range names {
-			// Find the node with this basename and extract its symbols
-			// and imports. We collect imports from every file with this
-			// basename, deduped, so a name like "route.ts" gets the union
-			// of all its call sites' dependencies.
-			seenImports := make(map[string]struct{})
-			walkTree(m.index.Tree, func(node *Node) {
-				if node.Type != "file" || llmSynonymKey(node) != name {
-					return
-				}
-				if len(node.Symbols) > 0 {
-					symbolsMap[name] = node.Symbols
-				}
-				// Imports reveal external dependencies (e.g. "@clerk/nextjs")
-				// that help the LLM generate domain-accurate synonyms.
-				// Imports aren't stored on the node, so we re-extract from disk.
-				for _, imp := range extractFileImports(node.FullPath) {
-					if _, dup := seenImports[imp]; dup {
-						continue
-					}
-					seenImports[imp] = struct{}{}
-				}
-			})
-			if len(seenImports) > 0 {
-				imports := make([]string, 0, len(seenImports))
-				for imp := range seenImports {
-					imports = append(imports, imp)
-				}
-				sort.Strings(imports)
-				importsMap[name] = imports
-			}
-		}
-
+	generationContext := synonymContext{}
+	var names []string
+	if m.useLLM {
+		generationContext = collectSynonymContext(m.index.Tree)
+		names = namesNeedingSynonyms(CollectNamesForLLM(m.index.Tree), m.cache, m.fingerprints, generationContext.Fingerprints, m.synonymsMin)
+	}
+	if len(names) > 0 {
 		apiKey := m.activeAPIKey()
 		m.mu.Unlock()
 		locked = false
-		synonyms, err := GenerateSynonymsForNamesWithContext(ctx, names, apiKey, m.maxBatchSize, m.model, m.endpoint, m.temperature, m.maxTokens, m.synonymsMin, m.synonymsMax, 1, symbolsMap, importsMap)
+		synonyms, err := GenerateSynonymsForNamesWithContext(ctx, names, apiKey, m.maxBatchSize, m.model, m.endpoint, m.temperature, m.maxTokens, m.synonymsMin, m.synonymsMax, 1, generationContext.Symbols, generationContext.Imports)
 		m.mu.Lock()
 		locked = true
 		if err != nil {
 			result.SynonymError = err
 		}
+		currentContext := collectSynonymContext(m.index.Tree)
 		for name, values := range synonyms {
+			if currentContext.Fingerprints[name] != generationContext.Fingerprints[name] {
+				continue
+			}
 			m.cache[name] = sanitizeSynonyms(values, m.synonymsMax)
+			m.fingerprints[name] = generationContext.Fingerprints[name]
 		}
 		if len(synonyms) > 0 {
 			AssignSynonymsToTree(m.index.Tree, m.cache, m.synonymsMax)
@@ -500,7 +472,7 @@ func (m *IndexManager) FlushIfDirty() (bool, error) {
 	if !m.dirty || m.index == nil {
 		return false, nil
 	}
-	if err := SaveSynonymCache(m.cachePath, m.cache); err != nil {
+	if err := saveSynonymCacheState(m.cachePath, synonymCacheState{Version: 2, Entries: m.cache, Fingerprints: m.fingerprints}); err != nil {
 		return false, err
 	}
 	if err := SaveContextIndex(m.outputPath, m.index); err != nil {
@@ -523,11 +495,14 @@ func (m *IndexManager) SnapshotStats() IndexStats {
 
 func (m *IndexManager) Search(query string, opts SearchOptions) []SearchResult {
 	m.mu.Lock()
-	defer m.mu.Unlock()
 	if m.index == nil || m.index.Tree == nil {
+		m.mu.Unlock()
 		return nil
 	}
-	return SearchHintsWithOptions(m.index, query, opts)
+	snapshot := *m.index
+	snapshot.Tree = cloneSearchTree(m.index.Tree)
+	m.mu.Unlock()
+	return SearchHintsWithOptions(&snapshot, query, opts)
 }
 
 func (m *IndexManager) RootPath() string {

@@ -52,7 +52,7 @@ Remote LLM endpoints must use HTTPS; HTTP is accepted only on loopback.
 
 **Synonyms:** Each node (file or directory) gets 5–12 LLM-generated synonyms via batched API calls to an OpenAI-compatible endpoint. For example, `Skeletons.tsx → ["skeletons", "loading", "placeholder", "animation"]`. Names are smart-batched (up to 60 per request, 10 parallel by default). The prompt includes extracted symbols and, for JS/TS files, ESM imports to generate contextual terms. Use `--offline` to guarantee that no LLM requests are made.
 
-**Bootstrap diff:** On subsequent runs, `watch` diffs the filesystem against the existing snapshot using file modification times and sizes. Timestamp-preserving edits with a different size are detected; edits preserving both size and timestamp require a full rebuild. Deleted files are removed, new files are added, modified files are re-extracted. No LLM calls for existing synonyms — run `ctxt sync` to fill gaps. Synonym keys use `parentDir/basename` (e.g., `webhook/route.ts`) instead of bare basenames to prevent duplicate filenames from overwriting each other in the synonym map.
+**Bootstrap diff:** On subsequent runs, `watch` diffs the filesystem against the existing snapshot using file modification times and sizes. Timestamp-preserving edits with a different size are detected; edits preserving both size and timestamp require a full rebuild. Deleted files are removed, new files are added, modified files are re-extracted. Watch bootstrap reuses cached synonyms; run `ctxt sync` to fill gaps and refresh changed symbol/import context. Synonym cache keys use the full project-relative path (e.g., `billing/routes/index.ts`) so identically named files in separate features remain distinct.
 
 ### Search mechanics
 
@@ -105,13 +105,30 @@ On first run, creates a starter `.ctxt/ctx_config.toml` and pauses so you can ed
 
 ### `ctxt sync`
 
-Targeted synonym generation — only generates synonyms for names that are missing or below `synonyms_min`. Works on the existing index without rebuilding.
+Targeted synonym generation — generates synonyms for indexed names that are missing, below `synonyms_min`, or have changed symbols/imports. It refreshes symbol extraction from disk before comparing context fingerprints. Works on the existing index without rebuilding the file tree.
 
 ```bash
 ctxt sync .
+ctxt sync . --path command_sync.go
+ctxt sync . --path docs --force
 ```
 
-Use after `init` to fill synonym gaps, or after adding new files to catch names that were missed.
+`--path` selects an indexed file or directory; `--force` regenerates selected
+entries even if their fingerprints are current. Use `--force` after changing
+models or generation instructions. Body-only edits that leave symbols/imports
+unchanged also require `--force`.
+
+Successful LLM responses are saved even if another batch fails. The command
+still exits with an error; rerun without `--force` to request only missing,
+short, or stale entries. `--batch-size` explicitly controls batch size when set.
+
+The cache automatically migrates to version 2 on the next write. Unique legacy
+entries are retained; ambiguous parent/file keys are dropped rather than shared
+between unrelated files. Legacy entries have no context fingerprint, so their
+first online `init` or `sync` refreshes them. Use `--offline` with `init` to migrate
+without LLM requests. Keep the CLI upgraded when sharing these cache files.
+
+Use `init` or restart `watch` after adding files, then run `sync` to fill gaps.
 
 ### `ctxt watch`
 
@@ -292,7 +309,7 @@ search-hints → load .ctxt/ctx_index.json (or query live memory) → score toke
 ## File formats
 
 - **`.ctxt/ctx_index.json`** — schema version, root path, timestamp, and indexed tree
-- **`.ctxt/ctx_cache.json`** — directory or parent/file key → synonyms for reuse
+- **`.ctxt/ctx_cache.json`** — versioned project-relative synonyms and symbol/import context fingerprints
 - **`.ctxt/ctx_config.toml`** — config-driven defaults
 - **`.ctxt/ctx_runtime.json`** — live watch discovery for memory search
 - **Bench/eval case files** — v2 format with categories (path-intent, symbol-lookup, concept-synonym, exact-file, narrow-scope, vague-intent); v1 bare array format is backward compatible

@@ -9,13 +9,14 @@ import (
 )
 
 type Node struct {
-	FullPath string           `json:"full_path"`
-	Type     string           `json:"type"`
-	Synonyms []string         `json:"synonyms,omitempty"`
-	Symbols  []string         `json:"symbols,omitempty"`
-	Size     int64            `json:"size,omitempty"`
-	ModTime  int64            `json:"mod_time,omitempty"`
-	Children map[string]*Node `json:"children,omitempty"`
+	SynonymKey string           `json:"synonym_key,omitempty"`
+	FullPath   string           `json:"full_path"`
+	Type       string           `json:"type"`
+	Synonyms   []string         `json:"synonyms,omitempty"`
+	Symbols    []string         `json:"symbols,omitempty"`
+	Size       int64            `json:"size,omitempty"`
+	ModTime    int64            `json:"mod_time,omitempty"`
+	Children   map[string]*Node `json:"children,omitempty"`
 }
 
 const MaxFileCount = 10000 // Safety limit to prevent crashes on large repos
@@ -100,11 +101,12 @@ func BuildTree(rootPath string, ignored map[string]bool) (*Node, error) {
 		}
 		name := d.Name()
 		parent.Children[name] = &Node{
-			FullPath: path,
-			Type:     nodeType,
-			ModTime:  info.ModTime().UnixNano(),
-			Size:     info.Size(),
-			Children: make(map[string]*Node),
+			FullPath:   path,
+			SynonymKey: filepath.ToSlash(rel),
+			Type:       nodeType,
+			ModTime:    info.ModTime().UnixNano(),
+			Size:       info.Size(),
+			Children:   make(map[string]*Node),
 		}
 		return nil
 	})
@@ -125,9 +127,12 @@ func pathSuffix(fullPath string) string {
 }
 
 // llmSynonymKey returns the key used for LLM synonym generation and lookup.
-// Files use parentDir/basename (pathSuffix); directories use just basename.
-// Must match CollectNamesForLLM's key logic.
+// New indexes use project-relative paths. Legacy nodes retain suffix lookup
+// until their cache is migrated.
 func llmSynonymKey(node *Node) string {
+	if node.SynonymKey != "" {
+		return node.SynonymKey
+	}
 	if node.Type == "file" {
 		return pathSuffix(node.FullPath)
 	}
@@ -163,8 +168,7 @@ func AssignSynonymsToTree(tree *Node, synonyms SynonymResponse, maxPerNode int) 
 			if node == tree {
 				return
 			}
-			name := llmSynonymKey(node)
-			node.Synonyms = sanitizeSynonyms(lexicalSynonyms(name), maxPerNode)
+			node.Synonyms = sanitizeSynonyms(lexicalSynonyms(legacySynonymKey(node)), maxPerNode)
 		})
 		return
 	}
@@ -178,7 +182,7 @@ func AssignSynonymsToTree(tree *Node, synonyms SynonymResponse, maxPerNode int) 
 		if syns, ok := synonyms[name]; ok {
 			combined = append(combined, syns...)
 		}
-		combined = append(combined, lexicalSynonyms(name)...)
+		combined = append(combined, lexicalSynonyms(legacySynonymKey(node))...)
 		node.Synonyms = sanitizeSynonyms(combined, maxPerNode)
 	})
 }

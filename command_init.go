@@ -107,7 +107,7 @@ Examples:
 			}
 			llmEndpoint, llmModel, llmKey, llmTemp, llmMaxTokens, llmProvider := resolveLLMConfig(flags, cfg.LLM)
 			LogInfof("LLM: provider=%s model=%s endpoint=%s api_key=%s", llmProvider, llmModel, endpointForLog(llmEndpoint), maskAPIKey(llmKey))
-			cache, err := LoadSynonymCache(cachePath)
+			cacheState, err := loadSynonymCacheState(cachePath)
 			if err != nil {
 				return err
 			}
@@ -118,22 +118,24 @@ Examples:
 			defer stop()
 
 			result, err := BuildIndex(BuildOptions{
-				Ctx:              ctx,
-				RootPath:         rootPath,
-				IgnoredPaths:     ignored,
-				APIKey:           llmKey,
-				Model:            llmModel,
-				BatchSize:        flags.BatchSize,
-				SynonymsPerName:  flags.SynonymsPerName,
-				SynonymsMin:      flags.SynonymsMin,
-				SynonymsMax:      flags.SynonymsMax,
-				SynonymCache:     cache,
-				MaxBatchSize:     cfg.Watch.MaxBatchSize,
-				Endpoint:         llmEndpoint,
-				Temperature:      llmTemp,
-				MaxTokens:        llmMaxTokens,
-				ParallelRequests: cfg.LLM.ParallelRequests,
-				Verbose:          flags.Verbose,
+				Ctx:                 ctx,
+				RootPath:            rootPath,
+				IgnoredPaths:        ignored,
+				APIKey:              llmKey,
+				Model:               llmModel,
+				BatchSize:           flags.BatchSize,
+				SynonymsPerName:     flags.SynonymsPerName,
+				SynonymsMin:         flags.SynonymsMin,
+				SynonymsMax:         flags.SynonymsMax,
+				SynonymCache:        cacheState.Entries,
+				CacheVersion:        cacheState.Version,
+				SynonymFingerprints: cacheState.Fingerprints,
+				MaxBatchSize:        cfg.Watch.MaxBatchSize,
+				Endpoint:            llmEndpoint,
+				Temperature:         llmTemp,
+				MaxTokens:           llmMaxTokens,
+				ParallelRequests:    cfg.LLM.ParallelRequests,
+				Verbose:             flags.Verbose,
 			})
 			if err != nil {
 				return err
@@ -143,7 +145,7 @@ Examples:
 			}
 
 			emitSynonymWarning(result.SynonymError)
-			if err := SaveSynonymCache(cachePath, result.SynonymCache); err != nil {
+			if err := saveSynonymCacheState(cachePath, synonymCacheState{Version: 2, Entries: result.SynonymCache, Fingerprints: result.SynonymFingerprints}); err != nil {
 				return err
 			}
 			if err := SaveContextIndex(outputPath, result.Index); err != nil {

@@ -8,29 +8,32 @@ import (
 )
 
 type BuildOptions struct {
-	Ctx              context.Context
-	RootPath         string
-	IgnoredPaths     map[string]bool
-	APIKey           string
-	Model            string
-	BatchSize        int
-	SynonymsPerName  int
-	SynonymsMin      int
-	SynonymsMax      int
-	SynonymCache     SynonymResponse
-	MaxBatchSize     int
-	Endpoint         string
-	Temperature      float64
-	MaxTokens        int
-	ParallelRequests int  // Concurrent LLM requests (default 1 = sequential)
-	Verbose          bool // Enable verbose progress output
+	Ctx                 context.Context
+	RootPath            string
+	IgnoredPaths        map[string]bool
+	APIKey              string
+	Model               string
+	BatchSize           int
+	SynonymsPerName     int
+	SynonymsMin         int
+	SynonymsMax         int
+	SynonymCache        SynonymResponse
+	CacheVersion        int
+	SynonymFingerprints map[string]string
+	MaxBatchSize        int
+	Endpoint            string
+	Temperature         float64
+	MaxTokens           int
+	ParallelRequests    int  // Concurrent LLM requests (default 1 = sequential)
+	Verbose             bool // Enable verbose progress output
 }
 
 type BuildResult struct {
-	Index        *ContextIndex
-	Stats        IndexStats
-	SynonymError error
-	SynonymCache SynonymResponse
+	Index               *ContextIndex
+	Stats               IndexStats
+	SynonymError        error
+	SynonymCache        SynonymResponse
+	SynonymFingerprints map[string]string
 }
 
 func BuildIndex(opts BuildOptions) (*BuildResult, error) {
@@ -84,11 +87,35 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 	LogInfof("✓ Built tree: %d files, %d directories%s", stats.TotalFiles, stats.TotalDirs, extraMsg)
 
 	names := CollectNamesForLLM(tree)
-	combined := cloneSynonymMap(opts.SynonymCache)
-	missing := missingNames(names, combined)
+	state := migrateSynonymCache(tree, synonymCacheState{Version: opts.CacheVersion, Entries: cloneSynonymMap(opts.SynonymCache), Fingerprints: opts.SynonymFingerprints})
+	combined := state.Entries
+	// Sequential execution: extract symbols FIRST, then generate synonyms with symbols context
+	var symbolCount int
+
+	// Step 1: Extract symbols (local, fast)
+	count := 0
+	walkTree(tree, func(node *Node) {
+		if node == tree || node.Type != "file" {
+			return
+		}
+		syms, err := extractSymbols(node.FullPath)
+		if err != nil {
+			return
+		}
+		node.Symbols = syms
+		count++
+		if count%100 == 0 && opts.Verbose {
+			LogInfof("  Extracting symbols: %d/%d files", count, stats.TotalFiles)
+		}
+	})
+	symbolCount = count
+
+	// Step 2: Capture the symbols/imports used for generation and freshness.
+	generationContext := collectSynonymContext(tree)
+	missing := namesNeedingSynonyms(names, combined, state.Fingerprints, generationContext.Fingerprints, opts.SynonymsMin)
 
 	if len(names) > 0 {
-		LogInfof("  %d names to process (%d cached, %d new)", len(names), len(names)-len(missing), len(missing))
+		LogInfof("  %d names to process (%d current, %d need generation)", len(names), len(names)-len(missing), len(missing))
 	}
 
 	// Check batch count in main goroutine so interactive prompt works
@@ -123,58 +150,19 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 		}
 	}
 
-	// Sequential execution: extract symbols FIRST, then generate synonyms with symbols context
-	var symbolCount int
-
-	// Step 1: Extract symbols (local, fast)
-	count := 0
-	walkTree(tree, func(node *Node) {
-		if node == tree || node.Type != "file" {
-			return
-		}
-		syms, err := extractSymbols(node.FullPath)
-		if err != nil {
-			return
-		}
-		node.Symbols = syms
-		count++
-		if count%100 == 0 && opts.Verbose {
-			LogInfof("  Extracting symbols: %d/%d files", count, stats.TotalFiles)
-		}
-	})
-	symbolCount = count
-
-	// Step 2: Build symbols and imports maps for LLM context
-	symbolsMap := make(map[string][]string)
-	importsMap := make(map[string][]string)
-	walkTree(tree, func(node *Node) {
-		if node.Type != "file" {
-			return
-		}
-		name := llmSynonymKey(node)
-		if len(node.Symbols) > 0 {
-			symbolsMap[name] = node.Symbols
-		}
-		// Imports reveal external dependencies (e.g. "@clerk/nextjs") that
-		// help the LLM generate domain-accurate synonyms for files whose
-		// own symbols are generic (e.g. POST/GET handlers in route.ts).
-		if imps := extractFileImports(node.FullPath); len(imps) > 0 {
-			importsMap[name] = imps
-		}
-	})
-
 	// Step 3: Generate synonyms with symbols + imports context
 	if runSynonyms && opts.APIKey != "" && len(missing) > 0 {
 		batchSize := opts.MaxBatchSize
 		if batchSize <= 0 {
 			batchSize = opts.BatchSize
 		}
-		generated, err := GenerateSynonymsForNamesWithContext(opts.Ctx, missing, opts.APIKey, batchSize, opts.Model, opts.Endpoint, opts.Temperature, opts.MaxTokens, opts.SynonymsMin, opts.SynonymsMax, opts.ParallelRequests, symbolsMap, importsMap)
+		generated, err := GenerateSynonymsForNamesWithContext(opts.Ctx, missing, opts.APIKey, batchSize, opts.Model, opts.Endpoint, opts.Temperature, opts.MaxTokens, opts.SynonymsMin, opts.SynonymsMax, opts.ParallelRequests, generationContext.Symbols, generationContext.Imports)
 		if err != nil {
 			synonymErr = err
 		}
 		for name, values := range generated {
 			combined[name] = sanitizeSynonyms(values, opts.SynonymsMax)
+			state.Fingerprints[name] = generationContext.Fingerprints[name]
 		}
 	}
 
@@ -189,24 +177,13 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 
 	index := &ContextIndex{
 		SchemaVersion: CurrentIndexSchema,
-		RootPath:    absRoot,
-		GeneratedAt: time.Now().UTC(),
-		Model:       opts.Model,
-		Tree:        tree,
+		RootPath:      absRoot,
+		GeneratedAt:   time.Now().UTC(),
+		Model:         opts.Model,
+		Tree:          tree,
 	}
 
-	return &BuildResult{Index: index, Stats: stats, SynonymError: synonymErr, SynonymCache: combined}, nil
-}
-
-func missingNames(names []string, cache SynonymResponse) []string {
-	missing := make([]string, 0, len(names))
-	for _, name := range names {
-		if _, ok := cache[name]; ok {
-			continue
-		}
-		missing = append(missing, name)
-	}
-	return missing
+	return &BuildResult{Index: index, Stats: stats, SynonymError: synonymErr, SynonymCache: combined, SynonymFingerprints: state.Fingerprints}, nil
 }
 
 func cloneSynonymMap(input SynonymResponse) SynonymResponse {

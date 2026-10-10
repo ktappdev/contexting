@@ -3,12 +3,16 @@ package contexting
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 )
 
 func newSyncCommand() *cobra.Command {
 	flags := CommonFlags{}
+	var force bool
+	var targetPath string
 
 	cmd := &cobra.Command{
 		Use:   "sync [path]",
@@ -17,7 +21,14 @@ func newSyncCommand() *cobra.Command {
 
 For example, a file importing "@clerk/nextjs" and "stripe" might get synonyms like "clerk webhook handler" or "payment processing route".
 
-Requires an existing index (run 'ctxt init' first).`,
+Requires an existing index (run 'ctxt init' first). Missing, short, or stale
+symbol/import context is refreshed automatically. Successful responses are saved
+when another batch fails; rerun without --force to retry unfinished entries.
+
+Examples:
+  ctxt sync .                              Refresh missing or stale synonyms
+  ctxt sync . --path command_sync.go        Select one indexed file
+  ctxt sync . --path docs --force           Regenerate an indexed directory`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var absConfigPath string
@@ -69,89 +80,87 @@ Requires an existing index (run 'ctxt init' first).`,
 				return fmt.Errorf("no context index found at %s; run 'ctxt init' first", outputPath)
 			}
 
+			if index.RootPath != absRoot {
+				return fmt.Errorf("index root path mismatch: expected %s, got %s", absRoot, index.RootPath)
+			}
+
 			// Load synonym cache
-			cache, err := LoadSynonymCache(cachePath)
+			cacheState, err := loadSynonymCacheState(cachePath)
 			if err != nil {
 				return fmt.Errorf("load synonym cache: %w", err)
 			}
 
-			// Collect all names from tree
+			cacheState = migrateSynonymCache(index.Tree, cacheState)
 			allNames := CollectNamesForLLM(index.Tree)
-			fmt.Printf("Scanning index... %d names found\n", len(allNames))
-
-			// Determine which names need synonyms
-			synonymsMin := flags.SynonymsMin
-			synonymsMax := flags.SynonymsMax
-			var needsSynonyms []string
-			var needsShort []string
-			for _, name := range allNames {
-				cached, ok := cache[name]
-				if !ok {
-					needsSynonyms = append(needsSynonyms, name)
-				} else if len(cached) < synonymsMin {
-					needsShort = append(needsShort, name)
+			if targetPath != "" {
+				resolved := resolveProjectPath(absRoot, targetPath)
+				if !isInsideProject(resolved, absRoot) {
+					return fmt.Errorf("sync path is outside project: %s", targetPath)
 				}
-			}
-
-			targets := append(needsSynonyms, needsShort...)
-			if len(targets) == 0 {
-				fmt.Printf("All names have sufficient synonyms. Nothing to do.\n")
-				return nil
-			}
-
-			fmt.Printf("%d names need synonyms (%d missing, %d short)\n", len(targets), len(needsSynonyms), len(needsShort))
-			fmt.Printf("Generating synonyms for %d names...\n", len(targets))
-
-			// Generate synonyms for targets
-			ctx, stop := signalAwareContext()
-			defer stop()
-
-			// Build symbols and imports maps for targets
-			symbolsMap := make(map[string][]string)
-			importsMap := make(map[string][]string)
-			walkTree(index.Tree, func(node *Node) {
-				if node.Type != "file" {
-					return
+				rel, err := filepath.Rel(absRoot, resolved)
+				if err != nil {
+					return err
 				}
-				name := llmSynonymKey(node)
-				if len(node.Symbols) > 0 {
-					symbolsMap[name] = node.Symbols
-				} else {
-					// Extract symbols if missing
-					if syms, err := extractSymbols(node.FullPath); err == nil && len(syms) > 0 {
-						node.Symbols = syms
-						symbolsMap[name] = syms
+				prefix := filepath.ToSlash(rel)
+				filtered := make([]string, 0)
+				for _, name := range allNames {
+					if prefix == "." || name == prefix || strings.HasPrefix(name, prefix+"/") {
+						filtered = append(filtered, name)
 					}
 				}
-				// Imports reveal external dependencies (e.g. "@clerk/nextjs")
-				// that help the LLM generate domain-accurate synonyms.
-				if imps := extractFileImports(node.FullPath); len(imps) > 0 {
-					importsMap[name] = imps
+				allNames = filtered
+				if len(allNames) == 0 {
+					return fmt.Errorf("sync path is not indexed: %s", targetPath)
 				}
-			})
-
-			generated, err := GenerateSynonymsForNamesWithContext(ctx, targets, llmKey, cfg.Watch.MaxBatchSize, llmModel, llmEndpoint, llmTemp, llmMaxTokens, synonymsMin, synonymsMax, cfg.LLM.ParallelRequests, symbolsMap, importsMap)
-			if err != nil {
-				return fmt.Errorf("generate synonyms: %w", err)
 			}
+			if err := refreshSynonymSymbols(index.Tree, allNames); err != nil {
+				return err
+			}
+			generationContext := collectSynonymContext(index.Tree)
+			cache := cacheState.Entries
+			synonymsMin, synonymsMax := flags.SynonymsMin, flags.SynonymsMax
+			targets := namesNeedingSynonyms(allNames, cache, cacheState.Fingerprints, generationContext.Fingerprints, synonymsMin)
+			if force {
+				targets = allNames
+			}
+			if len(targets) == 0 {
+				fmt.Println("All selected names have sufficient, current synonyms. Nothing to do.")
+				return nil
+			}
+			fmt.Printf("Generating synonyms for %d missing, short, stale, or explicitly selected names...\n", len(targets))
+			ctx, stop := signalAwareContext()
+			defer stop()
+			batchSize := cfg.Watch.MaxBatchSize
+			if cmd.Flags().Changed("batch-size") || batchSize <= 0 {
+				batchSize = flags.BatchSize
+			}
+
+			generated, err := GenerateSynonymsForNamesWithContext(ctx, targets, llmKey, batchSize, llmModel, llmEndpoint, llmTemp, llmMaxTokens, synonymsMin, synonymsMax, cfg.LLM.ParallelRequests, generationContext.Symbols, generationContext.Imports)
+			generationErr := err
 
 			// Update cache with new synonyms
 			for name, syns := range generated {
 				cache[name] = sanitizeSynonyms(syns, synonymsMax)
+				cacheState.Fingerprints[name] = generationContext.Fingerprints[name]
 			}
 
 			// Update tree nodes with new synonyms
 			AssignSynonymsToTree(index.Tree, cache, synonymsMax)
+			index.GeneratedAt = time.Now().UTC()
+			index.Model = llmModel
 
 			// Flush updated cache and index
-			if err := SaveSynonymCache(cachePath, cache); err != nil {
+			if err := saveSynonymCacheState(cachePath, cacheState); err != nil {
 				return fmt.Errorf("save synonym cache: %w", err)
 			}
 			if err := SaveContextIndex(outputPath, index); err != nil {
 				return fmt.Errorf("save context index: %w", err)
 			}
 
-			fmt.Printf("Done. Updated %d names. %s flushed.\n", len(targets), filepath.Base(outputPath))
+			if generationErr != nil {
+				return fmt.Errorf("saved %d successful names; rerun ctxt sync to retry unfinished names: %w", len(generated), generationErr)
+			}
+			fmt.Printf("Done. Updated %d names. %s flushed.\n", len(generated), filepath.Base(outputPath))
 			return nil
 		},
 	}
@@ -168,5 +177,7 @@ Requires an existing index (run 'ctxt init' first).`,
 	cmd.Flags().StringVar(&flags.SymbolExtractor, "symbol-extractor", "auto", "Symbol extraction engine: auto, treesitter, regex")
 	cmd.Flags().BoolVarP(&flags.Verbose, "verbose", "v", false, "Enable verbose logging")
 
+	cmd.Flags().BoolVar(&force, "force", false, "Regenerate all selected names, including current cache entries")
+	cmd.Flags().StringVar(&targetPath, "path", "", "Only sync an indexed file or directory relative to the project root")
 	return cmd
 }
