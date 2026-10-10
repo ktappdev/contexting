@@ -52,7 +52,7 @@ Remote LLM endpoints must use HTTPS; HTTP is accepted only on loopback.
 
 **Synonyms:** Each node (file or directory) gets 5–12 LLM-generated synonyms via batched API calls to an OpenAI-compatible endpoint. For example, `Skeletons.tsx → ["skeletons", "loading", "placeholder", "animation"]`. Names are smart-batched (up to 60 per request, 10 parallel by default). The prompt includes extracted symbols and, for JS/TS files, ESM imports to generate contextual terms. Use `--offline` to guarantee that no LLM requests are made.
 
-**Bootstrap diff:** On subsequent runs, `init` diffs the filesystem against the existing snapshot using file modification times. Deleted files are removed, new files are added, modified files are re-extracted. No LLM calls for existing synonyms — run `ctxt sync` to fill gaps. Synonym keys use `parentDir/basename` (e.g., `webhook/route.ts`) instead of bare basenames to prevent duplicate filenames from overwriting each other in the synonym map.
+**Bootstrap diff:** On subsequent runs, `watch` diffs the filesystem against the existing snapshot using file modification times and sizes. Timestamp-preserving edits with a different size are detected; edits preserving both size and timestamp require a full rebuild. Deleted files are removed, new files are added, modified files are re-extracted. No LLM calls for existing synonyms — run `ctxt sync` to fill gaps. Synonym keys use `parentDir/basename` (e.g., `webhook/route.ts`) instead of bare basenames to prevent duplicate filenames from overwriting each other in the synonym map.
 
 ### Search mechanics
 
@@ -77,7 +77,7 @@ The `--explain` flag reveals this breakdown:
 basename contains +7: skeleton + syn exact +8: loading + sym contains +5: PageSkeleton = total 148
 ```
 
-Results are ranked by total score. Low-signal short/common words are filtered from query and synonym matching to reduce noise. Results are truncated at confidence gaps — if there's a 50%+ score drop between consecutive results, lower-scoring results are omitted even if `--limit` would include them.
+Results are ranked by total score. Low-signal short/common words are filtered from query and synonym matching to reduce noise. Results are truncated at confidence gaps — if there's a 50%+ score drop between consecutive results, lower-scoring results are omitted even if `--limit` would include them. Exact filename/symbol lookups can return just one strong match; conceptual queries retain up to three alternatives. Zero-score candidates are never returned.
 
 ### Watch mode
 
@@ -145,7 +145,7 @@ Flags:
 - `--memory` (default true) — query live watch index first, fall back to snapshot
 - `--memory-only` — fail if live memory unavailable
 - `--runtime-file` — path to runtime discovery file (default `.ctxt/ctx_runtime.json`)
-- `--hybrid` — augment index results with content matching via ripgrep (default false)
+- `--hybrid` — augment index results by searching indexed files with ripgrep (default false); honors type and minimum-score filters
 - `--hybrid-score` — score assigned to content-matched results (default 1)
 - `--hybrid-root` — project root for content matching (defaults to index root)
 
@@ -272,11 +272,12 @@ Contexting loads common `.gitignore` patterns by default. Additional ignores com
 2. **`.gitignore` patterns** — loaded from the project root
 3. **`ignore` in config** — extra patterns merged with defaults
 
-Ignore sources are additive. Negated `.gitignore` rules (`!path`) are not
-supported, so a later rule cannot re-include an earlier ignored path. Symlink
-entries are not followed or indexed.
+Root `.gitignore` rules support ordered negation (`!path`), rooted patterns,
+directory-only patterns, and `**` globs. Negation can undo earlier Git rules,
+but cannot re-include an excluded parent directory or override built-in/config
+exclusions. Symlink entries are not followed or indexed.
 
-**Dot files** are skipped by default (any path segment starting with `.`). whitelisted dot files (`.env`, `.prettierrc`, `.editorconfig`, etc.) are kept. Add more via `dot_whitelist` in config.
+**Dot files** are skipped by default (any path segment starting with `.`). whitelisted dot files (`.env.example`, `.prettierrc`, `.editorconfig`, etc.) remain eligible unless explicitly ignored. Add more via `dot_whitelist` in config.
 
 ## Data flow
 

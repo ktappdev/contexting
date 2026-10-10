@@ -120,6 +120,7 @@ func NewIndexManager(opts IndexManagerOptions) *IndexManager {
 
 type fsEntry struct {
 	mtime int64
+	size  int64
 	isDir bool
 }
 
@@ -130,6 +131,7 @@ func collectFilesystemState(rootPath string, ignored map[string]bool) (map[strin
 	}
 
 	state := make(map[string]fsEntry)
+	matcher := newIgnoreMatcher(ignored)
 	fileCount := 0
 	err = filepath.WalkDir(absRoot, func(path string, d os.DirEntry, walkErr error) error {
 		if walkErr != nil {
@@ -147,7 +149,7 @@ func collectFilesystemState(rootPath string, ignored map[string]bool) (map[strin
 			return nil
 		}
 
-		if shouldIgnorePath(rel, d.Name(), ignored) {
+		if matcher.shouldIgnore(rel, d.Name(), d.IsDir()) {
 			if d.IsDir() {
 				return filepath.SkipDir
 			}
@@ -166,7 +168,7 @@ func collectFilesystemState(rootPath string, ignored map[string]bool) (map[strin
 			if err != nil {
 				return nil // skip files we can't stat
 			}
-			state[normalized] = fsEntry{mtime: info.ModTime().UnixNano(), isDir: false}
+			state[normalized] = fsEntry{mtime: info.ModTime().UnixNano(), size: info.Size()}
 		}
 		return nil
 	})
@@ -257,8 +259,8 @@ func (m *IndexManager) Bootstrap(ctx context.Context) (IndexStats, error) {
 						}
 						continue
 					}
-					// Check modified file (mtime changed)
-					if !entry.isDir && entry.mtime > 0 && entry.mtime != node.ModTime {
+					// Compare size too: tools can preserve timestamps when replacing files.
+					if !entry.isDir && (entry.mtime != node.ModTime || entry.size != node.Size) {
 						if upsertNodeByRelPath(m.index.Tree, absRoot, relPath, entry.isDir, entry.mtime, m.cache, m.synonymsMax) {
 							changesDetected = true
 							modifiedCount++
@@ -349,7 +351,7 @@ func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsno
 			}
 			snapshot := collectSnapshotPaths(m.index.Tree)
 			for path, entry := range state {
-				if node, ok := snapshot[path]; !ok || (node.Type == "directory") != entry.isDir || (!entry.isDir && node.ModTime != entry.mtime) {
+				if node, ok := snapshot[path]; !ok || (node.Type == "directory") != entry.isDir || (!entry.isDir && (node.ModTime != entry.mtime || node.Size != entry.size)) {
 					merged[path] |= fsnotify.Create
 				}
 			}
@@ -357,6 +359,7 @@ func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsno
 			break
 		}
 	}
+	matcher := newIgnoreMatcher(m.ignored)
 	paths := make([]string, 0, len(changes))
 	for path := range changes {
 		paths = append(paths, path)
@@ -393,7 +396,7 @@ func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsno
 			return result, statErr
 		}
 
-		if shouldIgnorePath(relPath, baseName, m.ignored) {
+		if matcher.shouldIgnore(relPath, baseName, isDir) {
 			if removeNodeByRelPath(m.index.Tree, relPath) {
 				result.Changed = true
 			}

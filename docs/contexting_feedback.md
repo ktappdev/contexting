@@ -1,5 +1,10 @@
 # Benchmark Feedback — ctxt search quality
 
+> Historical feedback from a separate monorepo. Exact basename boosts and symbol
+> scoring are implemented; confidence-gap behavior has since been refined. See
+> [the 2026-10-10 local evaluation](../bench_results/002_search_quality_2026-10-10.md)
+> for current results on this repository’s offline index.
+
 Ran `ctxt bench` with a 45-case file across a multi-language monorepo (Go + TypeScript + Svelte). 4 engines compared: ctxt, find, grep, combined. Overall results:
 
 | Engine | Hit@1 | Hit@3 | Hit@5 | Avg Time | Avg Tokens | Noise |

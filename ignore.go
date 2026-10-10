@@ -2,10 +2,14 @@ package contexting
 
 import (
 	"path/filepath"
+	"sort"
 	"strings"
+
+	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
 )
 
 const dotWhitelistKey = "__dot_whitelist__"
+const gitignoreRulesKey = "__gitignore_rules__\n"
 
 var defaultDotWhitelist = map[string]bool{
 	".prettierrc":     true,
@@ -59,10 +63,10 @@ var defaultIgnores = []string{
 
 	// Database migrations (boilerplate, low search value)
 	"migrations",
-	"pb_migrations",    // PocketBase
-	"db/migrate",       // Rails
-	"alembic",          // Python/Alembic
-	"flyway",           // Java/Flyway
+	"pb_migrations", // PocketBase
+	"db/migrate",    // Rails
+	"alembic",       // Python/Alembic
+	"flyway",        // Java/Flyway
 
 	// IDE
 	".vscode",
@@ -100,7 +104,7 @@ func BuildIgnoreMap(extra []string) map[string]bool {
 		ignored[normalizeIgnorePattern(pattern)] = true
 	}
 	for _, pattern := range extra {
-		normalized := normalizeIgnorePattern(pattern)
+		normalized := strings.TrimPrefix(strings.TrimSpace(filepath.ToSlash(pattern)), "./")
 		if normalized != "" {
 			ignored[normalized] = true
 		}
@@ -113,57 +117,74 @@ func BuildIgnoreMapForRoot(root string, extra []string) (map[string]bool, error)
 	if err != nil {
 		return nil, err
 	}
-	merged := make([]string, 0, len(patterns)+len(extra))
-	merged = append(merged, patterns...)
-	merged = append(merged, extra...)
-	return BuildIgnoreMap(merged), nil
+	ignored := BuildIgnoreMap(extra)
+	// Keep ordered Git rules separate from additive default/config exclusions.
+	ignored[gitignoreRulesKey+strings.Join(patterns, "\n")] = true
+	return ignored, nil
+}
+
+type ignoreMatcher struct {
+	exclusions gitignore.Matcher
+	gitRules   gitignore.Matcher
+	whitelist  map[string]bool
+}
+
+func newIgnoreMatcher(ignored map[string]bool) ignoreMatcher {
+	var exclusions []gitignore.Pattern
+	var gitRules []gitignore.Pattern
+	whitelist := BuildDotWhitelist(nil)
+	keys := make([]string, 0, len(ignored))
+	for key, enabled := range ignored {
+		if enabled {
+			keys = append(keys, key)
+		}
+	}
+	sort.Strings(keys)
+	for _, key := range keys {
+		switch {
+		case strings.HasPrefix(key, dotWhitelistKey):
+			whitelist[strings.TrimPrefix(key, dotWhitelistKey)] = true
+		case strings.HasPrefix(key, gitignoreRulesKey):
+			for _, line := range strings.Split(strings.TrimPrefix(key, gitignoreRulesKey), "\n") {
+				gitRules = append(gitRules, gitignore.ParsePattern(line, nil))
+			}
+		default:
+			// Config exclusions are additive; negation belongs in .gitignore.
+			if !strings.HasPrefix(key, "!") {
+				exclusions = append(exclusions, gitignore.ParsePattern(key, nil))
+			}
+		}
+	}
+	return ignoreMatcher{
+		exclusions: gitignore.NewMatcher(exclusions),
+		gitRules:   gitignore.NewMatcher(gitRules),
+		whitelist:  whitelist,
+	}
+}
+
+func (m ignoreMatcher) shouldIgnore(relPath, baseName string, isDir bool) bool {
+	normalized := normalizeIgnorePattern(relPath)
+	if normalized == "" {
+		return false
+	}
+	segments := strings.Split(normalized, "/")
+	for i, segment := range segments {
+		last := i == len(segments)-1
+		directory := !last || isDir
+		// Whitelisting a dot file must never expose its hidden parent directory.
+		if strings.HasPrefix(segment, ".") && (directory || !m.whitelist[baseName]) {
+			return true
+		}
+		path := segments[:i+1]
+		if m.exclusions.Match(path, directory) || m.gitRules.Match(path, directory) {
+			return true
+		}
+	}
+	return false
 }
 
 func shouldIgnorePath(relPath string, baseName string, ignored map[string]bool) bool {
-	normalizedRel := normalizeIgnorePattern(relPath)
-	if normalizedRel == "" {
-		return false
-	}
-
-	// Check if baseName is a whitelisted dot file
-	if strings.HasPrefix(baseName, ".") {
-		if defaultDotWhitelist[baseName] || ignored[dotWhitelistKey+baseName] {
-			return false
-		}
-	}
-
-	if isDotPath(normalizedRel) || strings.HasPrefix(normalizeIgnorePattern(baseName), ".") {
-		return true
-	}
-
-	if len(ignored) == 0 {
-		return false
-	}
-
-	if ignored[normalizeIgnorePattern(baseName)] || ignored[normalizedRel] {
-		return true
-	}
-
-	for pattern := range ignored {
-		if !strings.Contains(pattern, "*") {
-			continue
-		}
-		if matched, _ := filepath.Match(pattern, normalizeIgnorePattern(baseName)); matched {
-			return true
-		}
-		if matched, _ := filepath.Match(pattern, normalizedRel); matched {
-			return true
-		}
-	}
-
-	segments := strings.Split(normalizedRel, "/")
-	for _, segment := range segments {
-		if ignored[segment] {
-			return true
-		}
-	}
-
-	return false
+	return newIgnoreMatcher(ignored).shouldIgnore(relPath, baseName, false)
 }
 
 func normalizeIgnorePattern(path string) string {
@@ -173,14 +194,4 @@ func normalizeIgnorePattern(path string) string {
 	}
 	normalized := filepath.ToSlash(trimmed)
 	return strings.Trim(normalized, "/")
-}
-
-func isDotPath(normalizedRel string) bool {
-	segments := strings.Split(normalizedRel, "/")
-	for _, segment := range segments {
-		if strings.HasPrefix(segment, ".") {
-			return true
-		}
-	}
-	return false
 }

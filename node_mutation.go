@@ -79,6 +79,14 @@ func upsertNodeByRelPath(root *Node, absRoot string, relPath string, isDir bool,
 	if isDir {
 		nodeType = "directory"
 	}
+	var size int64
+	if !isDir {
+		info, err := os.Lstat(fullPath)
+		if err != nil || !info.Mode().IsRegular() {
+			return changed
+		}
+		size = info.Size()
+	}
 	nodeSynonyms := buildNodeSynonyms(llmSynonymKey(&Node{FullPath: fullPath, Type: nodeType}), cache, maxSynonyms)
 
 	node, ok := parent.Children[name]
@@ -93,6 +101,7 @@ func upsertNodeByRelPath(root *Node, absRoot string, relPath string, isDir bool,
 			Synonyms: nodeSynonyms,
 			Symbols:  symList,
 			ModTime:  mtime,
+			Size:     size,
 			Children: make(map[string]*Node),
 		}
 		return true
@@ -112,6 +121,10 @@ func upsertNodeByRelPath(root *Node, absRoot string, relPath string, isDir bool,
 	}
 	if node.Children == nil {
 		node.Children = make(map[string]*Node)
+		changed = true
+	}
+	if node.Size != size {
+		node.Size = size
 		changed = true
 	}
 	if node.ModTime != mtime {

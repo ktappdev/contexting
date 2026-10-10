@@ -13,6 +13,7 @@ type Node struct {
 	Type     string           `json:"type"`
 	Synonyms []string         `json:"synonyms,omitempty"`
 	Symbols  []string         `json:"symbols,omitempty"`
+	Size     int64            `json:"size,omitempty"`
 	ModTime  int64            `json:"mod_time,omitempty"`
 	Children map[string]*Node `json:"children,omitempty"`
 }
@@ -39,6 +40,7 @@ func BuildTree(rootPath string, ignored map[string]bool) (*Node, error) {
 		Children: make(map[string]*Node),
 	}
 
+	matcher := newIgnoreMatcher(ignored)
 	fileCount := 0
 	err = filepath.WalkDir(absRoot, func(path string, d os.DirEntry, walkErr error) error {
 		if walkErr != nil {
@@ -59,7 +61,7 @@ func BuildTree(rootPath string, ignored map[string]bool) (*Node, error) {
 			return nil
 		}
 
-		if shouldIgnorePath(rel, d.Name(), ignored) {
+		if matcher.shouldIgnore(rel, d.Name(), d.IsDir()) {
 			if d.IsDir() {
 				return filepath.SkipDir
 			}
@@ -92,10 +94,16 @@ func BuildTree(rootPath string, ignored map[string]bool) (*Node, error) {
 			}
 		}
 
+		info, err := d.Info()
+		if err != nil {
+			return err
+		}
 		name := d.Name()
 		parent.Children[name] = &Node{
 			FullPath: path,
 			Type:     nodeType,
+			ModTime:  info.ModTime().UnixNano(),
+			Size:     info.Size(),
 			Children: make(map[string]*Node),
 		}
 		return nil

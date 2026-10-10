@@ -91,14 +91,8 @@ func LoadGitignorePatterns(path string) ([]string, error) {
 	patterns := make([]string, 0, 32)
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, "!") {
-			continue
-		}
-		line = strings.TrimPrefix(line, "./")
-		line = strings.TrimPrefix(line, "/")
-		line = strings.TrimSuffix(line, "/")
-		if line == "" {
+		line := strings.TrimSuffix(scanner.Text(), "\r")
+		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
 		patterns = append(patterns, line)
@@ -106,5 +100,6 @@ func LoadGitignorePatterns(path string) ([]string, error) {
 	if err := scanner.Err(); err != nil {
 		return nil, fmt.Errorf("read .gitignore: %w", err)
 	}
-	return dedupeStrings(patterns), nil
+	// Order and duplicates matter: the last matching rule wins.
+	return patterns, nil
 }

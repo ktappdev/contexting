@@ -30,7 +30,7 @@ type EngineResult struct {
 	HitAt1     bool     `json:"hit_at_1"`
 	HitAt3     bool     `json:"hit_at_3"`
 	HitAt5     bool     `json:"hit_at_5"`
-	NoiseRatio float64  `json:"noise_ratio"`     // 1.0 - (relevantResults / totalResults)
+	NoiseRatio float64  `json:"noise_ratio"` // 1.0 - (relevantResults / totalResults)
 }
 
 // EngineSummary aggregates results for one engine across all cases.
@@ -99,6 +99,7 @@ func (unixFindEngine) Search(query string, expectAny []string, index *ContextInd
 	if err != nil {
 		return EngineResult{EngineName: "find", Error: fmt.Sprintf("build ignore map: %v", err)}
 	}
+	matcher := newIgnoreMatcher(ignored)
 	cmd := exec.Command("find", index.RootPath, "-type", "f")
 	cmd.Dir = index.RootPath
 	out, runErr := cmd.Output()
@@ -117,7 +118,7 @@ func (unixFindEngine) Search(query string, expectAny []string, index *ContextInd
 		if relErr != nil {
 			continue
 		}
-		if shouldIgnorePath(rel, filepath.Base(rel), ignored) {
+		if matcher.shouldIgnore(rel, filepath.Base(rel), false) {
 			continue
 		}
 		if tokensMatchPath(rel, "", queryTokens) {
@@ -196,6 +197,7 @@ func (grepEngine) Search(query string, expectAny []string, index *ContextIndex, 
 	}
 	queryTokens := tokenize(query)
 	results := make([]string, 0)
+	matcher := newIgnoreMatcher(ignored)
 	err = filepath.WalkDir(index.RootPath, func(path string, d os.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
@@ -207,7 +209,7 @@ func (grepEngine) Search(query string, expectAny []string, index *ContextIndex, 
 		if rel == "." {
 			return nil
 		}
-		if shouldIgnorePath(rel, d.Name(), ignored) {
+		if matcher.shouldIgnore(rel, d.Name(), d.IsDir()) {
 			if d.IsDir() {
 				return filepath.SkipDir
 			}
@@ -387,8 +389,6 @@ func tokensMatchContent(content string, tokens []string) bool {
 	}
 	return false
 }
-
-
 
 func hasNullByte(data []byte, limit int) bool {
 	if limit > len(data) {

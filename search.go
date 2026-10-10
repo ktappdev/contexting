@@ -2,7 +2,6 @@ package contexting
 
 import (
 	"encoding/json"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -25,7 +24,7 @@ type SearchResponse struct {
 }
 
 type SearchOptions struct {
-	Limit        int
+	Limit             int
 	MinScore          int
 	TypeFilter        string
 	IncludeDebug      bool
@@ -114,7 +113,7 @@ func SearchHintsWithOptions(index *ContextIndex, query string, opts SearchOption
 					continue
 				}
 				if len(token) < 3 || len(synLower) < 3 {
-				continue
+					continue
 				}
 				if strings.Contains(synLower, token) || strings.Contains(token, synLower) {
 					score += 5
@@ -162,7 +161,7 @@ func SearchHintsWithOptions(index *ContextIndex, query string, opts SearchOption
 			breakdown = append(breakdown, "file bias +1")
 		}
 
-		if score < opts.MinScore {
+		if score <= 0 || score < opts.MinScore {
 			return
 		}
 
@@ -189,7 +188,14 @@ func SearchHintsWithOptions(index *ContextIndex, query string, opts SearchOption
 	})
 
 	// Apply confidence gap heuristic to reduce noise
-	if len(results) > 3 {
+	if len(results) > 1 {
+		literalMatch := false
+		for _, match := range results[0].Matches {
+			if strings.HasPrefix(match, "exact-basename:") || strings.HasPrefix(match, "sym-exact:") {
+				literalMatch = true
+				break
+			}
+		}
 		cutoff := len(results)
 		for i := 1; i < len(results); i++ {
 			// If score drops by more than half from previous result, cut here
@@ -198,8 +204,9 @@ func SearchHintsWithOptions(index *ContextIndex, query string, opts SearchOption
 				break
 			}
 		}
-		// Don't cut below 3 results if scores are still positive
-		if cutoff < 3 && len(results) >= 3 && results[2].Score > 0 {
+		// Conceptual queries benefit from alternatives; literal lookups can stop
+		// at the first clear gap without padding the response to three results.
+		if !literalMatch && cutoff < 3 && len(results) >= 3 {
 			cutoff = 3
 		}
 		if cutoff < len(results) {
@@ -207,54 +214,23 @@ func SearchHintsWithOptions(index *ContextIndex, query string, opts SearchOption
 		}
 	}
 
-	// Content fallback: run ripgrep to find files by content when enabled
-	if opts.ContentFallback && index != nil {
-		root := opts.ContentRoot
-		if root == "" {
-			root = index.RootPath
+	if opts.ContentFallback && passesTypeFilter(&Node{Type: "file"}, opts.TypeFilter) {
+		existing := make(map[string]bool, len(results))
+		for _, result := range results {
+			existing[filepath.Clean(result.Path)] = true
 		}
-		score := opts.ContentMatchScore
-		if score <= 0 {
-			score = 1
-		}
-		pattern := strings.Join(tokens, "|")
-		cmd := exec.Command("rg", "--files-with-matches", "--no-heading", "--ignore-case", "-e", pattern, root)
-		cmd.Dir = root
-		out, err := cmd.Output()
-		if err == nil || (err != nil && isExitCode1(err)) {
-			existing := make(map[string]bool, len(results))
-			for _, r := range results {
-				existing[strings.ToLower(filepath.ToSlash(r.Path))] = true
+		for _, result := range searchIndexedContent(index, tokens, opts) {
+			if !existing[filepath.Clean(result.Path)] {
+				existing[filepath.Clean(result.Path)] = true
+				results = append(results, result)
 			}
-			lines := strings.Split(strings.TrimSpace(string(out)), "\n")
-			for _, absPath := range lines {
-				absPath = strings.TrimSpace(absPath)
-				if absPath == "" {
-					continue
-				}
-				rel, relErr := filepath.Rel(root, absPath)
-				if relErr != nil {
-					continue
-				}
-				norm := strings.ToLower(filepath.ToSlash(rel))
-				if existing[norm] {
-					continue
-				}
-				existing[norm] = true
-				results = append(results, SearchResult{
-					Path:  rel,
-					Type:  "file",
-					Score: score,
-					Matches: []string{"content"},
-				})
-			}
-			sort.Slice(results, func(i, j int) bool {
-				if results[i].Score != results[j].Score {
-					return results[i].Score > results[j].Score
-				}
-				return results[i].Path < results[j].Path
-			})
 		}
+		sort.Slice(results, func(i, j int) bool {
+			if results[i].Score != results[j].Score {
+				return results[i].Score > results[j].Score
+			}
+			return results[i].Path < results[j].Path
+		})
 	}
 
 	if len(results) > opts.Limit {
@@ -262,13 +238,6 @@ func SearchHintsWithOptions(index *ContextIndex, query string, opts SearchOption
 	}
 
 	return results
-}
-
-func isExitCode1(err error) bool {
-	if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
-		return true
-	}
-	return false
 }
 
 func hasSegmentPrefix(segments []string, token string) bool {

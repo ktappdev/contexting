@@ -14,6 +14,7 @@ import (
 
 func syncWatchDirectories(watcher *fsnotify.Watcher, root string, ignored map[string]bool, watched map[string]struct{}) error {
 	seen := make(map[string]struct{})
+	matcher := newIgnoreMatcher(ignored)
 
 	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
@@ -34,7 +35,7 @@ func syncWatchDirectories(watcher *fsnotify.Watcher, root string, ignored map[st
 		if err != nil {
 			return err
 		}
-		if rel != "." && shouldIgnorePath(rel, d.Name(), ignored) {
+		if rel != "." && matcher.shouldIgnore(rel, d.Name(), true) {
 			return filepath.SkipDir
 		}
 
@@ -77,7 +78,9 @@ func shouldSkipEvent(root string, event fsnotify.Event, ignored map[string]bool,
 	if rel == "." {
 		return false
 	}
-	return shouldIgnorePath(rel, filepath.Base(event.Name), ignored)
+	info, statErr := os.Lstat(event.Name)
+	isDir := statErr == nil && info.IsDir()
+	return newIgnoreMatcher(ignored).shouldIgnore(rel, filepath.Base(event.Name), isDir)
 }
 
 // isInsideProject returns true if path is inside rootPath or equals rootPath.
