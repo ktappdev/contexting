@@ -1,5 +1,10 @@
 # Benchmark Reports
 
+Reports 001–003 used the old evaluator: suffix-based expected-path matching,
+unlimited baseline results, and the old metric labels. Their percentages are
+historical observations and are not comparable to report version 2. Report 004
+establishes the corrected baseline; earlier ranking gains remain provisional.
+
 ## Purpose
 
 This directory contains benchmark reports tracking contexting's search performance over time. Each report captures a point-in-time snapshot so you can compare before/after changes to scoring algorithms, synonym generation, symbol extraction, or other search-related features.

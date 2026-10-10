@@ -283,6 +283,9 @@ func TestBenchLoadEvalCasesRoundTrip(t *testing.T) {
 }
 
 func TestComputeHitAtK(t *testing.T) {
+	if hit, _, _, rank := computeHitAtK([]string{"command_search.go", "memory_search.go", "src/search.go", "Search.go"}, []string{"search.go"}); hit || rank != -1 {
+		t.Fatalf("suffixes, nested paths, and case variants must not satisfy an exact expected path: rank=%d", rank)
+	}
 	paths := []string{"src/a.go", "src/b.go", "src/c.go", "src/d.go"}
 	expectAny := []string{"src/b.go"}
 
@@ -360,14 +363,14 @@ func TestEngineResultTokenCounting(t *testing.T) {
 		GrepMaxBytes: 1048576,
 	})
 	res := out.Results[0][0]
-	if res.Chars == 0 {
-		t.Errorf("expected non-zero chars, got %d", res.Chars)
+	if res.PathBytes == 0 {
+		t.Errorf("expected non-zero chars, got %d", res.PathBytes)
 	}
-	if res.Tokens == 0 {
-		t.Errorf("expected non-zero tokens, got %d", res.Tokens)
+	if res.EstimatedPathTokens == 0 {
+		t.Errorf("expected non-zero tokens, got %d", res.EstimatedPathTokens)
 	}
-	if res.Tokens != res.Chars/4 {
-		t.Errorf("expected tokens %d (chars/4), got %d", res.Chars/4, res.Tokens)
+	if res.EstimatedPathTokens != res.PathBytes/4 {
+		t.Errorf("expected tokens %d (chars/4), got %d", res.PathBytes/4, res.EstimatedPathTokens)
 	}
 }
 
@@ -398,12 +401,15 @@ func TestSummaryHitAtK(t *testing.T) {
 	if s.HitAt5 < 0 || s.HitAt5 > 1 {
 		t.Errorf("expected HitAt5 between 0 and 1, got %f", s.HitAt5)
 	}
-	if s.AvgTokens < 0 {
-		t.Errorf("expected non-negative AvgTokens, got %f", s.AvgTokens)
+	if s.AvgEstimatedPathTokens < 0 {
+		t.Errorf("expected non-negative AvgTokens, got %f", s.AvgEstimatedPathTokens)
 	}
 }
 
 func TestCountRelevantPaths(t *testing.T) {
+	if got := countRelevantPaths([]string{"command_search.go", "src/search.go", "Search.go"}, []string{"search.go"}); got != 0 {
+		t.Fatalf("expected no exact relevant paths, got %d", got)
+	}
 	paths := []string{"src/a.go", "src/b.go", "src/c.go"}
 	expectAny := []string{"src/b.go"}
 	if got := countRelevantPaths(paths, expectAny); got != 1 {
@@ -460,16 +466,16 @@ func TestSummaryNoiseRatio(t *testing.T) {
 	paths := []string{"src/a.go", "src/b.go", "src/c.go", "src/d.go"}
 	expectAny := []string{"src/a.go"}
 	results := []EngineResult{{
-		EngineName: "ctxt",
-		Paths:      paths,
-		TotalHits:  len(paths),
-		NoiseRatio: computeNoiseRatio(paths, expectAny),
-		HitAt1:     true,
-		HitAt3:     true,
-		HitAt5:     true,
-		Found:      true,
-		Rank:       1,
-		Tokens:     4,
+		EngineName:          "ctxt",
+		Paths:               paths,
+		TotalHits:           len(paths),
+		NoiseRatio:          computeNoiseRatio(paths, expectAny),
+		HitAt1:              true,
+		HitAt3:              true,
+		HitAt5:              true,
+		Found:               true,
+		Rank:                1,
+		EstimatedPathTokens: 4,
 	}}
 	cases := []EvalCase{
 		{Query: "a", ExpectAny: expectAny, Category: "symbol-lookup"},
@@ -528,9 +534,9 @@ func TestCategoryReportJSON(t *testing.T) {
 		MinScore:     1,
 		GrepMaxBytes: 1048576,
 	})
-	jsonStr, err := categoryReportToJSON(cases, out.Results, 5)
+	jsonStr, err := resultsToJSONBench(out)
 	if err != nil {
-		t.Fatalf("categoryReportToJSON error: %v", err)
+		t.Fatalf("resultsToJSONBench error: %v", err)
 	}
 	var parsed map[string]any
 	if err := json.Unmarshal([]byte(jsonStr), &parsed); err != nil {
@@ -539,8 +545,8 @@ func TestCategoryReportJSON(t *testing.T) {
 	if _, ok := parsed["categories"]; !ok {
 		t.Errorf("missing 'categories' key in JSON")
 	}
-	if _, ok := parsed["overall"]; !ok {
-		t.Errorf("missing 'overall' key in JSON")
+	if _, ok := parsed["summary"]; !ok {
+		t.Errorf("missing 'summary' key in JSON")
 	}
 }
 

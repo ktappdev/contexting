@@ -155,10 +155,12 @@ Default ignores: `.venv`, `site-packages`, `__pycache__`, `node_modules`, `.env*
 |--------|--------------|----------|
 | **ctxt** | Precomputed index — symbols, synonyms, path scoring. Ranked. | Default. When you want relevance-ranked results. |
 | **find** | Unix `find` — lists all files, filters by name tokens. Alphabetical. | Baseline filename search. |
-| **fd** | Faster `find` alternative — respects `.gitignore`. Alphabetical. | Gitignore-aware filename baseline. |
-| **grep** | Unix `grep` — searches file contents for tokens. Alphabetical. | Baseline content search, no gitignore. |
-| **rg** | ripgrep — faster `grep`, respects `.gitignore`. Alphabetical. | Gitignore-aware content baseline. |
-| **hybrid** | ctxt + content fallback via ripgrep. Content matches at score=1. | When index might have blind spots. Slower (7ms avg). |
+| **fd** | External `fd` — filename filtering on the shared indexed file set. Alphabetical. | Gitignore-aware filename baseline. |
+| **grep** | Unix `grep` — literal token content search on indexed files. Alphabetical. | Baseline content search using the shared index ignore policy. |
+| **rg** | External ripgrep — literal content search on indexed files. Alphabetical. | Gitignore-aware content baseline. |
+| **hybrid** | ctxt + content fallback via ripgrep. Content matches at score=1. | When index might have blind spots. Includes a ripgrep subprocess. |
 | **combined** | Union of find + grep. Alphabetical. | Maximum recall at cost of noise. |
+
+Bench comparisons use exact expected paths, files only, identical result limits, actual executables, and repeated timings. Report version 2 labels success rate and estimated path tokens explicitly.
 
 Run: `ctxt bench --cases docs/bench_cases.json --engines ctxt,hybrid,find,grep,rg`

@@ -17,7 +17,7 @@ This helps you understand:
 ctxt bench --cases docs/bench_cases.json
 ```
 
-This runs the default engines (ctxt, find, grep) against the case file and prints a summary.
+This runs the default engines (ctxt, find, grep), with one warmup and five measured runs per query. Every engine returns at most 10 files from the same indexed file set. Expected paths must identify exact project-relative files, including case.
 
 ### Run specific engines
 
@@ -54,10 +54,10 @@ ctxt bench \
 | Engine | What it does |
 |--------|--------------|
 | **ctxt** | Uses the precomputed index with symbols, synonyms, and path scoring. Ranked results. |
-| **find** | Walks the filesystem and matches tokens against filenames. Alphabetical results. |
-| **fd** | Like find but respects .gitignore and is faster. Alphabetical results. |
-| **grep** | Walks the filesystem and matches tokens against file contents. Alphabetical results. |
-| **rg** | ripgrep — like grep but respects .gitignore and is faster. Alphabetical results. |
+| **find** | Executes find, intersects its file list with the index, and filters by query tokens. Alphabetical results. |
+| **fd** | Executes fd with native ignore filtering disabled, then applies the same indexed file set and token filter as find. Alphabetical results. |
+| **grep** | Executes grep with fixed-string, case-insensitive patterns against explicit indexed files. Alphabetical results. |
+| **rg** | Executes ripgrep with the same fixed-string patterns and explicit indexed files. Alphabetical results. |
 | **hybrid** | ctxt index + ripgrep content fallback for sparse results. Content matches at score=1. |
 | **combined** | Union of find and grep results. Alphabetical results. |
 
@@ -70,14 +70,15 @@ ctxt bench \
 | **Hit@1** | The correct file appeared as the first result |
 | **Hit@3** | The correct file appeared in the top 3 results |
 | **Hit@5** | The correct file appeared in the top 5 results |
-| **Recall** | Percentage of cases where the engine found the correct file anywhere in results |
-| **Avg Time** | Average time per query in milliseconds |
-| **Avg Tokens** | Average total characters in results / 4 (heuristic for output size) |
-| **Noise Ratio** | 1.0 - (relevant results / total results). Lower is better. 0.0 means no noise. |
+| **Success** | Percentage of queries with any acceptable expected file within the shared result limit; this is not conventional document recall |
+| **Avg Time / p50 / p95** | Measurements pooled across repeated adapter calls, in fractional milliseconds; warmups and failed cases are excluded |
+| **Estimated path tokens** | Sum of returned path bytes / 4; excludes JSON, metadata, separators, and file contents |
+| **Noise Ratio** | 1.0 - (labeled acceptable results / total returned results). Unlabeled files count as noise, so labels must include all acceptable answers. Empty results have zero noise but also zero success. |
+| **Errors** | Cases where an executable is missing or execution fails. These cause a nonzero CLI exit and are separate from search misses. |
 
 **What to look for:**
 - High Hit@1 means the engine usually puts the right file first
-- High recall means the engine finds the right file, even if not first
+- High success means an acceptable file appears within the same result budget
 - Low noise ratio means the engine doesn't return irrelevant files
 - Fast time is good, but accuracy matters more for most use cases
 
@@ -179,9 +180,7 @@ The case file (`docs/bench_cases.json`) uses a v2 format with categories:
         {
           "query": "where is the search scoring logic",
           "expect_any": ["search.go"],
-          "description": "Search scoring logic is in the file literally named search.go",
-          "find_pattern": "search.go",
-          "grep_pattern": "SearchHints|SearchResult"
+          "description": "Search scoring logic is in search.go"
         }
       ]
     }
@@ -193,12 +192,11 @@ The case file (`docs/bench_cases.json`) uses a v2 format with categories:
 - `query`: The search query to run
 - `expect_any`: Array of acceptable file paths (any match counts as success)
 - `description`: Human-readable explanation of what the case tests
-- `find_pattern`: Pattern for the find engine to match
-- `grep_pattern`: Pattern for the grep engine to match
+Every engine receives the same query. There are no engine-specific query hints. Expected paths are checked against the indexed file list before execution.
 
 ## Adding Your Own Cases
 
-1. Create a new JSON file following the v2 format above
+1. Create a JSON file outside the indexed corpus (for example `.ctxt/validation_cases.json`) following the v2 format above
 2. Add categories and cases that reflect your project's structure
 3. Run the benchmark with your file:
 
@@ -210,7 +208,7 @@ ctxt bench --cases your_cases.json
 - Cover different scenarios: exact names, concepts, symbols, vague intent
 - Use real queries you or agents would actually type
 - Include both easy cases (exact filename) and hard cases (conceptual)
-- Test edge cases specific to your project's naming conventions
+- Include similar suffixes, duplicate basenames, and case-sensitive paths. List every acceptable file explicitly.
 
 ## Interpreting Results
 
@@ -220,13 +218,41 @@ ctxt bench --cases your_cases.json
 - **Low noise ratio** (< 0.3) — means ctxt isn't returning irrelevant files
 - **Fast time** (< 50ms per query) — index lookup should be fast
 
-### ctxt vs others:
-- **ctxt vs find:** ctxt should win on conceptual queries; find may win on exact filename matches
-- **ctxt vs grep:** ctxt should be faster and have less noise; grep may find more but with lower precision
-- **ctxt vs fd:** similar to find but fd respects .gitignore and is faster
-- **ctxt vs rg:** similar to grep but rg respects .gitignore and is faster
-- **ctxt vs hybrid:** hybrid fills gaps when index results are sparse, but is slower (~7ms avg)
-- **ctxt vs combined:** ctxt should have higher Hit@1 due to ranking; combined may have higher recall but more noise
+### Comparing engines fairly
+
+All engines search files, excluding directory results. The saved index defines
+membership and ignore rules for every engine; content engines additionally share
+`--grep-max-bytes` (default 1 MiB). grep/rg match any literal query token,
+case-insensitively. Baseline output is alphabetical, so Hit@K describes output
+position rather than relevance ranking. Combined unions full find/grep candidates
+before applying the result limit.
+
+Use `--runs 10 --warmup 2` for more timing samples. Engine order rotates across
+queries and repetitions. Index loading and corpus preparation are reported
+separately. ctxt runs in process; find/fd/grep/rg include subprocess startup.
+These are adapter timings, not complete CLI, watch HTTP, or MCP latency. They do
+not include index construction or LLM generation cost. Use a stable checkout and
+rebuild an outdated index before comparing runs.
+
+JSON uses report version 2 with one structure for grouped and ungrouped runs:
+`cases`, per-case `results` (including timing samples and errors), `summary`,
+optional `categories`, `methodology`, and setup timings. Metric names include
+`success_rate`, `estimated_path_tokens`, and `avg_estimated_path_tokens`.
+Each result’s `time_ms` is the median of its measured `samples_ms`.
+Previous report field names and suffix-based matching are not supported.
+
+### Development and validation sets
+
+Use `docs/bench_cases.json` while developing ranking changes. The separate
+`docs/bench_validation_cases.json` contains 12 additional frozen questions. Run
+it after choosing a change; do not tune scoring against its results. It still
+uses this repository and cannot establish performance on other projects.
+For claims beyond Contexting, collect queries and all acceptable paths from
+other real repositories, freeze those revisions, and evaluate separately.
+
+```bash
+ctxt bench --cases docs/bench_validation_cases.json --engines ctxt,rg,hybrid --json
+```
 
 ### Symbol extraction mode
 Bench results depend on the symbol extraction mode used when building the index. To compare tree-sitter vs regex:

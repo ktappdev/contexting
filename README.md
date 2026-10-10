@@ -214,7 +214,17 @@ Flags:
 - `--min-score` — minimum score threshold
 - `--root` — project root
 - `--index` — path to index file
-- `--grep-max-bytes` — max bytes for grep content search
+- `--grep-max-bytes` — shared max file size for grep, rg, and hybrid content search
+- `--runs` — measured runs per query and engine (default: 5)
+- `--warmup` — unmeasured warmups per query and engine (default: 1)
+
+Benchmark answers use exact, case-sensitive project-relative paths. All engines
+share the indexed file set and result limit; ctxt/hybrid rank by relevance,
+while other engines return alphabetical results. Reports distinguish query
+success from document recall and estimate **path-only** token size. JSON report
+version 2 includes timing samples, methodology, per-query results, and errors.
+Missing tools or failed commands cause a nonzero exit. See the
+[benchmark guide](docs/bench_guide.md) for timing scope and validation cases.
 
 ### `ctxt status`
 

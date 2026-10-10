@@ -57,6 +57,9 @@ func TestEvaluateSearchMetrics(t *testing.T) {
 }
 
 func TestFirstMatchRank(t *testing.T) {
+	if rank := firstMatchRank([]SearchResult{{Path: "command_search.go"}, {Path: "src/search.go"}, {Path: "Search.go"}}, []string{"search.go"}); rank != -1 {
+		t.Fatalf("expected exact project-relative matching, got rank %d", rank)
+	}
 	results := []SearchResult{{Path: "src/main.go"}, {Path: "config/local_store.go"}}
 	rank := firstMatchRank(results, []string{"config/local_store.go"})
 	if rank != 2 {

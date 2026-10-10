@@ -2,325 +2,91 @@ package contexting
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
-	"strings"
 	"time"
 )
-
-// SearchEngine is the contract every bench engine implements.
-type SearchEngine interface {
-	Name() string
-	Search(query string, expectAny []string, index *ContextIndex, opts SearchOptions, grepMaxBytes int) EngineResult
-}
-
-// EngineResult captures timing + outcome for one engine on one query.
-type EngineResult struct {
-	EngineName string   `json:"engine_name"`
-	Found      bool     `json:"found"`
-	Rank       int      `json:"rank"`       // 1-based; -1 if not found (only ctxt ranks)
-	TotalHits  int      `json:"total_hits"` // number of paths returned
-	Paths      []string `json:"paths,omitempty"`
-	TimeMs     int64    `json:"time_ms"`
-	Error      string   `json:"error,omitempty"` // empty if no error
-	Chars      int      `json:"chars"`           // total chars across all returned paths
-	Tokens     int      `json:"tokens"`          // chars/4 heuristic
-	HitAt1     bool     `json:"hit_at_1"`
-	HitAt3     bool     `json:"hit_at_3"`
-	HitAt5     bool     `json:"hit_at_5"`
-	NoiseRatio float64  `json:"noise_ratio"` // 1.0 - (relevantResults / totalResults)
-}
-
-// EngineSummary aggregates results for one engine across all cases.
-type EngineSummary struct {
-	EngineName    string  `json:"engine_name"`
-	Cases         int     `json:"cases"`
-	Recall        float64 `json:"recall"`
-	AvgResults    float64 `json:"avg_results"`
-	AvgTimeMs     float64 `json:"avg_time_ms"`
-	P50TimeMs     int64   `json:"p50_time_ms"`
-	P95TimeMs     int64   `json:"p95_time_ms"`
-	FailedCases   int     `json:"failed_cases"`
-	HitAt1        float64 `json:"hit_at_1"`
-	HitAt3        float64 `json:"hit_at_3"`
-	HitAt5        float64 `json:"hit_at_5"`
-	AvgTokens     float64 `json:"avg_tokens"`
-	AvgNoiseRatio float64 `json:"avg_noise_ratio"`
-}
 
 type ctxtEngine struct{}
 
 func (ctxtEngine) Name() string { return "ctxt" }
-
-func (ctxtEngine) Search(query string, expectAny []string, index *ContextIndex, opts SearchOptions, _ int) EngineResult {
+func (ctxtEngine) Search(query string, expected []string, index *ContextIndex, opts SearchOptions, _ int, corpus BenchCorpus) EngineResult {
 	start := time.Now()
+	opts.TypeFilter = "files"
 	results := SearchHintsWithOptions(index, query, opts)
-	rank := firstMatchRank(results, expectAny)
-	found := rank > 0
-	if !found {
-		rank = -1
-	}
 	paths := make([]string, 0, len(results))
-	for _, r := range results {
-		paths = append(paths, r.Path)
+	for _, result := range results {
+		paths = append(paths, result.Path)
 	}
-	hit1, hit3, hit5, _ := computeHitAtK(paths, expectAny)
-	chars, tokens := countTokens(paths)
-	noiseRatio := computeNoiseRatio(paths, expectAny)
-	return EngineResult{
-		EngineName: "ctxt",
-		Found:      found,
-		Rank:       rank,
-		TotalHits:  len(results),
-		Paths:      paths,
-		TimeMs:     time.Since(start).Milliseconds(),
-		Chars:      chars,
-		Tokens:     tokens,
-		HitAt1:     hit1,
-		HitAt3:     hit3,
-		HitAt5:     hit5,
-		NoiseRatio: noiseRatio,
-	}
-}
-
-type unixFindEngine struct{}
-
-func (unixFindEngine) Name() string { return "find" }
-
-func (unixFindEngine) Search(query string, expectAny []string, index *ContextIndex, _ SearchOptions, _ int) EngineResult {
-	start := time.Now()
-	_, lookErr := exec.LookPath("find")
-	if lookErr != nil {
-		return EngineResult{EngineName: "find", Error: "find binary not found in PATH"}
-	}
-	ignored, err := BuildIgnoreMapForRoot(index.RootPath, nil)
-	if err != nil {
-		return EngineResult{EngineName: "find", Error: fmt.Sprintf("build ignore map: %v", err)}
-	}
-	matcher := newIgnoreMatcher(ignored)
-	cmd := exec.Command("find", index.RootPath, "-type", "f")
-	cmd.Dir = index.RootPath
-	out, runErr := cmd.Output()
-	if runErr != nil {
-		return EngineResult{EngineName: "find", Error: fmt.Sprintf("find command failed: %v", runErr)}
-	}
-	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
-	queryTokens := tokenize(query)
-	results := make([]string, 0, len(lines))
-	for _, absPath := range lines {
-		absPath = strings.TrimSpace(absPath)
-		if absPath == "" {
-			continue
-		}
-		rel, relErr := filepath.Rel(index.RootPath, absPath)
-		if relErr != nil {
-			continue
-		}
-		if matcher.shouldIgnore(rel, filepath.Base(rel), false) {
-			continue
-		}
-		if tokensMatchPath(rel, "", queryTokens) {
-			results = append(results, rel)
-		}
-	}
-	sort.Strings(results)
-	hit1, hit3, hit5, firstRank := computeHitAtK(results, expectAny)
-	chars, tokens := countTokens(results)
-	noiseRatio := computeNoiseRatio(results, expectAny)
-	return EngineResult{
-		EngineName: "find", Found: firstRank > 0, Rank: -1, TotalHits: len(results),
-		Paths: results, TimeMs: time.Since(start).Milliseconds(),
-		Chars: chars, Tokens: tokens, HitAt1: hit1, HitAt3: hit3, HitAt5: hit5, NoiseRatio: noiseRatio,
-	}
-}
-
-type fdEngine struct{}
-
-func (fdEngine) Name() string { return "fd" }
-
-func (fdEngine) Search(query string, expectAny []string, index *ContextIndex, _ SearchOptions, _ int) EngineResult {
-	start := time.Now()
-	_, lookErr := exec.LookPath("fd")
-	if lookErr != nil {
-		return EngineResult{EngineName: "fd", Error: "fd binary not found in PATH"}
-	}
-	cmd := exec.Command("fd", "--absolute-path", "--type", "f", "--search-path", index.RootPath)
-	cmd.Dir = index.RootPath
-	out, runErr := cmd.Output()
-	if runErr != nil {
-		return EngineResult{EngineName: "fd", Error: fmt.Sprintf("fd command failed: %v", runErr)}
-	}
-	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
-	queryTokens := tokenize(query)
-	results := make([]string, 0, len(lines))
-	for _, absPath := range lines {
-		absPath = strings.TrimSpace(absPath)
-		if absPath == "" {
-			continue
-		}
-		rel, relErr := filepath.Rel(index.RootPath, absPath)
-		if relErr != nil {
-			continue
-		}
-		if tokensMatchPath(rel, filepath.Base(rel), queryTokens) {
-			results = append(results, rel)
-		}
-	}
-	sort.Strings(results)
-	hit1, hit3, hit5, firstRank := computeHitAtK(results, expectAny)
-	chars, tokens := countTokens(results)
-	noiseRatio := computeNoiseRatio(results, expectAny)
-	return EngineResult{
-		EngineName: "fd", Found: firstRank > 0, Rank: -1, TotalHits: len(results),
-		Paths: results, TimeMs: time.Since(start).Milliseconds(),
-		Chars: chars, Tokens: tokens, HitAt1: hit1, HitAt3: hit3, HitAt5: hit5, NoiseRatio: noiseRatio,
-	}
-}
-
-type grepEngine struct{}
-
-func (grepEngine) Name() string { return "grep" }
-
-func (grepEngine) Search(query string, expectAny []string, index *ContextIndex, _ SearchOptions, grepMaxBytes int) EngineResult {
-	start := time.Now()
-	ignored, err := BuildIgnoreMapForRoot(index.RootPath, nil)
-	if err != nil {
-		return EngineResult{
-			EngineName: "grep",
-			Error:      fmt.Sprintf("build ignore map: %v", err),
-		}
-	}
-	if grepMaxBytes <= 0 {
-		grepMaxBytes = 1048576
-	}
-	queryTokens := tokenize(query)
-	results := make([]string, 0)
-	matcher := newIgnoreMatcher(ignored)
-	err = filepath.WalkDir(index.RootPath, func(path string, d os.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
-		}
-		rel, walkErr := filepath.Rel(index.RootPath, path)
-		if walkErr != nil {
-			return walkErr
-		}
-		if rel == "." {
-			return nil
-		}
-		if matcher.shouldIgnore(rel, d.Name(), d.IsDir()) {
-			if d.IsDir() {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-		if d.IsDir() || !d.Type().IsRegular() {
-			return nil
-		}
-		info, statErr := os.Stat(path)
-		if statErr != nil {
-			return nil
-		}
-		if info.Size() > int64(grepMaxBytes) {
-			return nil
-		}
-		content, readErr := os.ReadFile(path)
-		if readErr != nil {
-			return nil
-		}
-		if hasNullByte(content, 512) {
-			return nil
-		}
-		if tokensMatchContent(string(content), queryTokens) {
-			results = append(results, rel)
-		}
-		return nil
-	})
-	if err != nil {
-		return EngineResult{
-			EngineName: "grep",
-			Error:      fmt.Sprintf("walk dir: %v", err),
-		}
-	}
-	sort.Strings(results)
-	hit1, hit3, hit5, firstRank := computeHitAtK(results, expectAny)
-	chars, tokens := countTokens(results)
-	noiseRatio := computeNoiseRatio(results, expectAny)
-	return EngineResult{
-		EngineName: "grep",
-		Found:      firstRank > 0,
-		Rank:       -1,
-		TotalHits:  len(results),
-		Paths:      results,
-		TimeMs:     time.Since(start).Milliseconds(),
-		Chars:      chars,
-		Tokens:     tokens,
-		HitAt1:     hit1,
-		HitAt3:     hit3,
-		HitAt5:     hit5,
-		NoiseRatio: noiseRatio,
-	}
-}
-
-type rgEngine struct{}
-
-func (rgEngine) Name() string { return "rg" }
-
-func (rgEngine) Search(query string, expectAny []string, index *ContextIndex, _ SearchOptions, _ int) EngineResult {
-	start := time.Now()
-	_, lookErr := exec.LookPath("rg")
-	if lookErr != nil {
-		return EngineResult{EngineName: "rg", Error: "rg binary not found in PATH"}
-	}
-	queryTokens := tokenize(query)
-	if len(queryTokens) == 0 {
-		return EngineResult{EngineName: "rg", Found: false, Rank: -1, TimeMs: time.Since(start).Milliseconds()}
-	}
-	pattern := strings.Join(queryTokens, "|")
-	cmd := exec.Command("rg", "--files-with-matches", "--no-heading", "--ignore-case", "-e", pattern, index.RootPath)
-	cmd.Dir = index.RootPath
-	out, runErr := cmd.Output()
-	if runErr != nil {
-		if exitErr, ok := runErr.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
-			out = []byte{}
-		} else {
-			return EngineResult{EngineName: "rg", Error: fmt.Sprintf("rg command failed: %v", runErr)}
-		}
-	}
-	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
-	results := make([]string, 0, len(lines))
-	for _, absPath := range lines {
-		absPath = strings.TrimSpace(absPath)
-		if absPath == "" {
-			continue
-		}
-		rel, relErr := filepath.Rel(index.RootPath, absPath)
-		if relErr != nil {
-			continue
-		}
-		results = append(results, rel)
-	}
-	sort.Strings(results)
-	hit1, hit3, hit5, firstRank := computeHitAtK(results, expectAny)
-	chars, tokens := countTokens(results)
-	noiseRatio := computeNoiseRatio(results, expectAny)
-	return EngineResult{
-		EngineName: "rg", Found: firstRank > 0, Rank: -1, TotalHits: len(results),
-		Paths: results, TimeMs: time.Since(start).Milliseconds(),
-		Chars: chars, Tokens: tokens, HitAt1: hit1, HitAt3: hit3, HitAt5: hit5, NoiseRatio: noiseRatio,
-	}
+	return benchResult("ctxt", paths, expected, opts.Limit, start, nil)
 }
 
 type hybridEngine struct{}
 
 func (hybridEngine) Name() string { return "hybrid" }
+func (hybridEngine) Search(query string, expected []string, index *ContextIndex, opts SearchOptions, maxBytes int, corpus BenchCorpus) EngineResult {
+	start := time.Now()
+	unlimited := opts
+	unlimited.Limit = int(^uint(0) >> 1)
+	unlimited.TypeFilter = "files"
+	unlimited.ContentFallback = false
+	results := SearchHintsWithOptions(index, query, unlimited)
+	if opts.MinScore <= 1 {
+		contentOpts := opts
+		contentOpts.Limit = -1
+		content := benchContentSearch("rg", query, expected, index, contentOpts, maxBytes, corpus)
+		if content.Error != "" {
+			return benchResult("hybrid", nil, expected, opts.Limit, start, fmt.Errorf("content fallback: %s", content.Error))
+		}
+		existing := make(map[string]bool)
+		for _, result := range results {
+			existing[filepath.ToSlash(result.Path)] = true
+		}
+		for _, path := range content.Paths {
+			if !existing[path] {
+				results = append(results, SearchResult{Path: path, Type: "file", Score: 1})
+			}
+		}
+		sort.Slice(results, func(i, j int) bool {
+			if results[i].Score != results[j].Score {
+				return results[i].Score > results[j].Score
+			}
+			return results[i].Path < results[j].Path
+		})
+	}
+	paths := make([]string, 0, len(results))
+	for _, result := range results {
+		paths = append(paths, filepath.ToSlash(result.Path))
+	}
+	return benchResult("hybrid", paths, expected, opts.Limit, start, nil)
+}
 
-func (hybridEngine) Search(query string, expectAny []string, index *ContextIndex, opts SearchOptions, _ int) EngineResult {
-	opts.ContentFallback = true
-	res := ctxtEngine{}.Search(query, expectAny, index, opts, 0)
-	res.EngineName = "hybrid"
-	return res
+type unixFindEngine struct{}
+
+func (unixFindEngine) Name() string { return "find" }
+func (unixFindEngine) Search(query string, expected []string, index *ContextIndex, opts SearchOptions, _ int, corpus BenchCorpus) EngineResult {
+	return benchFilenameSearch("find", query, expected, index, opts, corpus)
+}
+
+type fdEngine struct{}
+
+func (fdEngine) Name() string { return "fd" }
+func (fdEngine) Search(query string, expected []string, index *ContextIndex, opts SearchOptions, _ int, corpus BenchCorpus) EngineResult {
+	return benchFilenameSearch("fd", query, expected, index, opts, corpus)
+}
+
+type grepEngine struct{}
+
+func (grepEngine) Name() string { return "grep" }
+func (grepEngine) Search(query string, expected []string, index *ContextIndex, opts SearchOptions, maxBytes int, corpus BenchCorpus) EngineResult {
+	return benchContentSearch("grep", query, expected, index, opts, maxBytes, corpus)
+}
+
+type rgEngine struct{}
+
+func (rgEngine) Name() string { return "rg" }
+func (rgEngine) Search(query string, expected []string, index *ContextIndex, opts SearchOptions, maxBytes int, corpus BenchCorpus) EngineResult {
+	return benchContentSearch("rg", query, expected, index, opts, maxBytes, corpus)
 }
 
 type combinedEngine struct {
@@ -329,140 +95,26 @@ type combinedEngine struct {
 }
 
 func (combinedEngine) Name() string { return "combined" }
-
-func (c combinedEngine) Search(query string, expectAny []string, index *ContextIndex, opts SearchOptions, grepMaxBytes int) EngineResult {
+func (engine combinedEngine) Search(query string, expected []string, index *ContextIndex, opts SearchOptions, maxBytes int, corpus BenchCorpus) EngineResult {
 	start := time.Now()
-	findRes := c.find.Search(query, expectAny, index, opts, grepMaxBytes)
-	grepRes := c.grep.Search(query, expectAny, index, opts, grepMaxBytes)
-	union := make(map[string]struct{}, findRes.TotalHits+grepRes.TotalHits)
-	if findRes.Error == "" {
-		for _, p := range findRes.Paths {
-			union[p] = struct{}{}
+	// Union full candidate lists, then apply the shared output budget.
+	unlimited := opts
+	unlimited.Limit = -1
+	filename := engine.find.Search(query, expected, index, unlimited, maxBytes, corpus)
+	content := engine.grep.Search(query, expected, index, unlimited, maxBytes, corpus)
+	if filename.Error != "" || content.Error != "" {
+		return benchResult("combined", nil, expected, opts.Limit, start, fmt.Errorf("find: %s; grep: %s", filename.Error, content.Error))
+	}
+	seen := make(map[string]bool)
+	paths := make([]string, 0, len(filename.Paths)+len(content.Paths))
+	for _, path := range append(filename.Paths, content.Paths...) {
+		if !seen[path] {
+			seen[path] = true
+			paths = append(paths, path)
 		}
 	}
-	if grepRes.Error == "" {
-		for _, p := range grepRes.Paths {
-			union[p] = struct{}{}
-		}
-	}
-	combined := make([]string, 0, len(union))
-	for p := range union {
-		combined = append(combined, p)
-	}
-	sort.Strings(combined)
-	hit1, hit3, hit5, firstRank := computeHitAtK(combined, expectAny)
-	chars, tokens := countTokens(combined)
-	noiseRatio := computeNoiseRatio(combined, expectAny)
-	return EngineResult{
-		EngineName: "combined",
-		Found:      firstRank > 0,
-		Rank:       -1,
-		TotalHits:  len(combined),
-		Paths:      combined,
-		TimeMs:     time.Since(start).Milliseconds(),
-		Chars:      chars,
-		Tokens:     tokens,
-		HitAt1:     hit1,
-		HitAt3:     hit3,
-		HitAt5:     hit5,
-		NoiseRatio: noiseRatio,
-	}
-}
-
-func tokensMatchPath(relPath, baseName string, tokens []string) bool {
-	relLower := strings.ToLower(filepath.ToSlash(relPath))
-	baseLower := strings.ToLower(baseName)
-	for _, token := range tokens {
-		if strings.Contains(baseLower, token) || strings.Contains(relLower, token) {
-			return true
-		}
-	}
-	return false
-}
-
-func tokensMatchContent(content string, tokens []string) bool {
-	lower := strings.ToLower(content)
-	for _, token := range tokens {
-		if strings.Contains(lower, token) {
-			return true
-		}
-	}
-	return false
-}
-
-func hasNullByte(data []byte, limit int) bool {
-	if limit > len(data) {
-		limit = len(data)
-	}
-	for i := 0; i < limit; i++ {
-		if data[i] == 0 {
-			return true
-		}
-	}
-	return false
-}
-
-// computeHitAtK returns Hit@1, Hit@3, Hit@5 booleans and the 1-based rank of first expected match.
-// For ctxt: paths are already ranked (search results order).
-// For find/grep/combined: paths are sorted alphabetically — rank is position in that sorted list.
-func computeHitAtK(paths []string, expectAny []string) (hit1, hit3, hit5 bool, firstRank int) {
-	normalizedExpected := make([]string, 0, len(expectAny))
-	for _, expected := range expectAny {
-		normalizedExpected = append(normalizedExpected, normalizeEvalPath(expected))
-	}
-
-	for i, path := range paths {
-		normalizedPath := normalizeEvalPath(path)
-		for _, expected := range normalizedExpected {
-			if expected == normalizedPath || strings.HasSuffix(normalizedPath, expected) {
-				rank := i + 1
-				hit1 = rank == 1
-				hit3 = rank > 0 && rank <= 3
-				hit5 = rank > 0 && rank <= 5
-				return hit1, hit3, hit5, rank
-			}
-		}
-	}
-	return false, false, false, -1
-}
-
-// countTokens returns total character count and estimated token count (chars/4) for a list of paths.
-func countTokens(paths []string) (chars int, tokens int) {
-	for _, path := range paths {
-		chars += len(path)
-	}
-	tokens = chars / 4
-	return chars, tokens
-}
-
-// computeNoiseRatio returns 1.0 - (relevantPaths / totalPaths). 0 if no paths.
-func computeNoiseRatio(paths []string, expectAny []string) float64 {
-	total := len(paths)
-	if total == 0 {
-		return 0
-	}
-	relevant := countRelevantPaths(paths, expectAny)
-	return 1.0 - float64(relevant)/float64(total)
-}
-
-// countRelevantPaths counts how many paths match any expected path.
-func countRelevantPaths(paths []string, expectAny []string) int {
-	normalizedExpected := make([]string, 0, len(expectAny))
-	for _, expected := range expectAny {
-		normalizedExpected = append(normalizedExpected, normalizeEvalPath(expected))
-	}
-
-	relevant := 0
-	for _, path := range paths {
-		normalizedPath := normalizeEvalPath(path)
-		for _, expected := range normalizedExpected {
-			if expected == normalizedPath || strings.HasSuffix(normalizedPath, expected) {
-				relevant++
-				break
-			}
-		}
-	}
-	return relevant
+	sort.Strings(paths)
+	return benchResult("combined", paths, expected, opts.Limit, start, nil)
 }
 
 // knownEngines returns the list of supported engine names in default order.

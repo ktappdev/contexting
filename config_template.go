@@ -67,7 +67,9 @@ index = "ctx_index.json"
 cases = "ctx_cases.json"
 limit = 10
 min_score = 1
-engines = ["ctxt", "find", "grep", "combined"]
+engines = ["ctxt", "find", "grep"]
+runs = 5
+warmup = 1
 grep_max_bytes = 1048576
 json = false
 `

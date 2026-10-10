@@ -74,13 +74,15 @@ type EvalConfig struct {
 }
 
 type BenchConfig struct {
+	Runs         *int     `toml:"runs"`
+	Warmup       *int     `toml:"warmup"`
 	RootPath     string   `toml:"root"`
 	IndexPath    string   `toml:"index"`
 	CasesPath    string   `toml:"cases"`
-	Limit        int      `toml:"limit"`
-	MinScore     int      `toml:"min_score"`
+	Limit        *int     `toml:"limit"`
+	MinScore     *int     `toml:"min_score"`
 	Engines      []string `toml:"engines"`
-	GrepMaxBytes int      `toml:"grep_max_bytes"`
+	GrepMaxBytes *int     `toml:"grep_max_bytes"`
 	JSON         *bool    `toml:"json"`
 }
 

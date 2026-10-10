@@ -1,0 +1,84 @@
+{
+  "version": 2,
+  "categories": {
+    "validation": {
+      "description": "Frozen additional questions; do not tune scoring against these results. Same repository, not evidence of cross-project generalization.",
+      "cases": [
+        {
+          "query": "writer lock prevents concurrent indexing",
+          "expect_any": [
+            "writer_guard.go"
+          ]
+        },
+        {
+          "query": "load saved synonym cache",
+          "expect_any": [
+            "cache.go"
+          ]
+        },
+        {
+          "query": "replace destination file on Windows",
+          "expect_any": [
+            "io_replace_windows.go"
+          ]
+        },
+        {
+          "query": "cancel indexing on interrupt",
+          "expect_any": [
+            "signals.go"
+          ]
+        },
+        {
+          "query": "project configuration path resolution",
+          "expect_any": [
+            "paths.go"
+          ]
+        },
+        {
+          "query": "sanitize generated synonym list",
+          "expect_any": [
+            "synonyms.go"
+          ]
+        },
+        {
+          "query": "discover running watch server",
+          "expect_any": [
+            "memory_search_client.go",
+            "runtime_state.go"
+          ]
+        },
+        {
+          "query": "parse imports from TypeScript source",
+          "expect_any": [
+            "symbols_treesitter.go"
+          ]
+        },
+        {
+          "query": "report installed binary version",
+          "expect_any": [
+            "command_version.go",
+            "main.go"
+          ]
+        },
+        {
+          "query": "remove renamed filesystem entries",
+          "expect_any": [
+            "node_mutation.go"
+          ]
+        },
+        {
+          "query": "write temporary file before atomic rename",
+          "expect_any": [
+            "io_atomic.go"
+          ]
+        },
+        {
+          "query": "extract script blocks from component files",
+          "expect_any": [
+            "symbols.go"
+          ]
+        }
+      ]
+    }
+  }
+}

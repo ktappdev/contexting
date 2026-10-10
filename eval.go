@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 )
@@ -13,8 +12,6 @@ type EvalCase struct {
 	Query       string   `json:"query"`
 	ExpectAny   []string `json:"expect_any"`
 	Description string   `json:"description,omitempty"`
-	FindPattern string   `json:"find_pattern,omitempty"`
-	GrepPattern string   `json:"grep_pattern,omitempty"`
 	Category    string   `json:"category,omitempty"`
 }
 
@@ -126,22 +123,12 @@ func EvaluateSearch(index *ContextIndex, cases []EvalCase, opts SearchOptions) (
 }
 
 func firstMatchRank(results []SearchResult, expectAny []string) int {
-	normalizedExpected := make([]string, 0, len(expectAny))
-	for _, expected := range expectAny {
-		normalizedExpected = append(normalizedExpected, normalizeEvalPath(expected))
-	}
-
 	for i, result := range results {
-		normalizedResult := normalizeEvalPath(result.Path)
-		for _, expected := range normalizedExpected {
-			if expected == normalizedResult || strings.HasSuffix(normalizedResult, expected) {
+		for _, expected := range expectAny {
+			if pathMatchesExpected(result.Path, expected) {
 				return i + 1
 			}
 		}
 	}
 	return -1
-}
-
-func normalizeEvalPath(path string) string {
-	return filepath.ToSlash(strings.TrimSpace(strings.ToLower(path)))
 }
