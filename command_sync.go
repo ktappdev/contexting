@@ -90,7 +90,6 @@ Examples:
 				return fmt.Errorf("load synonym cache: %w", err)
 			}
 
-			cacheState = migrateSynonymCache(index.Tree, cacheState)
 			allNames := CollectNamesForLLM(index.Tree)
 			if targetPath != "" {
 				resolved := resolveProjectPath(absRoot, targetPath)

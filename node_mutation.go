@@ -88,7 +88,7 @@ func upsertNodeByRelPath(root *Node, absRoot string, relPath string, isDir bool,
 		}
 		size = info.Size()
 	}
-	nodeSynonyms := buildNodeSynonyms(filepath.ToSlash(relPath), legacySynonymKey(&Node{FullPath: fullPath, Type: nodeType}), cache, maxSynonyms)
+	nodeSynonyms := buildNodeSynonyms(filepath.ToSlash(relPath), nodeLexicalName(&Node{FullPath: fullPath, Type: nodeType}), cache, maxSynonyms)
 
 	node, ok := parent.Children[name]
 	if !ok {

@@ -67,7 +67,6 @@ type IndexManager struct {
 
 	index        *ContextIndex
 	cache        SynonymResponse
-	cacheVersion int
 	fingerprints map[string]string
 	dirty        bool
 	loaded       bool
@@ -207,19 +206,14 @@ func (m *IndexManager) Bootstrap(ctx context.Context) (IndexStats, error) {
 		return IndexStats{}, err
 	}
 	m.cache = state.Entries
-	m.cacheVersion = state.Version
 	m.fingerprints = state.Fingerprints
 
 	loadedIndex, err := LoadContextIndex(m.outputPath)
 	if err == nil && loadedIndex != nil && loadedIndex.Tree != nil {
 		if absRoot, rootErr := filepath.Abs(m.rootPath); rootErr == nil && loadedIndex.RootPath == absRoot {
-			migrated := state.Version < 2
-			state = migrateSynonymCache(loadedIndex.Tree, state)
-			m.cache = state.Entries
-			m.cacheVersion = state.Version
 			m.index = loadedIndex
 			m.loaded = true
-			m.dirty = migrated
+			m.dirty = false
 
 			// Diff snapshot against filesystem to catch changes made while not running
 			fsState, fsErr := collectFilesystemState(m.rootPath, m.ignored)
@@ -311,7 +305,6 @@ func (m *IndexManager) Bootstrap(ctx context.Context) (IndexStats, error) {
 		SynonymsMin:         m.synonymsMin,
 		SynonymsMax:         m.synonymsMax,
 		SynonymCache:        m.cache,
-		CacheVersion:        m.cacheVersion,
 		SynonymFingerprints: m.fingerprints,
 		MaxBatchSize:        m.maxBatchSize,
 		Endpoint:            m.endpoint,
@@ -323,7 +316,6 @@ func (m *IndexManager) Bootstrap(ctx context.Context) (IndexStats, error) {
 	}
 	m.index = result.Index
 	m.cache = result.SynonymCache
-	m.cacheVersion = 2
 	m.fingerprints = result.SynonymFingerprints
 	m.dirty = true
 	m.loaded = true
@@ -472,7 +464,7 @@ func (m *IndexManager) FlushIfDirty() (bool, error) {
 	if !m.dirty || m.index == nil {
 		return false, nil
 	}
-	if err := saveSynonymCacheState(m.cachePath, synonymCacheState{Version: 2, Entries: m.cache, Fingerprints: m.fingerprints}); err != nil {
+	if err := saveSynonymCacheState(m.cachePath, synonymCacheState{Version: currentCacheVersion, Entries: m.cache, Fingerprints: m.fingerprints}); err != nil {
 		return false, err
 	}
 	if err := SaveContextIndex(m.outputPath, m.index); err != nil {

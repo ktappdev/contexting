@@ -122,11 +122,15 @@ Successful LLM responses are saved even if another batch fails. The command
 still exits with an error; rerun without `--force` to request only missing,
 short, or stale entries. `--batch-size` explicitly controls batch size when set.
 
-The cache automatically migrates to version 2 on the next write. Unique legacy
-entries are retained; ambiguous parent/file keys are dropped rather than shared
-between unrelated files. Legacy entries have no context fingerprint, so their
-first online `init` or `sync` refreshes them. Use `--offline` with `init` to migrate
-without LLM requests. Keep the CLI upgraded when sharing these cache files.
+Only version 2 caches and indexes are supported. Older files are rejected;
+there is no migration or synonym-key fallback. For the default paths, rebuild:
+
+```bash
+rm .ctxt/ctx_cache.json
+ctxt init .
+```
+
+Use `ctxt init . --offline` to rebuild without LLM requests.
 
 Use `init` or restart `watch` after adding files, then run `sync` to fill gaps.
 

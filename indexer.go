@@ -18,7 +18,6 @@ type BuildOptions struct {
 	SynonymsMin         int
 	SynonymsMax         int
 	SynonymCache        SynonymResponse
-	CacheVersion        int
 	SynonymFingerprints map[string]string
 	MaxBatchSize        int
 	Endpoint            string
@@ -87,7 +86,10 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 	LogInfof("✓ Built tree: %d files, %d directories%s", stats.TotalFiles, stats.TotalDirs, extraMsg)
 
 	names := CollectNamesForLLM(tree)
-	state := migrateSynonymCache(tree, synonymCacheState{Version: opts.CacheVersion, Entries: cloneSynonymMap(opts.SynonymCache), Fingerprints: opts.SynonymFingerprints})
+	state := synonymCacheState{Entries: cloneSynonymMap(opts.SynonymCache), Fingerprints: opts.SynonymFingerprints}
+	if state.Fingerprints == nil {
+		state.Fingerprints = make(map[string]string)
+	}
 	combined := state.Entries
 	// Sequential execution: extract symbols FIRST, then generate synonyms with symbols context
 	var symbolCount int

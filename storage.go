@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-const CurrentIndexSchema = 1
+const CurrentIndexSchema = 2
 
 type ContextIndex struct {
 	SchemaVersion int       `json:"schema_version"`
@@ -22,7 +22,7 @@ func SaveContextIndex(path string, index *ContextIndex) error {
 		return fmt.Errorf("index is nil")
 	}
 
-	if index.SchemaVersion < 0 || index.SchemaVersion > CurrentIndexSchema {
+	if index.SchemaVersion != 0 && index.SchemaVersion != CurrentIndexSchema {
 		return fmt.Errorf("unsupported index schema %d", index.SchemaVersion)
 	}
 	snapshot := *index
@@ -49,8 +49,8 @@ func LoadContextIndex(path string) (*ContextIndex, error) {
 	if err := json.Unmarshal(bytes, &index); err != nil {
 		return nil, fmt.Errorf("parse index file: %w", err)
 	}
-	if index.SchemaVersion < 0 || index.SchemaVersion > CurrentIndexSchema {
-		return nil, fmt.Errorf("unsupported index schema %d; upgrade ctxt or rebuild the index", index.SchemaVersion)
+	if index.SchemaVersion != CurrentIndexSchema {
+		return nil, fmt.Errorf("unsupported index schema %d; rebuild with ctxt init", index.SchemaVersion)
 	}
 	if index.Tree == nil {
 		return nil, fmt.Errorf("index has no tree; rebuild with ctxt init")

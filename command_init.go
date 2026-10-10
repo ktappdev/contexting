@@ -128,7 +128,6 @@ Examples:
 				SynonymsMin:         flags.SynonymsMin,
 				SynonymsMax:         flags.SynonymsMax,
 				SynonymCache:        cacheState.Entries,
-				CacheVersion:        cacheState.Version,
 				SynonymFingerprints: cacheState.Fingerprints,
 				MaxBatchSize:        cfg.Watch.MaxBatchSize,
 				Endpoint:            llmEndpoint,
@@ -145,7 +144,7 @@ Examples:
 			}
 
 			emitSynonymWarning(result.SynonymError)
-			if err := saveSynonymCacheState(cachePath, synonymCacheState{Version: 2, Entries: result.SynonymCache, Fingerprints: result.SynonymFingerprints}); err != nil {
+			if err := saveSynonymCacheState(cachePath, synonymCacheState{Version: currentCacheVersion, Entries: result.SynonymCache, Fingerprints: result.SynonymFingerprints}); err != nil {
 				return err
 			}
 			if err := SaveContextIndex(outputPath, result.Index); err != nil {

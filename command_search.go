@@ -1,6 +1,7 @@
 package contexting
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -42,7 +43,7 @@ Examples:
   ctxt search-hints "database" --explain        Show score breakdown
   ctxt search-hints "upload" --type files       Files only (no directories)
   ctxt search-hints "config" --limit 20         More results`,
-		Args:  cobra.ExactArgs(1),
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var absConfigPath string
 			if configPath != "" {
@@ -121,6 +122,9 @@ Examples:
 			if !usedMemory {
 				index, err := LoadContextIndex(indexPath)
 				if err != nil {
+					if !errors.Is(err, os.ErrNotExist) {
+						return err
+					}
 					if useMemory {
 						source = "none"
 						f := true

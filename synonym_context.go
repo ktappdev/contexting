@@ -21,7 +21,7 @@ func collectSynonymContext(tree *Node) synonymContext {
 		if node == tree {
 			return
 		}
-		name := llmSynonymKey(node)
+		name := node.SynonymKey
 		if node.Type == "file" {
 			result.Symbols[name] = append([]string(nil), node.Symbols...)
 			result.Imports[name] = extractFileImports(node.FullPath)
@@ -57,7 +57,7 @@ func refreshSynonymSymbols(tree *Node, names []string) error {
 	}
 	var extractionErr error
 	walkTree(tree, func(node *Node) {
-		if extractionErr != nil || node.Type != "file" || !selected[llmSynonymKey(node)] {
+		if extractionErr != nil || node.Type != "file" || !selected[node.SynonymKey] {
 			return
 		}
 		symbols, err := extractSymbols(node.FullPath)

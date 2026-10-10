@@ -36,7 +36,7 @@ func TestWriterGuard(t *testing.T) {
 
 func TestIndexSchemaCompatibility(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "index.json")
-	for _, version := range []int{0, CurrentIndexSchema, CurrentIndexSchema + 1} {
+	for _, version := range []int{0, CurrentIndexSchema - 1, CurrentIndexSchema, CurrentIndexSchema + 1} {
 		data, err := json.Marshal(ContextIndex{SchemaVersion: version, Tree: &Node{Type: "directory"}})
 		if err != nil {
 			t.Fatal(err)
@@ -45,9 +45,9 @@ func TestIndexSchemaCompatibility(t *testing.T) {
 			t.Fatal(err)
 		}
 		index, err := LoadContextIndex(path)
-		if version > CurrentIndexSchema {
+		if version != CurrentIndexSchema {
 			if err == nil {
-				t.Fatal("accepted future schema")
+				t.Fatal("accepted unsupported schema")
 			}
 			continue
 		}
@@ -59,7 +59,7 @@ func TestIndexSchemaCompatibility(t *testing.T) {
 		}
 		index, err = LoadContextIndex(path)
 		if err != nil || index.SchemaVersion != CurrentIndexSchema {
-			t.Fatalf("migration: %v, %v", index, err)
+			t.Fatalf("round trip: %v, %v", index, err)
 		}
 	}
 }

@@ -117,24 +117,10 @@ func BuildTree(rootPath string, ignored map[string]bool) (*Node, error) {
 	return root, nil
 }
 
-func pathSuffix(fullPath string) string {
-	dir := filepath.Dir(fullPath)
-	base := filepath.Base(fullPath)
-	parent := filepath.Base(dir)
-	// For root-level files, parent is the project directory name (still useful context).
-	// For deeply nested files, parentDir/basename is usually unique enough.
-	return parent + "/" + base
-}
-
-// llmSynonymKey returns the key used for LLM synonym generation and lookup.
-// New indexes use project-relative paths. Legacy nodes retain suffix lookup
-// until their cache is migrated.
-func llmSynonymKey(node *Node) string {
-	if node.SynonymKey != "" {
-		return node.SynonymKey
-	}
+// nodeLexicalName keeps lexical hints focused on the immediate location.
+func nodeLexicalName(node *Node) string {
 	if node.Type == "file" {
-		return pathSuffix(node.FullPath)
+		return filepath.Base(filepath.Dir(node.FullPath)) + "/" + filepath.Base(node.FullPath)
 	}
 	return filepath.Base(node.FullPath)
 }
@@ -150,7 +136,10 @@ func CollectNamesForLLM(tree *Node) []string {
 		if node == tree {
 			return
 		}
-		name := llmSynonymKey(node)
+		name := node.SynonymKey
+		if name == "" {
+			return
+		}
 		if _, ok := seen[name]; ok {
 			return
 		}
@@ -168,7 +157,7 @@ func AssignSynonymsToTree(tree *Node, synonyms SynonymResponse, maxPerNode int) 
 			if node == tree {
 				return
 			}
-			node.Synonyms = sanitizeSynonyms(lexicalSynonyms(legacySynonymKey(node)), maxPerNode)
+			node.Synonyms = sanitizeSynonyms(lexicalSynonyms(nodeLexicalName(node)), maxPerNode)
 		})
 		return
 	}
@@ -177,12 +166,12 @@ func AssignSynonymsToTree(tree *Node, synonyms SynonymResponse, maxPerNode int) 
 		if node == tree {
 			return
 		}
-		name := llmSynonymKey(node)
+		name := node.SynonymKey
 		combined := make([]string, 0, maxPerNode+4)
 		if syns, ok := synonyms[name]; ok {
 			combined = append(combined, syns...)
 		}
-		combined = append(combined, lexicalSynonyms(legacySynonymKey(node))...)
+		combined = append(combined, lexicalSynonyms(nodeLexicalName(node))...)
 		node.Synonyms = sanitizeSynonyms(combined, maxPerNode)
 	})
 }
