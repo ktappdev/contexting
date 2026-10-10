@@ -142,7 +142,7 @@ Default ignores: `.venv`, `site-packages`, `__pycache__`, `node_modules`, `.env*
 6. **No log levels** — `LogInfof`/`LogWarnf`/`LogErrorf` always print; use stderr for warnings/errors
 7. **Watch behavior** — Snapshot persistence is shutdown-only (in-memory updates during runtime, flush on graceful shutdown)
 8. **Symbol-feeding** — Symbols extracted before synonyms, passed to LLM for domain-accurate generation
-9. **Bench case format** — v2 supports categories, v1 still works, `LoadCasesAuto` handles both
+9. **Bench case format** — version 2 with categories only; `LoadEvalCases` is shared by bench and eval
 10. **Scoring** — Exact basename +15 (highest), confidence gap truncation reduces noise
 11. **Hybrid search** — Use `--hybrid` on `search-hints` to fill gaps in index results. Ripgrep scans file contents for query tokens and merges unmatched files at score=1. Useful when the index misses files whose content literally contains the query words but whose symbols/synonyms don't connect. Add `--memory=false` if using a snapshot (non-watch) index.
 12. **`--agent` flag** — Blocks `init`/`watch`/`sync`/`clean` for safety in automated flows

@@ -2,6 +2,7 @@ package contexting
 
 import (
 	"encoding/json"
+	"fmt"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -49,6 +50,12 @@ func SearchHintsWithOptions(index *ContextIndex, query string, opts SearchOption
 	}
 
 	tokens := tokenize(query)
+	tokenGroups := make(map[string][]string)
+	for _, primary := range tokenizeBase(query) {
+		for _, variant := range tokenize(primary) {
+			tokenGroups[variant] = append(tokenGroups[variant], primary)
+		}
+	}
 	if len(tokens) == 0 {
 		return nil
 	}
@@ -70,6 +77,7 @@ func SearchHintsWithOptions(index *ContextIndex, query string, opts SearchOption
 		segments := strings.Split(relLower, "/")
 
 		score := 0
+		covered := make(map[string]bool)
 		matches := make([]string, 0)
 		breakdown := make([]string, 0)
 
@@ -77,50 +85,43 @@ func SearchHintsWithOptions(index *ContextIndex, query string, opts SearchOption
 			if token == "" {
 				continue
 			}
+			before := score
 			if relLower == token || baseNameLower == token {
 				score += 12
 				matches = append(matches, "exact:"+token)
 				breakdown = append(breakdown, "exact match +12: "+token)
-			}
-
-			if strings.Contains(baseNameLower, token) {
+			} else if strings.Contains(baseNameLower, token) {
 				score += 7
 				matches = append(matches, "basename:"+token)
 				breakdown = append(breakdown, "basename contains +7: "+token)
-			}
-
-			if strings.Contains(relLower, token) {
+			} else if hasSegmentPrefix(segments, token) {
+				score += 5
+				matches = append(matches, "segment-prefix:"+token)
+				breakdown = append(breakdown, "segment prefix +5: "+token)
+			} else if strings.Contains(relLower, token) {
 				score += 4
 				matches = append(matches, "path:"+token)
 				breakdown = append(breakdown, "path contains +4: "+token)
 			}
 
-			if hasSegmentPrefix(segments, token) {
-				score += 5
-				matches = append(matches, "segment-prefix:"+token)
-				breakdown = append(breakdown, "segment prefix +5: "+token)
+			synonymScore, synonymMatches, synonymBreakdown := scoreSynonymToken(node.Synonyms, token)
+			symbolScore, symbolMatches, symbolBreakdown := scoreSymbolToken(node.Symbols, token)
+			score += synonymScore + symbolScore
+			matches = append(matches, synonymMatches...)
+			matches = append(matches, symbolMatches...)
+			breakdown = append(breakdown, synonymBreakdown...)
+			breakdown = append(breakdown, symbolBreakdown...)
+			if score > before {
+				for _, primary := range tokenGroups[token] {
+					covered[primary] = true
+				}
 			}
+		}
 
-			for _, syn := range node.Synonyms {
-				synLower := strings.ToLower(syn)
-				if synLower == "" {
-					continue
-				}
-				if synLower == token {
-					score += 8
-					matches = append(matches, "syn-exact:"+syn)
-					breakdown = append(breakdown, "syn exact +8: "+syn)
-					continue
-				}
-				if len(token) < 3 || len(synLower) < 3 {
-					continue
-				}
-				if strings.Contains(synLower, token) || strings.Contains(token, synLower) {
-					score += 5
-					matches = append(matches, "syn:"+syn)
-					breakdown = append(breakdown, "syn overlap +5: "+syn)
-				}
-			}
+		if len(covered) > 1 {
+			bonus := 4 * (len(covered) - 1)
+			score += bonus
+			breakdown = append(breakdown, fmt.Sprintf("query coverage +%d: %d distinct terms", bonus, len(covered)))
 		}
 
 		// Exact basename match — query is the filename (with or without extension)
@@ -130,30 +131,6 @@ func SearchHintsWithOptions(index *ContextIndex, query string, opts SearchOption
 			score += 15
 			matches = append(matches, "exact-basename:"+baseNameLower)
 			breakdown = append(breakdown, "exact basename +15: "+baseNameLower)
-		}
-
-		// Symbol scoring
-		for _, sym := range node.Symbols {
-			symLower := strings.ToLower(sym)
-			symTokens := tokenizeIdentifier(symLower)
-			for _, token := range tokens {
-				if symLower == token {
-					score += 8
-					matches = append(matches, "sym-exact:"+sym)
-					breakdown = append(breakdown, "sym exact +8: "+sym)
-				} else if strings.Contains(symLower, token) {
-					score += 5
-					matches = append(matches, "sym:"+sym)
-					breakdown = append(breakdown, "sym contains +5: "+sym)
-				}
-				for _, symToken := range symTokens {
-					if symToken == token {
-						score += 4
-						matches = append(matches, "sym-token:"+symToken)
-						breakdown = append(breakdown, "sym token +4: "+symToken)
-					}
-				}
-			}
 		}
 
 		if node.Type == "file" && score > 0 {
@@ -262,7 +239,7 @@ func passesTypeFilter(node *Node, filter string) bool {
 	}
 }
 
-func tokenize(input string) []string {
+func tokenizeBase(input string) []string {
 	cleaned := strings.ToLower(input)
 	cleaned = strings.NewReplacer(
 		",", " ",
@@ -298,6 +275,11 @@ func tokenize(input string) []string {
 	if len(filteredBase) == 0 {
 		return nil
 	}
+	return filteredBase
+}
+
+func tokenize(input string) []string {
+	filteredBase := tokenizeBase(input)
 	expanded := make([]string, 0, len(filteredBase)*2)
 	for _, token := range filteredBase {
 		expanded = append(expanded, token)

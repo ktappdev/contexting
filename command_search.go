@@ -31,7 +31,7 @@ func newSearchCommand() *cobra.Command {
 
 How it works:
   • Your query is tokenized and matched against filenames, symbols (functions, classes, types), and synonyms
-  • Each match is scored by type: synonym=20, symbol=10, path=1
+  • Path, synonym, and symbol matches contribute bounded scores; matching more query terms adds a coverage bonus
   • Results are ranked by total score and returned
 
 Requires an existing index (run 'ctxt init .' first).

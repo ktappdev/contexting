@@ -2,8 +2,6 @@ package contexting
 
 import (
 	"fmt"
-	"go/parser"
-	"go/token"
 	"os"
 	"regexp"
 	"strings"
@@ -18,8 +16,7 @@ func extractSymbols(path string) ([]string, error) {
 	}
 
 	// Tree-sitter extraction for supported non-Go languages (if enabled).
-	// Default mode is "regex" so this block is skipped unless the user
-	// opts in via --symbol-extractor or the [common] config.
+	// Auto mode uses tree-sitter first and falls back to regex on errors.
 	if SymbolsExtractorMode == "treesitter" || SymbolsExtractorMode == "auto" {
 		if syms, err := extractSymbolsTreeSitter(path); err == nil {
 			return syms, nil
@@ -30,26 +27,15 @@ func extractSymbols(path string) ([]string, error) {
 	}
 	if strings.HasSuffix(ext, ".py") {
 		return extractByRegex(path, []string{
-			`(?m)^(?:async\s+)?def\s+([A-Za-z_][A-Za-z0-9_]*)`,
-			`(?m)^class\s+([A-Za-z_][A-Za-z0-9_]*)`,
+			`(?m)^[ \t]*(?:async\s+)?def\s+([A-Za-z_][A-Za-z0-9_]*)`,
+			`(?m)^[ \t]*class\s+([A-Za-z_][A-Za-z0-9_]*)`,
 		})
 	}
 	if strings.HasSuffix(ext, ".js") || strings.HasSuffix(ext, ".mjs") || strings.HasSuffix(ext, ".jsx") {
-		return extractByRegex(path, []string{
-			`(?m)^(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_][A-Za-z0-9_]*)`,
-			`(?m)^(?:export\s+)?class\s+([A-Za-z_][A-Za-z0-9_]*)`,
-			`(?m)^(?:export\s+)?const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=`,
-		})
+		return extractByRegex(path, jsPatternsWhitespace)
 	}
 	if strings.HasSuffix(ext, ".ts") || strings.HasSuffix(ext, ".tsx") {
-		return extractByRegex(path, []string{
-			`(?m)^(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_][A-Za-z0-9_]*)`,
-			`(?m)^(?:export\s+)?class\s+([A-Za-z_][A-Za-z0-9_]*)`,
-			`(?m)^(?:export\s+)?const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=`,
-			`(?m)^(?:export\s+)?interface\s+([A-Za-z_][A-Za-z0-9_]*)`,
-			`(?m)^(?:export\s+)?type\s+([A-Za-z_][A-Za-z0-9_]*)`,
-			`(?m)^(?:export\s+)?enum\s+([A-Za-z_][A-Za-z0-9_]*)`,
-		})
+		return extractByRegex(path, tsPatternsWhitespace)
 	}
 	if strings.HasSuffix(ext, ".rs") {
 		return extractByRegex(path, []string{
@@ -77,20 +63,6 @@ func extractSymbols(path string) ([]string, error) {
 		return extractAstroSymbols(path)
 	}
 	return nil, nil
-}
-
-// extractGoSymbols uses go/parser to extract top-level declarations
-func extractGoSymbols(path string) ([]string, error) {
-	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, path, nil, parser.AllErrors)
-	if err != nil {
-		return nil, err
-	}
-	var symbols []string
-	for name := range f.Scope.Objects {
-		symbols = append(symbols, name)
-	}
-	return dedupeStrings(symbols), nil
 }
 
 // extractByRegex reads a file and extracts symbols matching the given patterns
@@ -165,18 +137,18 @@ func extractScriptBlock(content string, openPattern, closePattern string) (strin
 }
 
 var jsPatternsWhitespace = []string{
-	`(?m)^\s*(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_][A-Za-z0-9_]*)`,
-	`(?m)^\s*(?:export\s+)?class\s+([A-Za-z_][A-Za-z0-9_]*)`,
-	`(?m)^\s*(?:export\s+)?const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=`,
+	`(?m)^[ \t]*(?:export\s+)?(?:default\s+)?(?:async\s+)?function\s+([A-Za-z_][A-Za-z0-9_]*)`,
+	`(?m)^[ \t]*(?:export\s+)?(?:default\s+)?class\s+([A-Za-z_][A-Za-z0-9_]*)`,
+	`(?m)^[ \t]*(?:export\s+)?const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=`,
 }
 
 var tsPatternsWhitespace = []string{
-	`(?m)^\s*(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_][A-Za-z0-9_]*)`,
-	`(?m)^\s*(?:export\s+)?class\s+([A-Za-z_][A-Za-z0-9_]*)`,
-	`(?m)^\s*(?:export\s+)?const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=`,
-	`(?m)^\s*(?:export\s+)?interface\s+([A-Za-z_][A-Za-z0-9_]*)`,
-	`(?m)^\s*(?:export\s+)?type\s+([A-Za-z_][A-Za-z0-9_]*)`,
-	`(?m)^\s*(?:export\s+)?enum\s+([A-Za-z_][A-Za-z0-9_]*)`,
+	`(?m)^[ \t]*(?:export\s+)?(?:default\s+)?(?:async\s+)?function\s+([A-Za-z_][A-Za-z0-9_]*)`,
+	`(?m)^[ \t]*(?:export\s+)?(?:default\s+)?class\s+([A-Za-z_][A-Za-z0-9_]*)`,
+	`(?m)^[ \t]*(?:export\s+)?const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=`,
+	`(?m)^[ \t]*(?:export\s+)?interface\s+([A-Za-z_][A-Za-z0-9_]*)`,
+	`(?m)^[ \t]*(?:export\s+)?type\s+([A-Za-z_][A-Za-z0-9_]*)`,
+	`(?m)^[ \t]*(?:export\s+)?enum\s+([A-Za-z_][A-Za-z0-9_]*)`,
 }
 
 // extractVueSymbols extracts symbols from Vue single-file components
@@ -280,8 +252,8 @@ func tokenizeIdentifier(name string) []string {
 						tokens = append(tokens, string(current))
 					}
 					current = []rune{r}
-				// upper→lower after uppercase sequence: end of acronym (like JWT in validateJWTToken)
-				// e.g., "JWTToken": at 'o', we split "JWT" and start "Token"
+					// upper→lower after uppercase sequence: end of acronym (like JWT in validateJWTToken)
+					// e.g., "JWTToken": at 'o', we split "JWT" and start "Token"
 				} else if unicode.IsUpper(prev) && unicode.IsLower(r) && len(current) > 1 {
 					// current has multiple uppers like "JWT", split off all but last
 					// then start new word with (last upper + this lower)

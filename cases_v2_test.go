@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestLoadCasesV1Array(t *testing.T) {
+func TestLoadCasesRejectsBareArray(t *testing.T) {
 	content := `[
 		{"query": "test query", "expect_any": ["file1.go"]},
 		{"query": "another query", "expect_any": ["file2.go"]}
@@ -17,21 +17,9 @@ func TestLoadCasesV1Array(t *testing.T) {
 		t.Fatalf("write test file: %v", err)
 	}
 
-	cases, err := LoadCasesAuto(path)
-	if err != nil {
-		t.Fatalf("LoadCasesAuto error: %v", err)
-	}
-	if len(cases) != 2 {
-		t.Fatalf("expected 2 cases, got %d", len(cases))
-	}
-	if cases[0].Query != "test query" {
-		t.Fatalf("unexpected query: %s", cases[0].Query)
-	}
-	if cases[0].Description != "" {
-		t.Fatalf("expected empty description for v1, got %s", cases[0].Description)
-	}
-	if cases[0].Category != "" {
-		t.Fatalf("expected empty category for v1, got %s", cases[0].Category)
+	_, err := LoadEvalCases(path)
+	if err == nil {
+		t.Fatal("expected legacy bare array to be rejected")
 	}
 }
 
@@ -60,9 +48,9 @@ func TestLoadCasesV2Object(t *testing.T) {
 		t.Fatalf("write test file: %v", err)
 	}
 
-	cases, err := LoadCasesAuto(path)
+	cases, err := LoadEvalCases(path)
 	if err != nil {
-		t.Fatalf("LoadCasesAuto error: %v", err)
+		t.Fatalf("LoadEvalCases error: %v", err)
 	}
 	if len(cases) != 3 {
 		t.Fatalf("expected 3 cases, got %d", len(cases))
@@ -105,7 +93,7 @@ func TestLoadCasesV2MissingVersion(t *testing.T) {
 		t.Fatalf("write test file: %v", err)
 	}
 
-	_, err := LoadCasesAuto(path)
+	_, err := LoadEvalCases(path)
 	if err == nil {
 		t.Fatalf("expected error for missing version, got nil")
 	}
@@ -122,33 +110,16 @@ func TestLoadCasesV2EmptyCategories(t *testing.T) {
 		t.Fatalf("write test file: %v", err)
 	}
 
-	cases, err := LoadCasesAuto(path)
+	cases, err := LoadEvalCases(path)
 	if err != nil {
-		t.Fatalf("LoadCasesAuto error: %v", err)
+		t.Fatalf("LoadEvalCases error: %v", err)
 	}
 	if len(cases) != 0 {
 		t.Fatalf("expected 0 cases, got %d", len(cases))
 	}
 }
 
-func TestLoadCasesAutoDetectsV1(t *testing.T) {
-	content := `[{"query": "test", "expect_any": ["file.go"]}]`
-	tmpDir := t.TempDir()
-	path := filepath.Join(tmpDir, "cases.json")
-	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
-		t.Fatalf("write test file: %v", err)
-	}
-
-	cases, err := LoadCasesAuto(path)
-	if err != nil {
-		t.Fatalf("LoadCasesAuto error: %v", err)
-	}
-	if len(cases) != 1 {
-		t.Fatalf("expected 1 case, got %d", len(cases))
-	}
-}
-
-func TestLoadCasesAutoDetectsV2(t *testing.T) {
+func TestLoadEvalCasesVersion2(t *testing.T) {
 	content := `{
 		"version": 2,
 		"categories": {
@@ -166,26 +137,6 @@ func TestLoadCasesAutoDetectsV2(t *testing.T) {
 		t.Fatalf("write test file: %v", err)
 	}
 
-	cases, err := LoadCasesAuto(path)
-	if err != nil {
-		t.Fatalf("LoadCasesAuto error: %v", err)
-	}
-	if len(cases) != 1 {
-		t.Fatalf("expected 1 case, got %d", len(cases))
-	}
-	if cases[0].Category != "test" {
-		t.Fatalf("expected category 'test', got %s", cases[0].Category)
-	}
-}
-
-func TestEvalCaseV1UnmarshalIgnoresNewFields(t *testing.T) {
-	content := `[{"query": "test", "expect_any": ["file.go"]}]`
-	tmpDir := t.TempDir()
-	path := filepath.Join(tmpDir, "cases.json")
-	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
-		t.Fatalf("write test file: %v", err)
-	}
-
 	cases, err := LoadEvalCases(path)
 	if err != nil {
 		t.Fatalf("LoadEvalCases error: %v", err)
@@ -193,13 +144,7 @@ func TestEvalCaseV1UnmarshalIgnoresNewFields(t *testing.T) {
 	if len(cases) != 1 {
 		t.Fatalf("expected 1 case, got %d", len(cases))
 	}
-	if cases[0].Query != "test" {
-		t.Fatalf("unexpected query: %s", cases[0].Query)
-	}
-	if cases[0].Description != "" {
-		t.Fatalf("expected empty description, got %s", cases[0].Description)
-	}
-	if cases[0].Category != "" {
-		t.Fatalf("expected empty category, got %s", cases[0].Category)
+	if cases[0].Category != "test" {
+		t.Fatalf("expected category 'test', got %s", cases[0].Category)
 	}
 }

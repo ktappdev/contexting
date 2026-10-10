@@ -48,7 +48,7 @@ Remote LLM endpoints must use HTTPS; HTTP is accepted only on loopback.
 
 `ctxt init` walks the filesystem tree and builds `.ctxt/ctx_index.json` — a single recursive JSON tree where every entry has `full_path`, `type`, optional `symbols`, optional `synonyms`, and nested `children` for directories.
 
-**Symbols:** Every source file gets scanned with language-specific extractors that pull out exported symbols — functions, types, variables, classes, constants. These become a `symbols` array on the file node. The default extractor is `auto` (tree-sitter with regex fallback). Supported languages: Go (go/parser), Python/JavaScript/TypeScript/Rust/Svelte/Astro (tree-sitter), Vue/Ruby (regex fallback).
+**Symbols:** Every source file gets scanned with language-specific extractors that pull out named declarations, including Go receiver methods — functions, types, variables, classes, constants. These become a `symbols` array on the file node. The default extractor is `auto` (tree-sitter with regex fallback). Supported languages: Go (go/parser), Python/JavaScript/TypeScript/Rust/Svelte/Astro (tree-sitter), Vue/Ruby (regex fallback).
 
 **Synonyms:** Each node (file or directory) gets 5–12 LLM-generated synonyms via batched API calls to an OpenAI-compatible endpoint. For example, `Skeletons.tsx → ["skeletons", "loading", "placeholder", "animation"]`. Names are smart-batched (up to 60 per request, 10 parallel by default). The prompt includes extracted symbols and, for JS/TS files, ESM imports to generate contextual terms. Use `--offline` to guarantee that no LLM requests are made.
 
@@ -56,28 +56,29 @@ Remote LLM endpoints must use HTTPS; HTTP is accepted only on loopback.
 
 ### Search mechanics
 
-When you run `search-hints "product review rating"`, the query is lowercased and split into tokens. Each token is scored against every node in the tree using matchers that each contribute points:
+When you run `search-hints "product review rating"`, the query is lowercased and split into tokens. Each token is scored against every node in the tree using the matchers below. Each token receives points for its strongest path match, strongest synonym match, and up to three distinct symbol matches, so repeated mentions of one concept cannot inflate a file’s score:
 
 | Matcher | Points | Description |
 |---------|--------|-------------|
 | exact | +12 | Token exactly matches a directory basename |
 | basename | +7 | Token matches the file's basename |
-| exact basename | +15 | Token exactly matches the full filename (with or without extension) |
+| exact basename | +15 | Entire query exactly matches the full filename (with or without extension) |
 | path segment | +4 | Token matches any segment in the full path |
 | segment prefix | +5 | Token is a prefix of a path segment |
 | syn-exact | +8 | Token exactly matches a synonym |
 | syn overlap | +5 | Token partially overlaps a synonym |
-| sym exact | +8 | Token exactly matches a symbol name |
+| sym exact | +24 | Token exactly matches a symbol name |
 | sym contains | +5 | Token is contained in a symbol name |
 | sym token | +4 | Token matches a camelCase/PascalCase split token in a symbol |
 
 The `--explain` flag reveals this breakdown:
 
 ```
-basename contains +7: skeleton + syn exact +8: loading + sym contains +5: PageSkeleton = total 148
+syn exact +8: loading
+sym contains +5: PageSkeleton
 ```
 
-Results are ranked by total score. Low-signal short/common words are filtered from query and synonym matching to reduce noise. Results are truncated at confidence gaps — if there's a 50%+ score drop between consecutive results, lower-scoring results are omitted even if `--limit` would include them. Exact filename/symbol lookups can return just one strong match; conceptual queries retain up to three alternatives. Zero-score candidates are never returned.
+Matching additional distinct query terms adds +4 per term after the first; generated stems do not count as extra query terms. Exact symbol matches outweigh three partial symbol matches. Results are ranked by total score. Low-signal short/common words are filtered from query and synonym matching to reduce noise. Results are truncated at confidence gaps — if there's a 50%+ score drop between consecutive results, lower-scoring results are omitted even if `--limit` would include them. Exact filename/symbol lookups can return just one strong match; conceptual queries retain up to three alternatives. Zero-score candidates are never returned.
 
 ### Watch mode
 
@@ -178,7 +179,7 @@ Benchmark Hit@1/3/5 + MRR from manual query cases.
 ctxt eval --cases ctx_cases.json --json
 ```
 
-Input format (v2 with categories, backward compatible with v1):
+Input format (version 2 with categories):
 ```json
 {
   "version": 2,
@@ -193,12 +194,7 @@ Input format (v2 with categories, backward compatible with v1):
 }
 ```
 
-v1 format (bare array) is also supported:
-```json
-[
-  {"query": "auth middleware", "expect_any": ["internal/auth/middleware.go"]}
-]
-```
+Bare arrays and other case versions are rejected.
 
 ### `ctxt bench`
 
@@ -316,7 +312,7 @@ search-hints → load .ctxt/ctx_index.json (or query live memory) → score toke
 - **`.ctxt/ctx_cache.json`** — versioned project-relative synonyms and symbol/import context fingerprints
 - **`.ctxt/ctx_config.toml`** — config-driven defaults
 - **`.ctxt/ctx_runtime.json`** — live watch discovery for memory search
-- **Bench/eval case files** — v2 format with categories (path-intent, symbol-lookup, concept-synonym, exact-file, narrow-scope, vague-intent); v1 bare array format is backward compatible
+- **Bench/eval case files** — v2 format with categories (path-intent, symbol-lookup, concept-synonym, exact-file, narrow-scope, vague-intent); requires version 2
 
 ## Project size guard
 

@@ -91,7 +91,7 @@ Examples:
 				return fmt.Errorf("--cases is required")
 			}
 
-			cases, err := LoadCasesAuto(casesPath)
+			cases, err := LoadEvalCases(casesPath)
 			if err != nil {
 				return err
 			}

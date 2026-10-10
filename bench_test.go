@@ -12,14 +12,14 @@ func buildFixtureBench(t *testing.T) (string, *ContextIndex) {
 	t.Helper()
 	root := t.TempDir()
 	files := map[string]string{
-		"src/audio/batch.go":         "package audio\nfunc BatchProcess() {}",
-		"src/audio/stream.go":        "package audio\nfunc Stream() {}",
-		"src/search/scoring.go":      "package search\nfunc Score() {}",
-		"src/cmd/register.go":      "package cmd\nfunc RegisterCommand() {}",
-		"src/ignore/rules.go":        "package ignore\nfunc Match() {}",
-		"node_modules/lib/index.js":  "module.exports = {}\n", // should be ignored
-		".git/config":                "[core]\n",
-		"README.md":                  "# bench fixture\n",
+		"src/audio/batch.go":        "package audio\nfunc BatchProcess() {}",
+		"src/audio/stream.go":       "package audio\nfunc Stream() {}",
+		"src/search/scoring.go":     "package search\nfunc Score() {}",
+		"src/cmd/register.go":       "package cmd\nfunc RegisterCommand() {}",
+		"src/ignore/rules.go":       "package ignore\nfunc Match() {}",
+		"node_modules/lib/index.js": "module.exports = {}\n", // should be ignored
+		".git/config":               "[core]\n",
+		"README.md":                 "# bench fixture\n",
 	}
 	for path, content := range files {
 		full := filepath.Join(root, filepath.FromSlash(path))
@@ -43,7 +43,7 @@ func buildFixtureBench(t *testing.T) (string, *ContextIndex) {
 func writeCasesBench(t *testing.T, cases []EvalCase) string {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "cases.json")
-	data, err := json.Marshal(cases)
+	data, err := json.Marshal(CaseFile{Version: 2, Categories: map[string]CaseCategory{"bench": {Cases: cases}}})
 	if err != nil {
 		t.Fatalf("marshal cases: %v", err)
 	}
@@ -548,7 +548,7 @@ func TestCategoryReportFallback(t *testing.T) {
 	_, index := buildFixtureBench(t)
 	cases := []EvalCase{
 		{Query: "batch audio processing", ExpectAny: []string{"src/audio/batch.go"}}, // No category
-		{Query: "scoring", ExpectAny: []string{"src/search/scoring.go"}}, // No category
+		{Query: "scoring", ExpectAny: []string{"src/search/scoring.go"}},             // No category
 	}
 	out := runBench(BenchInput{
 		Index:        index,

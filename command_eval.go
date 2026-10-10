@@ -26,14 +26,14 @@ Examples:
   ctxt eval --cases cases.json --json              JSON output`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var absConfigPath string
-		if configPath != "" {
-			var cfgErr error
-			absConfigPath, cfgErr = filepath.Abs(configPath)
-			if cfgErr != nil {
-				return fmt.Errorf("resolve config path: %w", cfgErr)
+			if configPath != "" {
+				var cfgErr error
+				absConfigPath, cfgErr = filepath.Abs(configPath)
+				if cfgErr != nil {
+					return fmt.Errorf("resolve config path: %w", cfgErr)
+				}
 			}
-		}
-		cfg, err := LoadContextingConfig(absConfigPath)
+			cfg, err := LoadContextingConfig(absConfigPath)
 			if err != nil {
 				return err
 			}
@@ -63,7 +63,7 @@ Examples:
 			if err != nil {
 				return err
 			}
-			cases, err := LoadCasesAuto(casesPath)
+			cases, err := LoadEvalCases(casesPath)
 			if err != nil {
 				return err
 			}
