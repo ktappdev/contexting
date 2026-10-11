@@ -5,7 +5,6 @@ import "github.com/spf13/cobra"
 func applyCommonConfig(cmd *cobra.Command, flags *CommonFlags, cfg CommonConfig) {
 	applyStringFlag(cmd, "output", &flags.OutputPath, cfg.OutputPath)
 	applyStringFlag(cmd, "synonym-cache", &flags.SynonymCache, cfg.SynonymCache)
-	applyStringFlag(cmd, "llm-model", &flags.Model, cfg.Model)
 	applyStringFlag(cmd, "api-key", &flags.APIKey, cfg.APIKey)
 	applyIntFlag(cmd, "batch-size", &flags.BatchSize, cfg.BatchSize)
 	applyIntFlag(cmd, "synonyms", &flags.SynonymsPerName, cfg.SynonymsPerName)

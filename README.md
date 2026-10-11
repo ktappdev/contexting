@@ -26,6 +26,10 @@ ctxt status
 
 The first run creates `.ctxt/ctx_config.toml` and starts indexing right away. You can edit the config later; CLI flags override config values. Start `ctxt watch .` when you want a live index that follows file changes.
 
+**Want to choose a model before indexing?** Run `ctxt config init` first,
+edit `model` under `[llm]` in `.ctxt/ctx_config.toml`, then run `ctxt init .`.
+See [config setup](#ctxt-config-init) for details.
+
 LLM synonyms are optional. To enable them, set `OPENROUTER_API_KEY` in your shell or secret manager before running `ctxt init .`. Without a key, indexing still works with lexical matching.
 
 ## LLM flexibility
@@ -254,10 +258,27 @@ ctxt doctor --json
 
 ### `ctxt config init`
 
-Create or overwrite `.ctxt/ctx_config.toml`:
+Create `.ctxt/ctx_config.toml` before indexing if you want to choose your model
+or customize ignore rules first:
 
 ```bash
-ctxt config init --output .ctxt/ctx_config.toml
+ctxt config init
+```
+
+Edit `model` under `[llm]` in the generated file, then build the index:
+
+```bash
+ctxt init .
+```
+
+`--output` selects a different config path. Existing files are preserved;
+`--force` explicitly overwrites them with the starter defaults.
+
+After indexing, changing the model does not invalidate cached synonyms. To
+regenerate synonyms with your saved model, run:
+
+```bash
+ctxt sync . --force
 ```
 
 ## Configuration
@@ -268,7 +289,6 @@ ctxt config init --output .ctxt/ctx_config.toml
 [common]
 output = ".ctxt/ctx_index.json"
 synonym_cache = ".ctxt/ctx_cache.json"
-llm_model = "deepseek/deepseek-v4-flash"
 batch_size = 8               # names per LLM request; 0 enables smart batching
 synonyms_min = 5             # min synonyms per name
 synonyms_max = 12            # max synonyms per name
@@ -286,6 +306,9 @@ parallel_requests = 10       # concurrent LLM batches
 ```
 
 **LLM config resolution:** flag → config `api_key` → config `api_key_env` → `LLM_API_KEY` → `OPENROUTER_API_KEY`.
+
+**Model selection:** `--llm-model` → `[llm].model` → built-in default. Set the
+saved model only under `[llm]`; `[common].llm_model` is not supported.
 
 **Supported providers:** OpenRouter (default) and APIs that implement the
 OpenAI chat-completions request/response shape. The `provider` value labels

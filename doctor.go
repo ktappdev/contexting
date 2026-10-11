@@ -209,9 +209,6 @@ func applyCommonConfigNoCLI(flags *CommonFlags, cfg CommonConfig) {
 	if cfg.SynonymCache != "" {
 		flags.SynonymCache = cfg.SynonymCache
 	}
-	if cfg.Model != "" {
-		flags.Model = cfg.Model
-	}
 	if cfg.APIKey != "" {
 		flags.APIKey = cfg.APIKey
 	}

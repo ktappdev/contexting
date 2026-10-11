@@ -14,10 +14,12 @@ func TestLoadContextingConfig(t *testing.T) {
 	content := `
 [common]
 output = "out/context.json"
-llm_model = "openai/gpt-oss-safeguard-20b"
 batch_size = 12
 ignore = ["dist", "build"]
 verbose = true
+
+[llm]
+model = "openai/gpt-oss-safeguard-20b"
 
 [watch]
 debounce = "2s"
@@ -46,6 +48,9 @@ show_tokens = true
 	}
 	if cfg.Common.BatchSize != 12 {
 		t.Fatalf("unexpected batch size: %d", cfg.Common.BatchSize)
+	}
+	if cfg.LLM.Model != "openai/gpt-oss-safeguard-20b" {
+		t.Fatalf("unexpected LLM model: %s", cfg.LLM.Model)
 	}
 	if cfg.Watch.Debounce != "2s" {
 		t.Fatalf("unexpected debounce: %s", cfg.Watch.Debounce)

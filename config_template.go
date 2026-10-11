@@ -3,7 +3,6 @@ package contexting
 const starterConfigTemplate = `[common]
 output = ".ctxt/ctx_index.json"
 synonym_cache = ".ctxt/ctx_cache.json"
-llm_model = "deepseek/deepseek-v4-flash"
 batch_size = 8               # names per batch; smaller = faster individual requests
 synonyms_min = 5            # min synonyms per name
 synonyms_max = 12           # max synonyms per name
@@ -22,10 +21,6 @@ model = "deepseek/deepseek-v4-flash"
 # api_key = "sk-..."                    # or use api_key_env for security
 api_key_env = "OPENROUTER_API_KEY"      # read key from env var
 # max_tokens = 512
-# provider = "openrouter"
-# endpoint = "https://openrouter.ai/api/v1/chat/completions"
-# model = "deepseek/deepseek-v4-flash"
-# api_key_env = "OPENROUTER_API_KEY"
 
 [init]
 root = "."

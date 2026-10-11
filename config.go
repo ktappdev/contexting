@@ -21,7 +21,6 @@ type ContextingConfig struct {
 type CommonConfig struct {
 	OutputPath      string   `toml:"output"`
 	SynonymCache    string   `toml:"synonym_cache"`
-	Model           string   `toml:"llm_model"`
 	APIKey          string   `toml:"api_key"`
 	BatchSize       int      `toml:"batch_size"`
 	SynonymsPerName int      `toml:"synonyms"`

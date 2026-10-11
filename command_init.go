@@ -21,9 +21,12 @@ Creates two files:
 
 With an LLM API key, ctxt sends filenames + extracted imports to the LLM to generate domain-accurate synonyms. Without one, falls back to lexical splitting (pascalCase → "pascal case", snake_case → "snake case").
 
+To choose your model before indexing, run "ctxt config init", edit [llm].model
+in .ctxt/ctx_config.toml, then run "ctxt init .".
+
 Examples:
   ctxt init .                                    Basic setup
-  ctxt init . --model openai/gpt-4o              Use specific LLM model
+  ctxt init . --llm-model openai/gpt-4o          Use specific LLM model
   ctxt init . --symbol-extractor treesitter      Force tree-sitter (no regex fallback)
   ctxt init . --symbol-extractor regex           Regex-only extraction
   ctxt init . --synonyms 8                       Generate up to 8 synonyms per name

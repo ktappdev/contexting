@@ -143,7 +143,7 @@
                 <pre><code>ctxt init .
 ctxt status</code></pre>
               </div>
-              <p class="step-note">The first run creates <code>.ctxt/ctx_config.toml</code> and keeps going with sensible defaults. Add <code>OPENROUTER_API_KEY</code> first for LLM synonyms; it is optional.</p>
+              <p class="step-note">To choose a model first, run <code>ctxt config init</code> and edit <code>[llm].model</code> in <code>.ctxt/ctx_config.toml</code> before indexing. Otherwise, the first run offers a starter config and continues with its defaults. <code>OPENROUTER_API_KEY</code> is optional.</p>
             </div>
           </article>
 
@@ -292,7 +292,7 @@ ctxt search-hints "session timeout" --explain</code></pre>
           <div class="config-note-icon" aria-hidden="true">⚙</div>
           <div>
             <p class="card-label">Configuration that stays with the project</p>
-            <p>On first run, ctxt creates <code>.ctxt/ctx_config.toml</code> and continues with its defaults. CLI flags win over config, and config wins over defaults. Keep the config checked in if the whole team should share behavior; keep API keys in environment variables.</p>
+            <p>Run <code>ctxt config init</code> to customize settings before indexing, or let the first run offer a starter config. Set your model under <code>[llm]</code>; CLI flags override config values. Keep the config checked in if the whole team should share behavior; keep API keys in environment variables.</p>
           </div>
           <a class="text-link" href="https://github.com/ktappdev/contexting/blob/main/context.toml.example">See the example <span aria-hidden="true">↗</span></a>
         </div>

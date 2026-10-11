@@ -1,7 +1,6 @@
 [common]
 output = ".ctxt/ctx_index.json"
 synonym_cache = ".ctxt/ctx_cache.json"
-llm_model = "deepseek/deepseek-v4-flash"
 batch_size = 8              # names per batch; 0 enables smart batching
 synonyms_min = 5            # min synonyms per name
 synonyms_max = 12           # max synonyms per name

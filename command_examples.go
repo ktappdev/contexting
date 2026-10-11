@@ -13,8 +13,9 @@ func newExamplesCommand() *cobra.Command {
 		Long:  ``,
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Print(`Setup:
+  ctxt config init                         Create config to customize before indexing
   ctxt init .                              Build index for current project
-  ctxt init . --model openai/gpt-4o        Use specific model for synonyms
+  ctxt init . --llm-model openai/gpt-4o      Use specific model for synonyms
 
 Search:
   ctxt search-hints "auth"                 Find auth-related files
@@ -37,7 +38,7 @@ Benchmarks:
 Inspection:
   ctxt status                    Show index stats
   ctxt doctor                    Health check
-  ctxt config show               View current config
+  ctxt config --help             See config setup options
   ctxt clean                     Remove all ctxt files
 `)
 		},

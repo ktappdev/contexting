@@ -18,6 +18,12 @@ func newConfigInitCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "init",
 		Short: "Create starter .ctxt/ctx_config.toml",
+		Long: `Create the project config before indexing so you can choose your model and settings.
+
+From the project root, run "ctxt config init", edit [llm].model in
+.ctxt/ctx_config.toml, then run "ctxt init ." to build the index.
+
+Existing config files are preserved unless you pass --force.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			target := outPath
 			if target == "" {
@@ -27,6 +33,7 @@ func newConfigInitCommand() *cobra.Command {
 				return err
 			}
 			LogInfof("Created starter config at %s", target)
+			LogInfof("Edit [llm].model and other settings before indexing your project.")
 			return nil
 		},
 	}
