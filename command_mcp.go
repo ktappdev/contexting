@@ -421,7 +421,6 @@ Setup: Add to your AI client's MCP config:
 						if len(changes) == 0 {
 							continue
 						}
-						logChangeSummary(changes, flags.Verbose)
 						result, applyErr := manager.ApplyChanges(ctx, changes)
 						if applyErr != nil {
 							if !isCanceledError(applyErr) {
@@ -432,6 +431,7 @@ Setup: Add to your AI client's MCP config:
 						emitSynonymWarning(result.SynonymError)
 						if result.Changed {
 							if flags.Verbose {
+								logChangeSummary(result.ChangedPaths, flags.Verbose)
 								LogInfof("In-memory index updated: %d nodes (%d files, %d directories).", result.Stats.TotalNodes, result.Stats.TotalFiles, result.Stats.TotalDirs)
 							}
 							if persistMode == PersistChange {
@@ -527,12 +527,14 @@ Setup: Add to your AI client's MCP config:
 
 			remaining := drainPending()
 			if len(remaining) > 0 {
-				logChangeSummary(remaining, flags.Verbose)
 				result, applyErr := manager.ApplyChanges(context.Background(), remaining)
 				if applyErr != nil {
 					LogErrorf("Final apply failed: %v", applyErr)
 				} else {
 					emitSynonymWarning(result.SynonymError)
+					if result.Changed && flags.Verbose {
+						logChangeSummary(result.ChangedPaths, true)
+					}
 				}
 			}
 			if writeMode {

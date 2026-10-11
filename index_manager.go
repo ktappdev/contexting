@@ -43,6 +43,7 @@ type ApplyResult struct {
 	Stats        IndexStats
 	SynonymError error
 	Changed      bool
+	ChangedPaths map[string]fsnotify.Op
 }
 
 type IndexManager struct {
@@ -325,7 +326,7 @@ func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsno
 		return ApplyResult{}, fmt.Errorf("index manager not bootstrapped")
 	}
 
-	result := ApplyResult{}
+	result := ApplyResult{ChangedPaths: make(map[string]fsnotify.Op)}
 	if len(changes) == 0 {
 		result.Stats = ComputeStats(m.index.Tree)
 		result.Stats.CollectedNames = len(CollectNamesForLLM(m.index.Tree))
@@ -376,6 +377,7 @@ func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsno
 		if op&(fsnotify.Remove|fsnotify.Rename) != 0 {
 			if removeNodeByRelPath(m.index.Tree, relPath) {
 				result.Changed = true
+				result.ChangedPaths[relPath] |= op & (fsnotify.Remove | fsnotify.Rename)
 			}
 		}
 
@@ -394,12 +396,14 @@ func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsno
 		if matcher.shouldIgnore(relPath, baseName, isDir) {
 			if removeNodeByRelPath(m.index.Tree, relPath) {
 				result.Changed = true
+				result.ChangedPaths[relPath] |= op & (fsnotify.Create | fsnotify.Write | fsnotify.Chmod)
 			}
 			continue
 		}
 
 		if upsertNodeByRelPath(m.index.Tree, m.rootPath, relPath, isDir, mtime, m.cache, m.synonymsMax) {
 			result.Changed = true
+			result.ChangedPaths[relPath] |= op & (fsnotify.Create | fsnotify.Write | fsnotify.Chmod)
 		}
 	}
 
