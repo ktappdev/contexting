@@ -32,6 +32,24 @@ func anchorsConfigToRoot(name string) bool {
 	return name == "watch"
 }
 
+func commandHasAncestor(cmd *cobra.Command, name string) bool {
+	for current := cmd; current != nil; current = current.Parent() {
+		if current.Name() == name {
+			return true
+		}
+	}
+	return false
+}
+
+func isAgentUnsafeCommand(cmd *cobra.Command) bool {
+	for current := cmd; current != nil; current = current.Parent() {
+		if agentUnsafeCommands[current.Name()] {
+			return true
+		}
+	}
+	return false
+}
+
 func NewRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:     "ctxt",
@@ -54,10 +72,10 @@ Get started:
   ctxt examples         # See more usage patterns`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			// Skip auto-prompt for help/config management flows.
-			if agentMode && agentUnsafeCommands[cmd.Name()] {
+			if agentMode && isAgentUnsafeCommand(cmd) {
 				return fmt.Errorf("command %q is not available in agent mode; run without --agent or use a human-approved tool", cmd.Name())
 			}
-			if cmd.Name() == "help" || cmd.Name() == "version" || cmd.Name() == "config" || cmd.Name() == "clean" || cmd.Name() == "status" || cmd.Name() == "mcp" || cmd.Parent() != nil && cmd.Parent().Name() == "config" {
+			if cmd.Name() == "help" || cmd.Name() == "version" || cmd.Name() == "config" || cmd.Name() == "clean" || cmd.Name() == "status" || commandHasAncestor(cmd, "mcp") || cmd.Parent() != nil && cmd.Parent().Name() == "config" {
 				return nil
 			}
 			if noConfigPrompt {

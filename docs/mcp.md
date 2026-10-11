@@ -33,6 +33,37 @@ MCP is a standard protocol for AI assistants to use external tools. The AI clien
    ```
    Synonyms improve conceptual search but aren't required.
 
+## One-command setup
+
+After building the index, run this from the project root:
+
+```bash
+ctxt mcp setup .
+```
+
+`setup` detects installed Claude Code, Codex, and Pi clients, shows the
+project-local config files it will create or update, and asks before writing.
+It then starts the MCP server in the foreground; stop it with Ctrl+C. The
+clients must be restarted or reloaded to pick up their new config.
+
+To configure selected clients explicitly, use repeatable `--client` flags:
+
+```bash
+ctxt mcp setup --client codex --client pi .
+```
+
+For automation, `--yes` accepts the displayed config changes without a prompt:
+
+```bash
+ctxt mcp setup --yes .
+```
+
+The setup command writes only the MCP entry for `ctxt` and preserves other
+servers in those files. It uses `.mcp.json` for Claude Code,
+`.codex/config.toml` for Codex, and `.pi/mcp.json` for Pi. `ctxt mcp` uses local
+stdio, so this setup is for clients running on the same machine; cloud-hosted
+agents need a remotely reachable MCP transport.
+
 ## Claude Desktop Setup (macOS)
 
 1. **Install ctxt** (if not already installed):

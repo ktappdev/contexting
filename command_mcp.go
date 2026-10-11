@@ -200,6 +200,7 @@ The server watches for file changes and keeps the index current. All communicati
 Pass the project's absolute path so the server targets the right project no matter what working directory the AI client launches it from. If several ctxt servers run on one project, the first becomes the writer and later ones serve read-only (live in-memory search, no snapshot writes).
 
 Setup: Add to your AI client's MCP config:
+  ctxt mcp setup .    Configure detected local clients and start the server
   {"command": "ctxt", "args": ["mcp", "/abs/path/to/project"]}`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -575,6 +576,7 @@ Setup: Add to your AI client's MCP config:
 	cmd.Flags().BoolVar(&searchLog, "search-log", false, "Log incoming queries (may contain sensitive data)")
 	cmd.Flags().IntVar(&searchLogQueryMax, "search-log-query-max", defaultSearchLogQueryMax, "Maximum query characters shown in search logs")
 	cmd.Flags().BoolVar(&enableHTTP, "http", false, "Also serve HTTP memory search endpoint alongside MCP")
+	cmd.AddCommand(newMCPSetupCommand(cmd))
 
 	return cmd
 }
