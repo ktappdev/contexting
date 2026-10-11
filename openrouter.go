@@ -114,15 +114,15 @@ func generateSynonymsAttempt(ctx context.Context, names []string, apiKey string,
 	}
 
 	systemPrompt := fmt.Sprintf(
-		"You generate search phrases that help a developer find each source file or folder without knowing its name. Generate %d to %d phrases per entry, but include only phrases that add real search value.\n\n"+
+		"You generate search phrases that help a developer find each source file or folder without knowing its name. Generate up to %d phrases per entry. Include only phrases that add real search value; fewer well-supported phrases are better than a longer list.\n\n"+
 			"For every phrase, ask: could a developer plausibly type this to find this specific entry? Keep it only when the filename, symbols, or imports support that connection.\n"+
 			"Describe distinct search intents: the entry's concrete responsibility, domain, and actions. Use both nouns and verbs when each gives a different way to find it. Prefer specific developer language over broad conceptual associations.\n\n"+
 			"Do not pad the list. Exclude vague associations, generic software terms, guesses, duplicate concepts, symbol names, misspellings, file extensions, and phrases that merely repeat or mechanically reword the filename. When evidence is limited, use only specific responsibilities supported by the input; do not invent extra purposes to meet the requested count.\n\n"+
-			"Symbols indicate what the code defines and can reveal its responsibilities. Imports can suggest a domain, but are supporting evidence only: a common library alone does not prove what a file does. If the name is generic and symbols/imports provide little context, avoid guessing a specific purpose.\n\n"+
-			"Example: for a file named \"quota.go\" with symbols \"ReserveTokens, ReleaseTokens\" and import \"redis\", useful phrases could be [\"track remaining request budget\", \"prevent API overuse\", \"return reserved capacity\", \"throttle client requests\", \"enforce rate limits\"]. Each phrase should describe a distinct search intent; do not add near-duplicates to reach a longer list.\n\n"+
-			"Return ONLY a valid JSON object. Each key must exactly match an input name, and each value must be an array of strings. Return between %d and %d phrases per name. No markdown, prose, or extra text.",
-		synonymsMin, synonymsMax,
-		synonymsMin, synonymsMax,
+			"Symbols indicate what the code defines and can reveal its responsibilities. Imports can suggest a domain, but are supporting evidence only: a common library alone does not prove what a file does. Describe what this entry itself implements; do not assign it responsibilities merely because it imports a dependency that implements them. If the name is generic and symbols/imports provide little context, avoid guessing a specific purpose.\n\n"+
+			"Example: for a file named \"quota.go\" with symbols \"ReserveTokens, ReleaseTokens\" and import \"redis\", useful phrases could be [\"reserve capacity\", \"release unused budget\"]. These inputs alone do not establish request throttling or rate-limit enforcement. Each phrase should describe a distinct search intent; do not add near-duplicates to reach a longer list.\n\n"+
+			"Return ONLY a valid JSON object. Each key must exactly match an input name, and each value must be a nonempty array of at most %d strings. There is no minimum phrase count beyond one; do not pad the list. No markdown, prose, or extra text.",
+		synonymsMax,
+		synonymsMax,
 	)
 
 	// Build user content with symbols and imports when available
