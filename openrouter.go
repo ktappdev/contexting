@@ -114,27 +114,13 @@ func generateSynonymsAttempt(ctx context.Context, names []string, apiKey string,
 	}
 
 	systemPrompt := fmt.Sprintf(
-		"You are a code search expert. Given source code file and folder names from a software project, generate %d to %d conceptual synonyms for each — words a developer might type when searching for that file WITHOUT knowing its exact name.\n\n"+
-			"Think about WHAT THE FILE DOES, not just what it's called. Include:\n"+
-			"- Functional purpose (what the code handles)\n"+
-			"- Related concepts (terms developers associate with this functionality)\n"+
-			"- Alternative vocabulary (different words for the same concept)\n"+
-			"- Action verbs (what a developer would DO with this code — e.g. \"authenticate\", \"filter\", \"parse\", \"validate\")\n\n"+
-			"The input may include code symbols (in brackets) AND imports (in brackets) for each file.\n"+
-			"- Symbols reveal what the code defines (function/class/type names). Use them to understand what the code actually does.\n"+
-			"- Imports reveal which external libraries or internal modules the file depends on. Use imports to understand the file's DOMAIN — e.g. \"@clerk/nextjs\" means the file handles Clerk authentication, \"stripe\" means payment processing, \"next/navigation\" means routing, \"@prisma/client\" means database access. This is critical: a file's own symbols may be generic (e.g. POST/GET handlers in a route.ts) while its imports pinpoint the actual domain.\n"+
-			"Generate synonyms that reflect the real domain inferred from symbols AND imports — not just the filename word.\n\n"+
-			"Do NOT include: word variations of the filename, misspellings, file extensions, or trivial modifications.\n"+
-			"Do NOT replace noun synonyms with verb synonyms — include BOTH nouns and verbs.\n\n"+
-			"Examples:\n"+
-			"{\"auth.go\": [\"login\", \"authentication\", \"session\", \"credentials\", \"signin\", \"access control\", \"identity\"]}\n"+
-			"{\"ignore.go\": [\"skip\", \"exclude\", \"filter\", \"block\", \"deny list\", \"whitelist\", \"blacklist\", \"ignore patterns\", \"omit\", \"suppress\"]}\n"+
-			"{\"openrouter.go\": [\"llm\", \"ai model\", \"api client\", \"chat completion\", \"language model\", \"inference\", \"synonym generation\"]}\n"+
-			"{\"index_manager.go\": [\"index\", \"cache\", \"snapshot\", \"search state\", \"live index\", \"in-memory index\", \"persistence\"]}\n"+
-			"{\"watch_helpers.go\": [\"file monitor\", \"fsnotify\", \"file changes\", \"watcher\", \"event handler\", \"live updates\", \"filesystem events\"]}\n"+
-			"{\"handler.go\": [\"process request\", \"handle\", \"serve\", \"respond\", \"route\", \"dispatch\", \"receive\", \"accept\"]}\n"+
-			"{\"webhook/route.ts\": [\"clerk webhook\", \"user events\", \"clerk event handler\", \"webhook receiver\", \"clerk user sync\", \"auth webhook\"]}\n\n"+
-			"Return ONLY a valid JSON object where each key is an exact filename from the input list and each value is an array of synonym strings. Generate between %d and %d synonyms per name. No markdown, no prose, no extra text.",
+		"You generate search phrases that help a developer find each source file or folder without knowing its name. Generate %d to %d phrases per entry, but include only phrases that add real search value.\n\n"+
+			"For every phrase, ask: could a developer plausibly type this to find this specific entry? Keep it only when the filename, symbols, or imports support that connection.\n"+
+			"Describe distinct search intents: the entry's concrete responsibility, domain, and actions. Use both nouns and verbs when each gives a different way to find it. Prefer specific developer language over broad conceptual associations.\n\n"+
+			"Do not pad the list. Exclude vague associations, generic software terms, guesses, duplicate concepts, symbol names, misspellings, file extensions, and phrases that merely repeat or mechanically reword the filename. When evidence is limited, use only specific responsibilities supported by the input; do not invent extra purposes to meet the requested count.\n\n"+
+			"Symbols indicate what the code defines and can reveal its responsibilities. Imports can suggest a domain, but are supporting evidence only: a common library alone does not prove what a file does. If the name is generic and symbols/imports provide little context, avoid guessing a specific purpose.\n\n"+
+			"Example: for a file named \"quota.go\" with symbols \"ReserveTokens, ReleaseTokens\" and import \"redis\", useful phrases could be [\"track remaining request budget\", \"prevent API overuse\", \"return reserved capacity\", \"throttle client requests\", \"enforce rate limits\"]. Each phrase should describe a distinct search intent; do not add near-duplicates to reach a longer list.\n\n"+
+			"Return ONLY a valid JSON object. Each key must exactly match an input name, and each value must be an array of strings. Return between %d and %d phrases per name. No markdown, prose, or extra text.",
 		synonymsMin, synonymsMax,
 		synonymsMin, synonymsMax,
 	)
