@@ -44,7 +44,9 @@ ctxt mcp setup .
 `setup` detects installed Claude Code, Codex, and Pi clients, shows the
 project-local config files it will create or update, and asks before writing.
 It then starts the MCP server in the foreground; stop it with Ctrl+C. The
-clients must be restarted or reloaded to pick up their new config.
+directly launched stdio process does not attach to an already-open client. Stop
+it with Ctrl+C, then restart or reload the clients; each client launches its
+own configured server process.
 
 To configure selected clients explicitly, use repeatable `--client` flags:
 
