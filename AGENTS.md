@@ -106,7 +106,7 @@ ctxt version  # → 0.0.2 (ctxt --version also works)
 | Parallel requests | `10` |
 | Symbol flow | Symbols extracted BEFORE synonyms (sequential), then fed to LLM during synonym generation |
 | Default bench engines | `ctxt,find,grep` (`fd`, `rg`, `hybrid`, `combined` are opt-in via `--engines`) |
-| Scoring | Exact basename match +15 (highest); confidence gap heuristic truncates results at score cliffs |
+| Scoring | Exact symbol match +24 (highest); exact basename +15, exact token +12, basename contains +7, path contains +4, synonym exact +8, symbol token +4; confidence gap heuristic truncates results at score cliffs |
 | `--agent` flag | Blocks state-modifying commands (`init`/`watch`/`sync`/`clean`) |
 
 ### Flag Defaults

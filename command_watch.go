@@ -47,12 +47,17 @@ Examples:
   ctxt watch . --persist shutdown                Save snapshot on graceful shutdown`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var absConfigPath string
-			if configPath != "" {
-				var err error
-				absConfigPath, err = filepath.Abs(configPath)
-				if err != nil {
-					return fmt.Errorf("resolve config path: %w", err)
+			rootArg := ""
+			if len(args) == 1 {
+				rootArg = args[0]
+			}
+			absConfigPath, err := resolveStartupConfigPath(configPath, rootArg, cmd.Flags().Changed("config"))
+			if err != nil {
+				return err
+			}
+			if absConfigPath != "" && !cmd.Flags().Changed("config") {
+				if _, statErr := os.Stat(absConfigPath); os.IsNotExist(statErr) {
+					LogWarnf("Config file not found at %s; using defaults.", absConfigPath)
 				}
 			}
 			cfg, err := LoadContextingConfig(absConfigPath)
@@ -108,16 +113,13 @@ Examples:
 			if err != nil {
 				return fmt.Errorf("resolve watch path: %w", err)
 			}
-			if _, statErr := os.Stat(absConfigPath); os.IsNotExist(statErr) {
-				if !cmd.Flags().Changed("config") {
-					return fmt.Errorf("config file not found at %s; run ctxt from the project root directory", absConfigPath)
-				}
-			}
-			releaseWriter, err := acquireWriterGuard(absRoot)
+			releaseWriter, writeMode, err := acquireWriterGuardAllowShared(absRoot)
 			if err != nil {
 				return err
 			}
-			defer releaseWriter()
+			if writeMode {
+				defer releaseWriter()
+			}
 			outputPath := resolveProjectPath(absRoot, flags.OutputPath)
 			if _, statErr := os.Stat(outputPath); os.IsNotExist(statErr) {
 				return fmt.Errorf("no index found at %s; run 'ctxt init' from the project root first", outputPath)
@@ -320,16 +322,20 @@ Examples:
 							}
 						}
 					}
-					flushed, flushErr := manager.FlushIfDirty()
-					if flushErr != nil {
-						LogErrorf("Failed to flush snapshot on shutdown: %v", flushErr)
-						LogInfof("Stopping watcher.")
-						return flushErr
-					}
-					if flushed {
-						LogInfof("Flushed snapshot to %s and %s", outputPath, cachePath)
+					if writeMode {
+						flushed, flushErr := manager.FlushIfDirty()
+						if flushErr != nil {
+							LogErrorf("Failed to flush snapshot on shutdown: %v", flushErr)
+							LogInfof("Stopping watcher.")
+							return flushErr
+						}
+						if flushed {
+							LogInfof("Flushed snapshot to %s and %s", outputPath, cachePath)
+						} else {
+							LogInfof("No snapshot flush needed.")
+						}
 					} else {
-						LogInfof("No snapshot flush needed.")
+						LogInfof("Read-only watcher: skipping snapshot flush.")
 					}
 					LogInfof("Stopping watcher.")
 					return nil

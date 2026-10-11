@@ -1,8 +1,10 @@
 package contexting
 
 import (
+	"fmt"
 	"net/url"
 	"os"
+	"path/filepath"
 )
 
 type CommonFlags struct {
@@ -38,6 +40,29 @@ func (c *CommonFlags) normalize() {
 	if c.SynonymCache == "" {
 		c.SynonymCache = ".ctxt/ctx_cache.json"
 	}
+}
+
+// resolveStartupConfigPath anchors the default config path to the resolved project
+// root so ctxt watch/mcp work regardless of the process working directory. When a
+// root argument is given, the default ".ctxt/ctx_config.toml" resolves to that root;
+// otherwise it resolves to the working directory as before. An explicitly supplied
+// --config keeps its previous behavior: it resolves against the working directory.
+func resolveStartupConfigPath(configPath string, rootArg string, configOverridden bool) (string, error) {
+	if configOverridden {
+		if configPath == "" {
+			return "", nil
+		}
+		return filepath.Abs(configPath)
+	}
+	configRoot := "."
+	if rootArg != "" {
+		configRoot = rootArg
+	}
+	absRoot, err := filepath.Abs(configRoot)
+	if err != nil {
+		return "", fmt.Errorf("resolve config root: %w", err)
+	}
+	return resolveProjectPath(absRoot, configPath), nil
 }
 
 func resolveLLMConfig(flags CommonFlags, llmCfg LLMConfig) (endpoint, model, apiKey string, temperature float64, maxTokens int, provider string) {

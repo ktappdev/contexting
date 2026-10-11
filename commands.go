@@ -24,6 +24,14 @@ var agentUnsafeCommands = map[string]bool{
 	"mcp":   true,
 }
 
+// anchorsConfigToRoot reports whether a command resolves its default config
+// path against a project root argument (see resolveStartupConfigPath). The
+// bootstrap prompt must use the same anchoring so it offers to create the
+// config where the command will actually load it.
+func anchorsConfigToRoot(name string) bool {
+	return name == "watch"
+}
+
 func NewRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:     "ctxt",
@@ -55,7 +63,19 @@ Get started:
 			if noConfigPrompt {
 				return nil
 			}
-			created, err := ensureStarterConfigPrompt(configPath, createConfig)
+			// Commands that anchor the default config to a project root argument
+			// must bootstrap against that same resolved path, otherwise the
+			// prompt would offer to create the config in the caller's directory
+			// while the command loads it from the project root.
+			rootArg := ""
+			if anchorsConfigToRoot(cmd.Name()) && len(args) > 0 {
+				rootArg = args[0]
+			}
+			resolved, err := resolveStartupConfigPath(configPath, rootArg, cmd.Flags().Changed("config"))
+			if err != nil {
+				return err
+			}
+			created, err := ensureStarterConfigPrompt(resolved, createConfig)
 			configJustCreated = created
 			return err
 		},

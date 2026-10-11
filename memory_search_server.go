@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -18,9 +19,12 @@ const defaultShutdownTimeout = 2 * time.Second   // Timeout for graceful HTTP se
 const defaultSearchLogQueryMax = 120
 
 type memorySearchServer struct {
-	runtimeFile string
-	listener    net.Listener
-	httpServer  *http.Server
+	listener     net.Listener
+	httpServer   *http.Server
+	registration *runtimeRegistration
+	closeOnce    sync.Once
+	closed       chan struct{}
+	closeErr     error
 }
 
 type MemorySearchLogOptions struct {
@@ -93,9 +97,9 @@ func startMemorySearchServer(ctx context.Context, manager *IndexManager, runtime
 	}
 
 	server := &memorySearchServer{
-		runtimeFile: runtimeFile,
-		listener:    listener,
-		httpServer:  httpServer,
+		listener:   listener,
+		httpServer: httpServer,
+		closed:     make(chan struct{}),
 	}
 
 	runtime := RuntimeState{
@@ -104,14 +108,21 @@ func startMemorySearchServer(ctx context.Context, manager *IndexManager, runtime
 		PID:       os.Getpid(),
 		StartedAt: time.Now().UTC(),
 	}
-	if err := SaveRuntimeState(runtimeFile, runtime); err != nil {
+	server.registration, err = registerRuntimeState(runtimeFile, runtime)
+	if err != nil {
 		_ = listener.Close()
 		return nil, err
 	}
+	if server.registration == nil {
+		LogInfof("Another HTTP server owns discovery at %s; leaving its registration unchanged.", runtimeFile)
+	}
 
 	go func() {
-		<-ctx.Done()
-		_ = server.Close()
+		select {
+		case <-ctx.Done():
+			_ = server.Close()
+		case <-server.closed:
+		}
 	}()
 
 	go func() {
@@ -146,10 +157,16 @@ func (s *memorySearchServer) Close() error {
 	if s == nil {
 		return nil
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), defaultShutdownTimeout)
-	defer cancel()
-	_ = s.httpServer.Shutdown(ctx)
-	_ = s.listener.Close()
-	_ = os.Remove(s.runtimeFile)
-	return nil
+	s.closeOnce.Do(func() {
+		defer close(s.closed)
+		ctx, cancel := context.WithTimeout(context.Background(), defaultShutdownTimeout)
+		defer cancel()
+		s.closeErr = s.httpServer.Shutdown(ctx)
+		if s.closeErr != nil {
+			_ = s.httpServer.Close()
+		}
+		_ = s.listener.Close()
+		s.registration.close()
+	})
+	return s.closeErr
 }

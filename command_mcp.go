@@ -26,6 +26,155 @@ type searchToolArgs struct {
 // MCP status tool has no input.
 type statusToolArgs struct{}
 
+// defaultMCPLimit and maxMCPResults bound the search tool's result count so a client
+// cannot dump the whole index (or an unbounded response) into an agent's context.
+const (
+	defaultMCPLimit = 10
+	maxMCPResults   = 50
+)
+
+// searchToolSchema is the JSON Schema for the search tool's input. It is hand-written
+// rather than inferred because the go-sdk's inferred schemas only carry field
+// descriptions; enum and maximum constraints require an explicit schema.
+var searchToolSchema = map[string]any{
+	"type": "object",
+	"properties": map[string]any{
+		"query": map[string]any{
+			"type":        "string",
+			"description": "Search query - keywords, filenames, or concepts",
+		},
+		"limit": map[string]any{
+			"type":        "integer",
+			"description": "Max results (default 10, maximum 50)",
+			"default":     defaultMCPLimit,
+			"minimum":     1,
+			"maximum":     maxMCPResults,
+		},
+		"type": map[string]any{
+			"type":        "string",
+			"description": "Filter: all, files, or dirs",
+			"enum":        []any{"all", "files", "dirs"},
+		},
+		"explain": map[string]any{
+			"type":        "boolean",
+			"description": "Include score breakdown",
+		},
+		"hybrid": map[string]any{
+			"type":        "boolean",
+			"description": "Enable content fallback via ripgrep when index results are sparse",
+		},
+	},
+	"required": []any{"query"},
+}
+
+// registerMCPSearchTool exposes concept-based ranked file search over MCP. Search is
+// strictly read-only (the manager keeps the index in memory), so it is annotated
+// read-onlyHint to let clients auto-approve it.
+func registerMCPSearchTool(server *mcp.Server, manager *IndexManager) {
+	mcp.AddTool(server, &mcp.Tool{
+		Name: "search",
+		Description: "Search a codebase for files using concept-based ranked search. Faster and more relevant than grep or find for locating WHERE code lives. " +
+			"Query with plain keywords, concepts, partial filenames, or symbol names (e.g. \"auth login\", \"jwt token refresh\", \"payment handler\", \"createUser\"). " +
+			"Results are ranked by relevance score (exact basename +15 and exact symbol +24 rank highest; partial path and basename matches add +4..+7; synonym matches add +5..+8). " +
+			"The live index updates automatically as files change, so no separate watch or init step is required while this server is running. " +
+			"Set hybrid=true to enable content fallback via ripgrep when index results are sparse. " +
+			"Use this instead of grep when you need to find which file handles a concept — grep finds what's INSIDE files, this finds WHICH files matter. " +
+			"Do not use for searching file contents (use grep) or file metadata like size/date/permissions (use find).",
+		InputSchema: searchToolSchema,
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
+	}, searchToolHandler(manager))
+}
+
+func searchToolHandler(manager *IndexManager) func(ctx context.Context, req *mcp.CallToolRequest, args searchToolArgs) (*mcp.CallToolResult, any, error) {
+	return func(ctx context.Context, req *mcp.CallToolRequest, args searchToolArgs) (*mcp.CallToolResult, any, error) {
+		if args.Query == "" {
+			return mcpErrorResult("missing required argument: query"), nil, nil
+		}
+		limit := args.Limit
+		if limit <= 0 {
+			limit = defaultMCPLimit
+		}
+		if limit > maxMCPResults {
+			limit = maxMCPResults
+		}
+		typeFilter := args.Type
+		if typeFilter == "" {
+			typeFilter = "all"
+		}
+		switch typeFilter {
+		case "all", "files", "dirs":
+		default:
+			return mcpErrorResult(fmt.Sprintf("invalid type %q; must be one of all, files, or dirs", typeFilter)), nil, nil
+		}
+		results := manager.Search(args.Query, SearchOptions{
+			Limit:           limit,
+			MinScore:        1,
+			TypeFilter:      typeFilter,
+			IncludeDebug:    args.Explain,
+			ContentFallback: args.Hybrid,
+		})
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{mcpTextResult(formatMCPSearchResults(results, args.Explain))},
+		}, nil, nil
+	}
+}
+
+func registerMCPStatusTool(server *mcp.Server, manager *IndexManager) {
+	mcp.AddTool(server, &mcp.Tool{
+		Name: "status",
+		Description: "Report the health and coverage of the ctxt codebase index. " +
+			"Returns total indexed files, directories, index generation time, and root path. " +
+			"The server keeps an in-memory index current as files change; use this to check what the live index covers before searching. " +
+			"This tool is read-only and never modifies project state.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
+	}, func(ctx context.Context, req *mcp.CallToolRequest, _ statusToolArgs) (*mcp.CallToolResult, any, error) {
+		stats := manager.SnapshotStats()
+		root := manager.RootPath()
+		generatedAt := manager.IndexGeneratedAt()
+		var sb strings.Builder
+		fmt.Fprintf(&sb, "Root: %s\n", root)
+		fmt.Fprintf(&sb, "Total nodes: %d\n", stats.TotalNodes)
+		fmt.Fprintf(&sb, "Files: %d\n", stats.TotalFiles)
+		fmt.Fprintf(&sb, "Directories: %d\n", stats.TotalDirs)
+		fmt.Fprintf(&sb, "Generated: %s\n", generatedAt.Format(time.RFC3339))
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{mcpTextResult(sb.String())},
+		}, nil, nil
+	})
+}
+
+func mcpErrorResult(text string) *mcp.CallToolResult {
+	return &mcp.CallToolResult{
+		IsError: true,
+		Content: []mcp.Content{mcpTextResult(text)},
+	}
+}
+
+func mcpTextResult(text string) *mcp.TextContent {
+	return &mcp.TextContent{Text: text}
+}
+
+func formatMCPSearchResults(results []SearchResult, explain bool) string {
+	var sb strings.Builder
+	if len(results) == 0 {
+		sb.WriteString("No results found.")
+		return sb.String()
+	}
+	for i, r := range results {
+		fmt.Fprintf(&sb, "%d. %s (score: %d, type: %s)", i+1, r.Path, r.Score, r.Type)
+		if len(r.Matches) > 0 {
+			fmt.Fprintf(&sb, " matches: %s", strings.Join(r.Matches, ", "))
+		}
+		sb.WriteString("\n")
+		if explain && len(r.Breakdown) > 0 {
+			for _, b := range r.Breakdown {
+				fmt.Fprintf(&sb, "   - %s\n", b)
+			}
+		}
+	}
+	return sb.String()
+}
+
 func newMCPCommand() *cobra.Command {
 	flags := CommonFlags{}
 	var debounce time.Duration
@@ -48,19 +197,26 @@ Exposes two tools:
 
 The server watches for file changes and keeps the index current. All communication is via stdin/stdout JSON-RPC — no network, fully local.
 
+Pass the project's absolute path so the server targets the right project no matter what working directory the AI client launches it from. If several ctxt servers run on one project, the first becomes the writer and later ones serve read-only (live in-memory search, no snapshot writes).
+
 Setup: Add to your AI client's MCP config:
-  {"command": "ctxt", "args": ["mcp"]}`,
+  {"command": "ctxt", "args": ["mcp", "/abs/path/to/project"]}`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// MCP uses stdout for JSON-RPC; all logging must go to stderr.
 			logToStderr = true
 
-			var absConfigPath string
-			if configPath != "" {
-				var err error
-				absConfigPath, err = filepath.Abs(configPath)
-				if err != nil {
-					return fmt.Errorf("resolve config path: %w", err)
+			rootArg := ""
+			if len(args) == 1 {
+				rootArg = args[0]
+			}
+			absConfigPath, err := resolveStartupConfigPath(configPath, rootArg, cmd.Flags().Changed("config"))
+			if err != nil {
+				return err
+			}
+			if absConfigPath != "" && !cmd.Flags().Changed("config") {
+				if _, statErr := os.Stat(absConfigPath); os.IsNotExist(statErr) {
+					LogWarnf("Config file not found at %s; using defaults.", absConfigPath)
 				}
 			}
 			cfg, err := LoadContextingConfig(absConfigPath)
@@ -106,8 +262,8 @@ Setup: Add to your AI client's MCP config:
 			}
 
 			rootPath := "."
-			if len(args) == 1 {
-				rootPath = args[0]
+			if rootArg != "" {
+				rootPath = rootArg
 			} else if cfg.Watch.RootPath != "" {
 				rootPath = cfg.Watch.RootPath
 			}
@@ -116,16 +272,13 @@ Setup: Add to your AI client's MCP config:
 			if err != nil {
 				return fmt.Errorf("resolve mcp path: %w", err)
 			}
-			if _, statErr := os.Stat(absConfigPath); os.IsNotExist(statErr) {
-				if !cmd.Flags().Changed("config") {
-					return fmt.Errorf("config file not found at %s; run ctxt from the project root directory", absConfigPath)
-				}
-			}
-			releaseWriter, err := acquireWriterGuard(absRoot)
+			releaseWriter, writeMode, err := acquireWriterGuardAllowShared(absRoot)
 			if err != nil {
 				return err
 			}
-			defer releaseWriter()
+			if writeMode {
+				defer releaseWriter()
+			}
 			outputPath := resolveProjectPath(absRoot, flags.OutputPath)
 			if _, statErr := os.Stat(outputPath); os.IsNotExist(statErr) {
 				return fmt.Errorf("no index found at %s; run 'ctxt init' from the project root first", outputPath)
@@ -366,79 +519,8 @@ Setup: Add to your AI client's MCP config:
 				Version: currentVersion(),
 			}, nil)
 
-			mcp.AddTool(server, &mcp.Tool{
-				Name: "search",
-				Description: "Before searching, ensure an index exists. Run `ctxt init .` in your project directory to build the index. For live updates while coding, run `ctxt watch .`. Use `ctxt status` to check index health. " +
-					"Then use this search tool to find files by concept. " +
-					"Search a codebase for files using concept-based ranked search. Faster and more relevant than grep or find for locating WHERE code lives. " +
-					"Query with plain keywords, concepts, partial filenames, or symbol names (e.g. \"auth login\", \"jwt token refresh\", \"payment handler\", \"createUser\"). " +
-					"Results are ranked by relevance score (symbol matches +4, synonyms +3, basename +7, exact match +15). " +
-					"Set hybrid=true to enable content fallback via ripgrep when index results are sparse. " +
-					"Use this instead of grep when you need to find which file handles a concept — grep finds what's INSIDE files, this finds WHICH files matter. " +
-					"Do not use for searching file contents (use grep) or file metadata like size/date/permissions (use find).",
-			}, func(ctx context.Context, req *mcp.CallToolRequest, args searchToolArgs) (*mcp.CallToolResult, any, error) {
-				if args.Query == "" {
-					return &mcp.CallToolResult{
-						IsError: true,
-						Content: []mcp.Content{&mcp.TextContent{Text: "missing required argument: query"}},
-					}, nil, nil
-				}
-				limit := args.Limit
-				if limit <= 0 {
-					limit = 10
-				}
-				typeFilter := args.Type
-				if typeFilter == "" {
-					typeFilter = "all"
-				}
-				results := manager.Search(args.Query, SearchOptions{
-					Limit:           limit,
-					MinScore:        1,
-					TypeFilter:      typeFilter,
-					IncludeDebug:    args.Explain,
-					ContentFallback: args.Hybrid,
-				})
-				var sb strings.Builder
-				if len(results) == 0 {
-					sb.WriteString("No results found.")
-				} else {
-					for i, r := range results {
-						fmt.Fprintf(&sb, "%d. %s (score: %d, type: %s)", i+1, r.Path, r.Score, r.Type)
-						if len(r.Matches) > 0 {
-							fmt.Fprintf(&sb, " matches: %s", strings.Join(r.Matches, ", "))
-						}
-						sb.WriteString("\n")
-						if args.Explain && len(r.Breakdown) > 0 {
-							for _, b := range r.Breakdown {
-								fmt.Fprintf(&sb, "   - %s\n", b)
-							}
-						}
-					}
-				}
-				return &mcp.CallToolResult{
-					Content: []mcp.Content{&mcp.TextContent{Text: sb.String()}},
-				}, nil, nil
-			})
-
-			mcp.AddTool(server, &mcp.Tool{
-				Name: "status",
-				Description: "Check the health and coverage of the ctxt codebase index. " +
-					"Returns total indexed files, directories, index generation time, and root path. " +
-					"Use this FIRST before searching to verify the index exists and is current. If no index exists, tell the user to run `ctxt init .` in their project directory.",
-			}, func(ctx context.Context, req *mcp.CallToolRequest, _ statusToolArgs) (*mcp.CallToolResult, any, error) {
-				stats := manager.SnapshotStats()
-				root := manager.RootPath()
-				generatedAt := manager.IndexGeneratedAt()
-				var sb strings.Builder
-				fmt.Fprintf(&sb, "Root: %s\n", root)
-				fmt.Fprintf(&sb, "Total nodes: %d\n", stats.TotalNodes)
-				fmt.Fprintf(&sb, "Files: %d\n", stats.TotalFiles)
-				fmt.Fprintf(&sb, "Directories: %d\n", stats.TotalDirs)
-				fmt.Fprintf(&sb, "Generated: %s\n", generatedAt.Format(time.RFC3339))
-				return &mcp.CallToolResult{
-					Content: []mcp.Content{&mcp.TextContent{Text: sb.String()}},
-				}, nil, nil
-			})
+			registerMCPSearchTool(server, manager)
+			registerMCPStatusTool(server, manager)
 
 			LogInfof("MCP server ready on stdio.")
 			serverErr := server.Run(ctx, &mcp.StdioTransport{})
@@ -453,12 +535,16 @@ Setup: Add to your AI client's MCP config:
 					emitSynonymWarning(result.SynonymError)
 				}
 			}
-			flushed, flushErr := manager.FlushIfDirty()
-			if flushErr != nil {
-				LogErrorf("Failed to flush snapshot on shutdown: %v", flushErr)
-			}
-			if flushed {
-				LogInfof("Flushed snapshot to %s and %s", outputPath, cachePath)
+			if writeMode {
+				flushed, flushErr := manager.FlushIfDirty()
+				if flushErr != nil {
+					LogErrorf("Failed to flush snapshot on shutdown: %v", flushErr)
+				}
+				if flushed {
+					LogInfof("Flushed snapshot to %s and %s", outputPath, cachePath)
+				}
+			} else {
+				LogInfof("Read-only MCP server: skipping snapshot flush.")
 			}
 			LogInfof("Stopping MCP server.")
 			if serverErr != nil {
