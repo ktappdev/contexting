@@ -61,13 +61,6 @@ var defaultIgnores = []string{
 	"tmp",
 	"temp",
 
-	// Database migrations (boilerplate, low search value)
-	"migrations",
-	"pb_migrations", // PocketBase
-	"db/migrate",    // Rails
-	"alembic",       // Python/Alembic
-	"flyway",        // Java/Flyway
-
 	// IDE
 	".vscode",
 	".idea",

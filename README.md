@@ -293,7 +293,7 @@ output = ".ctxt/ctx_index.json"
 synonym_cache = ".ctxt/ctx_cache.json"
 batch_size = 8               # names per LLM request; 0 enables smart batching
 synonyms_max = 12            # max synonyms per name
-ignore = [".git", ".venv", "site-packages", "__pycache__", "node_modules", "vendor", "dist", "migrations", "pb_migrations", "alembic", "flyway"]
+ignore = [".git", ".venv", "site-packages", "__pycache__", "node_modules", "vendor", "dist"]
 dot_whitelist = []           # extra dot files to keep (merged with built-in defaults)
 verbose = true
 
@@ -319,9 +319,11 @@ the configuration; `endpoint` and `model` control the request.
 
 Contexting loads common `.gitignore` patterns by default. Additional ignores come from:
 
-1. **Built-in defaults** — `.git`, `.venv`, `site-packages`, `__pycache__`, `node_modules`, `vendor`, `dist`, `migrations`, `pb_migrations`, `alembic`, `flyway`
+1. **Built-in defaults** — `.git`, `.venv`, `site-packages`, `__pycache__`, `node_modules`, `vendor`, `dist`
 2. **`.gitignore` patterns** — loaded from the project root
 3. **`ignore` in config** — extra patterns merged with defaults
+
+Database migration folders (`migrations`, `pb_migrations`, `db/migrate`, `alembic`, and `flyway`) are indexed unless your `.gitignore` or config excludes them. Older starter configs explicitly ignored migration folders; remove those entries from the config's `ignore` list and run `ctxt init .` to include them in a rebuilt index.
 
 Root `.gitignore` rules support ordered negation (`!path`), rooted patterns,
 directory-only patterns, and `**` globs. Negation can undo earlier Git rules,

@@ -6,7 +6,7 @@ synonym_cache = ".ctxt/ctx_cache.json"
 batch_size = 8               # names per batch; smaller = faster individual requests
 synonyms_max = 12           # max synonyms per name
 symbol_extractor = "auto"  # "auto", "treesitter", or "regex"
-ignore = [".git", ".venv", "site-packages", "__pycache__", "node_modules", "vendor", "dist", "migrations", "pb_migrations", "alembic", "flyway"]
+ignore = [".git", ".venv", "site-packages", "__pycache__", "node_modules", "vendor", "dist"]
 # Extra dot files to keep (merged with built-in defaults like .prettierrc, .editorconfig, etc.)
 # dot_whitelist = [".env.local", ".env.production"]
 verbose = true
