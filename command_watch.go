@@ -147,10 +147,10 @@ Examples:
 			LogInfof("LLM: provider=%s model=%s endpoint=%s api_key=%s", llmProvider, llmModel, endpointForLog(llmEndpoint), maskAPIKey(llmKey))
 			if !llmOnWatch {
 				llmKey = ""
-				LogInfof("Watch LLM mode is off (default). Using cache + lexical synonyms only.")
+				LogInfof("Watch LLM mode is off. Using cache + lexical synonyms only.")
 			}
 			if llmOnWatch && llmKey == "" {
-				LogWarnf("LLM API key not configured; continuing without synonyms")
+				LogInfof("LLM API key not configured. Using cache + lexical synonyms only.")
 			}
 
 			ctx, stop := signalAwareContext()
@@ -409,7 +409,7 @@ Examples:
 	cmd.Flags().StringVar(&flags.SymbolExtractor, "symbol-extractor", "auto", "Symbol extraction engine: auto, treesitter, regex")
 	cmd.Flags().BoolVarP(&flags.Verbose, "verbose", "v", false, "Enable verbose logging")
 	cmd.Flags().DurationVar(&debounce, "debounce", defaultDebounce, "Debounce interval for coalescing fs events")
-	cmd.Flags().BoolVar(&llmOnWatch, "llm-on-watch", false, "Enable live LLM synonym generation during watch")
+	cmd.Flags().BoolVar(&llmOnWatch, "llm-on-watch", true, "Generate live LLM synonyms when an API key is configured; set false to disable")
 	cmd.Flags().StringVar(&persist, "persist", string(PersistShutdown), "Persistence mode (only shutdown is supported)")
 	cmd.Flags().DurationVar(&persistInterval, "persist-interval", defaultPersistInterval, "Reserved for compatibility; unused with shutdown persistence")
 	_ = cmd.Flags().MarkHidden("persist-interval")

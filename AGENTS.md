@@ -112,7 +112,7 @@ ctxt version  # → 0.0.2 (ctxt --version also works)
 ### Flag Defaults
 
 - `--verbose` (default: false) — gates steady-state change summaries
-- `--llm-on-watch` (default: false) — opts into LLM calls during watch
+- `--llm-on-watch` (default: true) — enables LLM calls during watch/MCP when an API key is configured; false disables them
 - `--search-log` (default: false) — gates potentially sensitive query logging
 - `--by-category` (default: true) — group bench results by category
 - `--engines` (default: `"ctxt,find,grep"`) — engines to benchmark. Also available: `fd`, `rg`, `hybrid`, `combined`

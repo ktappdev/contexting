@@ -191,7 +191,7 @@ The MCP server accepts optional flags in the `args` array:
 | Flag | Description | Default |
 |------|-------------|---------|
 | `--http` | Also serve HTTP search endpoint alongside MCP | disabled |
-| `--llm-on-watch` | Enable live LLM synonym generation for new files | false |
+| `--llm-on-watch` | Generate live synonyms for missing or stale entries when an API key is configured; set false to disable | true |
 | `--verbose` / `-v` | Enable verbose logging to stderr | disabled |
 | `--debounce` | Filesystem event coalesce interval | 750ms |
 | `--symbol-extractor` | Symbol extraction mode: auto, treesitter, regex | auto |

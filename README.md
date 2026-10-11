@@ -56,7 +56,7 @@ Remote LLM endpoints must use HTTPS; HTTP is accepted only on loopback.
 
 **Synonyms:** Each node (file or directory) gets up to 12 evidence-backed LLM-generated search phrases via batched API calls to an OpenAI-compatible endpoint. For example, `Skeletons.tsx → ["skeletons", "loading", "placeholder", "animation"]`. Names are smart-batched (up to 60 per request, 10 parallel by default). The prompt includes extracted symbols and, for JS/TS files, ESM imports to generate contextual terms. Use `--offline` to guarantee that no LLM requests are made.
 
-**Bootstrap diff:** On subsequent runs, `watch` diffs the filesystem against the existing snapshot using file modification times and sizes. Timestamp-preserving edits with a different size are detected; edits preserving both size and timestamp require a full rebuild. Deleted files are removed, new files are added, modified files are re-extracted. Watch bootstrap reuses cached synonyms; run `ctxt sync` to fill gaps and refresh changed symbol/import context. Synonym cache keys use the full project-relative path (e.g., `billing/routes/index.ts`) so identically named files in separate features remain distinct.
+**Bootstrap diff:** On subsequent runs, `watch` diffs the filesystem against the existing snapshot using file modification times and sizes. Timestamp-preserving edits with a different size are detected; edits preserving both size and timestamp require a full rebuild. Deleted files are removed, new files are added, modified files are re-extracted. Watch bootstrap reuses cached synonyms. During live updates, watch refreshes missing or stale synonyms when an API key is configured and LLM mode is enabled. Run `ctxt sync` to explicitly fill gaps and refresh changed symbol/import context. Synonym cache keys use the full project-relative path (e.g., `billing/routes/index.ts`) so identically named files in separate features remain distinct.
 
 ### Search mechanics
 
@@ -143,14 +143,14 @@ Use `init` or restart `watch` after adding files, then run `sync` to fill gaps.
 
 ### `ctxt watch`
 
-Keep the index in memory with live filesystem updates.
+Keep the index in memory with live filesystem updates. Live LLM enrichment is enabled when an API key is configured, for both `ctxt watch` and `ctxt mcp`. Without a key, they use cached and lexical synonyms. Existing configs with `[watch] llm = false` keep enrichment disabled; change it to `true` or override with `--llm-on-watch=true`.
 
 ```bash
 ctxt watch . --debounce 750ms --verbose
 ```
 
 Key flags:
-- `--llm-on-watch` (default false) — opt into live remote synonym enrichment
+- `--llm-on-watch` (default true) — enrich live changes when an API key is configured; set `--llm-on-watch=false` to disable LLM calls
 - `--search-log` (default false) — log memory search requests; queries may be sensitive
 - `--search-log-query-max` (default 120) — truncate logged queries
 - `--persist` (default "shutdown") — snapshots flush on graceful shutdown

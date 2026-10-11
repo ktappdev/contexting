@@ -31,7 +31,7 @@ root = "."
 [watch]
 root = "."
 debounce = "750ms"
-llm = false
+llm = true # Enrich live changes when an API key is configured; false disables LLM calls
 persist = "shutdown"
 search_log = false
 search_log_query_max = 120
