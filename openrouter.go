@@ -325,8 +325,12 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 				result[name] = values
 			}
 			mu.Unlock()
-			atomic.AddInt32(&completed, 1)
-			LogInfof("  Synonyms: batch %d/%d done (%d names)", batchNum, totalBatches, len(batchNames))
+			finished := atomic.AddInt32(&completed, 1)
+			if err != nil {
+				LogWarnf("  Synonyms: %d/%d batches finished — batch %d failed (%d names): %v", finished, totalBatches, batchNum, len(batchNames), err)
+				return
+			}
+			LogInfof("  Synonyms: %d/%d batches finished — batch %d completed (%d names)", finished, totalBatches, batchNum, len(batchNames))
 		}(batchNum, batchNames, batchSymbols, batchImports)
 	}
 	wg.Wait()
