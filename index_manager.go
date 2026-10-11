@@ -381,7 +381,7 @@ func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsno
 			}
 		}
 
-		if op&(fsnotify.Create|fsnotify.Write|fsnotify.Chmod) == 0 {
+		if op&(fsnotify.Create|fsnotify.Write) == 0 {
 			continue
 		}
 
@@ -396,14 +396,14 @@ func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsno
 		if matcher.shouldIgnore(relPath, baseName, isDir) {
 			if removeNodeByRelPath(m.index.Tree, relPath) {
 				result.Changed = true
-				result.ChangedPaths[relPath] |= op & (fsnotify.Create | fsnotify.Write | fsnotify.Chmod)
+				result.ChangedPaths[relPath] |= op & (fsnotify.Create | fsnotify.Write)
 			}
 			continue
 		}
 
 		if upsertNodeByRelPath(m.index.Tree, m.rootPath, relPath, isDir, mtime, m.cache, m.synonymsMax) {
 			result.Changed = true
-			result.ChangedPaths[relPath] |= op & (fsnotify.Create | fsnotify.Write | fsnotify.Chmod)
+			result.ChangedPaths[relPath] |= op & (fsnotify.Create | fsnotify.Write)
 		}
 	}
 

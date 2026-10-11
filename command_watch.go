@@ -349,16 +349,20 @@ Examples:
 					if shouldSkipEvent(absRoot, event, ignored, outputPath, cachePath, absConfigPath) {
 						continue
 					}
+					op := event.Op &^ fsnotify.Chmod
+					if op == 0 {
+						continue
+					}
 					relName := event.Name
 					if rel, relErr := filepath.Rel(absRoot, event.Name); relErr == nil {
 						relName = rel
 					}
-					addPending(relName, event.Op)
+					addPending(relName, op)
 					if flags.Verbose {
-						LogInfof("Event: %s %s", event.Op, event.Name)
+						LogInfof("Event: %s %s", op, event.Name)
 					}
 
-					if event.Op&(fsnotify.Create|fsnotify.Rename) != 0 {
+					if op&(fsnotify.Create|fsnotify.Rename) != 0 {
 						if err := syncWatchDirectories(watcher, absRoot, ignored, watchedDirs); err != nil {
 							LogErrorf("Sync watch dirs failed: %v", err)
 						}
