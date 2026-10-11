@@ -15,18 +15,18 @@ from source:
 
 ```bash
 go install github.com/ktappdev/contexting/cmd/ctxt@latest
-cd your-repo
-ctxt init .
-ctxt watch .
 ```
 
-Set an API key for synonym generation (optional but recommended):
+From your project root, build and check the index:
 
 ```bash
-export OPENROUTER_API_KEY="sk-or-v1-..."
+ctxt init .
+ctxt status
 ```
 
-First run creates a `.ctxt/ctx_config.toml` config file. Edit it, then press Enter to continue. Subsequent runs use the saved config.
+The first run creates `.ctxt/ctx_config.toml` and starts indexing right away. You can edit the config later; CLI flags override config values. Start `ctxt watch .` when you want a live index that follows file changes.
+
+LLM synonyms are optional. To enable them, set `OPENROUTER_API_KEY` in your shell or secret manager before running `ctxt init .`. Without a key, indexing still works with lexical matching.
 
 ## LLM flexibility
 
@@ -102,7 +102,7 @@ Key flags:
 - `-v, --verbose` — show symbol extraction progress and batch completion
 - Always rebuilds the entire tree; use when you need a clean snapshot
 
-On first run, creates a starter `.ctxt/ctx_config.toml` and pauses so you can edit it.
+On first run, creates a starter `.ctxt/ctx_config.toml` and continues with its defaults. Edit the file later to customize future runs. Use `--no-config-prompt` for unattended runs.
 
 ### `ctxt sync`
 

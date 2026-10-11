@@ -1,9 +1,7 @@
 package contexting
 
 import (
-	"bufio"
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -51,27 +49,10 @@ Examples:
 				SymbolsExtractorMode = flags.SymbolExtractor
 			}
 
-			// If config was just created, pause so user can edit settings before indexing
+			// A new config already contains the defaults loaded above. Let indexing
+			// continue immediately; users can adjust the config for later runs.
 			if configJustCreated {
-				fmt.Println()
-				fmt.Printf("Config created at %s. You can customize settings before indexing begins:\n", configPath)
-				fmt.Println("  - synonyms: number of synonyms per name (default: 10)")
-				fmt.Println("  - batch_size: names per LLM request (default: auto)")
-				fmt.Println("  - llm_model: LLM model for synonym generation")
-				fmt.Println("  - ignore: paths to exclude from indexing")
-				fmt.Println()
-				if isInteractiveTerminal() {
-					fmt.Print("Edit .ctxt/ctx_config.toml now, then press Enter to continue... ")
-					reader := bufio.NewReader(os.Stdin)
-					_, _ = reader.ReadString('\n')
-				}
-				// Re-read config so any edits are picked up
-				cfg, err = LoadContextingConfig(absConfigPath)
-				if err != nil {
-					return err
-				}
-				applyCommonConfig(cmd, &flags, cfg.Common)
-				flags.normalize()
+				fmt.Printf("Using starter config at %s. You can customize it for future runs.\n", absConfigPath)
 			}
 
 			rootPath := "."
