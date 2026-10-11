@@ -24,7 +24,6 @@ type CommonConfig struct {
 	APIKey          string   `toml:"api_key"`
 	BatchSize       int      `toml:"batch_size"`
 	SynonymsPerName int      `toml:"synonyms"`
-	SynonymsMin     int      `toml:"synonyms_min"`
 	SynonymsMax     int      `toml:"synonyms_max"`
 	SymbolExtractor string   `toml:"symbol_extractor"` // "auto", "treesitter", "regex"
 	Verbose         *bool    `toml:"verbose"`

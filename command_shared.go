@@ -15,7 +15,6 @@ type CommonFlags struct {
 	Endpoint        string
 	BatchSize       int
 	SynonymsPerName int
-	SynonymsMin     int
 	SynonymsMax     int
 	SymbolExtractor string
 	Verbose         bool
@@ -27,15 +26,9 @@ func (c *CommonFlags) normalize() {
 	if c.SynonymsPerName <= 0 {
 		c.SynonymsPerName = defaultSynonyms
 	}
-	// Resolve synonyms min/max: if set, use them; otherwise fall back to SynonymsPerName
-	if c.SynonymsMin <= 0 {
-		c.SynonymsMin = c.SynonymsPerName
-	}
+	// Resolve the synonym output cap.
 	if c.SynonymsMax <= 0 {
 		c.SynonymsMax = defaultSynonymsMax
-	}
-	if c.SynonymsMin > c.SynonymsMax {
-		c.SynonymsMin = c.SynonymsMax
 	}
 	if c.SynonymCache == "" {
 		c.SynonymCache = ".ctxt/ctx_cache.json"

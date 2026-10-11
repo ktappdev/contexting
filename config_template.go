@@ -4,7 +4,6 @@ const starterConfigTemplate = `[common]
 output = ".ctxt/ctx_index.json"
 synonym_cache = ".ctxt/ctx_cache.json"
 batch_size = 8               # names per batch; smaller = faster individual requests
-synonyms_min = 5            # min synonyms per name
 synonyms_max = 12           # max synonyms per name
 symbol_extractor = "auto"  # "auto", "treesitter", or "regex"
 ignore = [".git", ".venv", "site-packages", "__pycache__", "node_modules", "vendor", "dist", "migrations", "pb_migrations", "alembic", "flyway"]

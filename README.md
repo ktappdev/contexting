@@ -43,7 +43,7 @@ The default uses OpenRouter with `deepseek/deepseek-v4-flash` — fast, nearly f
 - **Other OpenAI-compatible APIs** — set `endpoint`, `model`, and `api_key_env`
 - **No LLM** — skip the `[llm]` section entirely or set `api_key = ""`
 
-Adjust `batch_size`, `parallel_requests`, and `synonyms_min`/`synonyms_max` to trade off speed vs. coverage for your model.
+Adjust `batch_size`, `parallel_requests`, and `synonyms_max` to trade off speed vs. coverage for your model.
 Remote LLM endpoints must use HTTPS; HTTP is accepted only on loopback.
 
 ## How it works
@@ -54,7 +54,7 @@ Remote LLM endpoints must use HTTPS; HTTP is accepted only on loopback.
 
 **Symbols:** Every source file gets scanned with language-specific extractors that pull out named declarations, including Go receiver methods — functions, types, variables, classes, constants. These become a `symbols` array on the file node. The default extractor is `auto` (tree-sitter with regex fallback). Supported languages: Go (go/parser), Python/JavaScript/TypeScript/Rust/Svelte/Astro (tree-sitter), Vue/Ruby (regex fallback).
 
-**Synonyms:** Each node (file or directory) gets 5–12 LLM-generated synonyms via batched API calls to an OpenAI-compatible endpoint. For example, `Skeletons.tsx → ["skeletons", "loading", "placeholder", "animation"]`. Names are smart-batched (up to 60 per request, 10 parallel by default). The prompt includes extracted symbols and, for JS/TS files, ESM imports to generate contextual terms. Use `--offline` to guarantee that no LLM requests are made.
+**Synonyms:** Each node (file or directory) gets up to 12 evidence-backed LLM-generated search phrases via batched API calls to an OpenAI-compatible endpoint. For example, `Skeletons.tsx → ["skeletons", "loading", "placeholder", "animation"]`. Names are smart-batched (up to 60 per request, 10 parallel by default). The prompt includes extracted symbols and, for JS/TS files, ESM imports to generate contextual terms. Use `--offline` to guarantee that no LLM requests are made.
 
 **Bootstrap diff:** On subsequent runs, `watch` diffs the filesystem against the existing snapshot using file modification times and sizes. Timestamp-preserving edits with a different size are detected; edits preserving both size and timestamp require a full rebuild. Deleted files are removed, new files are added, modified files are re-extracted. Watch bootstrap reuses cached synonyms; run `ctxt sync` to fill gaps and refresh changed symbol/import context. Synonym cache keys use the full project-relative path (e.g., `billing/routes/index.ts`) so identically named files in separate features remain distinct.
 
@@ -70,7 +70,7 @@ When you run `search-hints "product review rating"`, the query is lowercased and
 | path segment | +4 | Token matches any segment in the full path |
 | segment prefix | +5 | Token is a prefix of a path segment |
 | syn-exact | +8 | Token exactly matches a synonym |
-| syn overlap | +5 | Token partially overlaps a synonym |
+| syn word | +5 | Token matches a word or simple suffix variant within a synonym phrase |
 | sym exact | +24 | Token exactly matches a symbol name |
 | sym contains | +5 | Token is contained in a symbol name |
 | sym token | +4 | Token matches a camelCase/PascalCase split token in a symbol |
@@ -101,7 +101,7 @@ ctxt init . --output .ctxt/ctx_index.json --synonym-cache .ctxt/ctx_cache.json
 
 Key flags:
 - `--no-config-prompt`, `--create-config` — non-interactive automation
-- `--llm-model`, `--batch-size`, `--synonyms-min`, `--synonyms-max`, `--api-key`, `--ignore`
+- `--llm-model`, `--batch-size`, `--synonyms-max`, `--api-key`, `--ignore`
 - `--symbol-extractor` — symbol extraction mode: `auto` (default, tree-sitter with regex fallback), `treesitter`, or `regex`
 - `-v, --verbose` — show symbol extraction progress and batch completion
 - Always rebuilds the entire tree; use when you need a clean snapshot
@@ -110,7 +110,9 @@ On first run, creates a starter `.ctxt/ctx_config.toml` and continues with its d
 
 ### `ctxt sync`
 
-Targeted synonym generation — generates synonyms for indexed names that are missing, below `synonyms_min`, or have changed symbols/imports. It refreshes symbol extraction from disk before comparing context fingerprints. Works on the existing index without rebuilding the file tree.
+Targeted synonym generation — generates synonyms for indexed names that are missing or have changed symbols/imports. It refreshes symbol extraction from disk before comparing context fingerprints. Works on the existing index without rebuilding the file tree.
+
+A nonempty, current synonym list is accepted even when it contains only one phrase. `synonyms_max` caps generation; `synonyms_min` and `--synonyms-min` have been removed. Remove `synonyms_min` from existing configs. Use `--force` to explicitly regenerate current lists.
 
 ```bash
 ctxt sync .
@@ -290,7 +292,6 @@ ctxt sync . --force
 output = ".ctxt/ctx_index.json"
 synonym_cache = ".ctxt/ctx_cache.json"
 batch_size = 8               # names per LLM request; 0 enables smart batching
-synonyms_min = 5             # min synonyms per name
 synonyms_max = 12            # max synonyms per name
 ignore = [".git", ".venv", "site-packages", "__pycache__", "node_modules", "vendor", "dist", "migrations", "pb_migrations", "alembic", "flyway"]
 dot_whitelist = []           # extra dot files to keep (merged with built-in defaults)

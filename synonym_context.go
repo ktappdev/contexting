@@ -39,10 +39,10 @@ func collectSynonymContext(tree *Node) synonymContext {
 	return result
 }
 
-func namesNeedingSynonyms(names []string, cache SynonymResponse, previous, current map[string]string, minimum int) []string {
+func namesNeedingSynonyms(names []string, cache SynonymResponse, previous, current map[string]string) []string {
 	var targets []string
 	for _, name := range names {
-		if len(cache[name]) < minimum || previous[name] != current[name] {
+		if len(cache[name]) == 0 || previous[name] != current[name] {
 			targets = append(targets, name)
 		}
 	}

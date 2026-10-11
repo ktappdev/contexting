@@ -30,7 +30,6 @@ type IndexManagerOptions struct {
 	Model           string
 	BatchSize       int
 	SynonymsPerName int
-	SynonymsMin     int
 	SynonymsMax     int
 	APIKey          string
 	UseLLM          bool
@@ -56,7 +55,6 @@ type IndexManager struct {
 	model           string
 	batchSize       int
 	synonymsPerName int
-	synonymsMin     int
 	synonymsMax     int
 	apiKey          string
 	useLLM          bool
@@ -83,14 +81,8 @@ func NewIndexManager(opts IndexManagerOptions) *IndexManager {
 	if opts.SynonymsPerName <= 0 {
 		opts.SynonymsPerName = defaultSynonyms
 	}
-	if opts.SynonymsMin <= 0 {
-		opts.SynonymsMin = opts.SynonymsPerName
-	}
 	if opts.SynonymsMax <= 0 {
 		opts.SynonymsMax = defaultSynonymsMax
-	}
-	if opts.SynonymsMin > opts.SynonymsMax {
-		opts.SynonymsMin = opts.SynonymsMax
 	}
 	if opts.IgnoredPaths == nil {
 		opts.IgnoredPaths = BuildIgnoreMap(nil)
@@ -107,7 +99,6 @@ func NewIndexManager(opts IndexManagerOptions) *IndexManager {
 		model:           opts.Model,
 		batchSize:       opts.BatchSize,
 		synonymsPerName: opts.SynonymsPerName,
-		synonymsMin:     opts.SynonymsMin,
 		synonymsMax:     opts.SynonymsMax,
 		apiKey:          opts.APIKey,
 		useLLM:          opts.UseLLM,
@@ -302,7 +293,6 @@ func (m *IndexManager) Bootstrap(ctx context.Context) (IndexStats, error) {
 		Model:               m.model,
 		BatchSize:           m.batchSize,
 		SynonymsPerName:     m.synonymsMax,
-		SynonymsMin:         m.synonymsMin,
 		SynonymsMax:         m.synonymsMax,
 		SynonymCache:        m.cache,
 		SynonymFingerprints: m.fingerprints,
@@ -421,13 +411,13 @@ func (m *IndexManager) ApplyChanges(ctx context.Context, changes map[string]fsno
 	var names []string
 	if m.useLLM {
 		generationContext = collectSynonymContext(m.index.Tree)
-		names = namesNeedingSynonyms(CollectNamesForLLM(m.index.Tree), m.cache, m.fingerprints, generationContext.Fingerprints, m.synonymsMin)
+		names = namesNeedingSynonyms(CollectNamesForLLM(m.index.Tree), m.cache, m.fingerprints, generationContext.Fingerprints)
 	}
 	if len(names) > 0 {
 		apiKey := m.activeAPIKey()
 		m.mu.Unlock()
 		locked = false
-		synonyms, err := GenerateSynonymsForNamesWithContext(ctx, names, apiKey, m.maxBatchSize, m.model, m.endpoint, m.temperature, m.maxTokens, m.synonymsMin, m.synonymsMax, 1, generationContext.Symbols, generationContext.Imports)
+		synonyms, err := GenerateSynonymsForNamesWithContext(ctx, names, apiKey, m.maxBatchSize, m.model, m.endpoint, m.temperature, m.maxTokens, m.synonymsMax, 1, generationContext.Symbols, generationContext.Imports)
 		m.mu.Lock()
 		locked = true
 		if err != nil {

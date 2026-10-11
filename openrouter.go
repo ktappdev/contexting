@@ -59,12 +59,12 @@ func GetAPIKey() (string, error) {
 }
 
 func GenerateSynonymsBatch(names []string, apiKey string, model string, endpoint string, temperature float64, maxTokens int, synonymsPerName int) (SynonymResponse, error) {
-	return GenerateSynonymsBatchWithContext(context.Background(), names, apiKey, model, endpoint, temperature, maxTokens, synonymsPerName, synonymsPerName, nil, nil)
+	return GenerateSynonymsBatchWithContext(context.Background(), names, apiKey, model, endpoint, temperature, maxTokens, synonymsPerName, nil, nil)
 }
 
-func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKey string, model string, endpoint string, temperature float64, maxTokens int, synonymsMin int, synonymsMax int, symbols map[string][]string, imports map[string][]string) (SynonymResponse, error) {
+func GenerateSynonymsBatchWithContext(ctx context.Context, names []string, apiKey string, model string, endpoint string, temperature float64, maxTokens int, synonymsMax int, symbols map[string][]string, imports map[string][]string) (SynonymResponse, error) {
 	for attempt := 0; ; attempt++ {
-		result, err := generateSynonymsAttempt(ctx, names, apiKey, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax, symbols, imports)
+		result, err := generateSynonymsAttempt(ctx, names, apiKey, model, endpoint, temperature, maxTokens, synonymsMax, symbols, imports)
 		var status *llmStatusError
 		if err == nil || attempt == 2 || !errors.As(err, &status) || (status.code != 429 && status.code < 500) {
 			return result, err
@@ -85,7 +85,7 @@ func (e *llmStatusError) Error() string {
 	return fmt.Sprintf("LLM request failed with HTTP status %d", e.code)
 }
 
-func generateSynonymsAttempt(ctx context.Context, names []string, apiKey string, model string, endpoint string, temperature float64, maxTokens int, synonymsMin int, synonymsMax int, symbols map[string][]string, imports map[string][]string) (SynonymResponse, error) {
+func generateSynonymsAttempt(ctx context.Context, names []string, apiKey string, model string, endpoint string, temperature float64, maxTokens int, synonymsMax int, symbols map[string][]string, imports map[string][]string) (SynonymResponse, error) {
 
 	if len(names) == 0 {
 		return make(SynonymResponse), nil
@@ -108,9 +108,6 @@ func generateSynonymsAttempt(ctx context.Context, names []string, apiKey string,
 	}
 	if synonymsMax <= 0 {
 		synonymsMax = defaultSynonymsMax
-	}
-	if synonymsMin <= 0 {
-		synonymsMin = synonymsMax
 	}
 
 	systemPrompt := fmt.Sprintf(
@@ -239,11 +236,11 @@ func isLoopbackHost(host string) bool {
 	return ip != nil && ip.IsLoopback()
 }
 
-func GenerateSynonymsForNames(names []string, apiKey string, batchSize int, model string, endpoint string, temperature float64, maxTokens int, synonymsMin int, synonymsMax int) (SynonymResponse, error) {
-	return GenerateSynonymsForNamesWithContext(context.Background(), names, apiKey, batchSize, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax, 1, nil, nil)
+func GenerateSynonymsForNames(names []string, apiKey string, batchSize int, model string, endpoint string, temperature float64, maxTokens int, synonymsMax int) (SynonymResponse, error) {
+	return GenerateSynonymsForNamesWithContext(context.Background(), names, apiKey, batchSize, model, endpoint, temperature, maxTokens, synonymsMax, 1, nil, nil)
 }
 
-func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, apiKey string, batchSize int, model string, endpoint string, temperature float64, maxTokens int, synonymsMin int, synonymsMax int, parallelLimit int, symbols map[string][]string, imports map[string][]string) (SynonymResponse, error) {
+func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, apiKey string, batchSize int, model string, endpoint string, temperature float64, maxTokens int, synonymsMax int, parallelLimit int, symbols map[string][]string, imports map[string][]string) (SynonymResponse, error) {
 	if len(names) == 0 {
 		return make(SynonymResponse), nil
 	}
@@ -252,9 +249,6 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 	}
 	if synonymsMax <= 0 {
 		synonymsMax = defaultSynonymsMax
-	}
-	if synonymsMin <= 0 {
-		synonymsMin = synonymsMax
 	}
 	if parallelLimit <= 0 {
 		parallelLimit = 1
@@ -271,7 +265,7 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 	}
 	if batchSize >= len(names) {
 		LogInfof("  Synonyms: processing %d names...", len(names))
-		return GenerateSynonymsBatchWithContext(ctx, names, apiKey, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax, symbols, imports)
+		return GenerateSynonymsBatchWithContext(ctx, names, apiKey, model, endpoint, temperature, maxTokens, synonymsMax, symbols, imports)
 	}
 
 	totalBatches := (len(names) + batchSize - 1) / batchSize
@@ -316,7 +310,7 @@ func GenerateSynonymsForNamesWithContext(ctx context.Context, names []string, ap
 			}
 			defer func() { <-sem }()
 
-			synonyms, err := GenerateSynonymsBatchWithContext(ctx, batchNames, apiKey, model, endpoint, temperature, maxTokens, synonymsMin, synonymsMax, batchSymbols, batchImports)
+			synonyms, err := GenerateSynonymsBatchWithContext(ctx, batchNames, apiKey, model, endpoint, temperature, maxTokens, synonymsMax, batchSymbols, batchImports)
 			mu.Lock()
 			if err != nil {
 				batchErrors = append(batchErrors, fmt.Errorf("batch %d: %w", batchNum, err))

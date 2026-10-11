@@ -18,10 +18,15 @@ func scoreSynonymToken(synonyms []string, token string) (int, []string, []string
 		if lower == token {
 			return 8, []string{"syn-exact:" + synonym}, []string{"syn exact +8: " + synonym}
 		}
-		if score == 0 && len(token) >= 3 && len(lower) >= 3 && (strings.Contains(lower, token) || strings.Contains(token, lower)) {
-			score = 5
-			matches = []string{"syn:" + synonym}
-			breakdown = []string{"syn overlap +5: " + synonym}
+		if score == 0 {
+			for _, word := range tokenize(lower) {
+				if word == token {
+					score = 5
+					matches = []string{"syn:" + synonym}
+					breakdown = []string{"syn word +5: " + synonym}
+					break
+				}
+			}
 		}
 	}
 	return score, matches, breakdown

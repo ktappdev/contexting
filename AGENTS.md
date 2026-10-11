@@ -101,12 +101,12 @@ ctxt version  # → 0.0.2 (ctxt --version also works)
 | Writer guard | CLI writers are serialized per project via `.ctxt-writer/` |
 | Default model | `deepseek/deepseek-v4-flash` |
 | Supported release targets | Linux/macOS/Windows on amd64 and arm64 |
-| Synonyms | 5–12 per name |
+| Synonyms | 1–12 evidence-backed phrases per name; no minimum-count regeneration |
 | Temperature | `0.9` |
 | Parallel requests | `10` |
 | Symbol flow | Symbols extracted BEFORE synonyms (sequential), then fed to LLM during synonym generation |
 | Default bench engines | `ctxt,find,grep` (`fd`, `rg`, `hybrid`, `combined` are opt-in via `--engines`) |
-| Scoring | Exact symbol match +24 (highest); exact basename +15, exact token +12, basename contains +7, path contains +4, synonym exact +8, symbol token +4; confidence gap heuristic truncates results at score cliffs |
+| Scoring | Exact symbol match +24 (highest); exact basename +15, exact token +12, basename contains +7, path contains +4, synonym exact +8, synonym word +5, symbol token +4; confidence gap heuristic truncates results at score cliffs |
 | `--agent` flag | Blocks state-modifying commands (`init`/`watch`/`sync`/`clean`) |
 
 ### Flag Defaults
@@ -118,7 +118,6 @@ ctxt version  # → 0.0.2 (ctxt --version also works)
 - `--engines` (default: `"ctxt,find,grep"`) — engines to benchmark. Also available: `fd`, `rg`, `hybrid`, `combined`
 - `--hybrid` (search flag, default: false) — enable content fallback via ripgrep when index results are sparse
 - `--hybrid-score` (search flag, default: 1) — score assigned to content-matched results
-- `--synonyms-min` (default: `5`) — min synonyms per name
 - `--synonyms-max` (default: `12`) — max synonyms per name
 
 ### Ignore System

@@ -21,8 +21,8 @@ func newSyncCommand() *cobra.Command {
 
 For example, a file importing "@clerk/nextjs" and "stripe" might get synonyms like "clerk webhook handler" or "payment processing route".
 
-Requires an existing index (run 'ctxt init' first). Missing, short, or stale
-symbol/import context is refreshed automatically. Successful responses are saved
+Requires an existing index (run 'ctxt init' first). Missing synonyms or stale
+symbol/import context are refreshed automatically. Successful responses are saved
 when another batch fails; rerun without --force to retry unfinished entries.
 
 Examples:
@@ -117,16 +117,16 @@ Examples:
 			}
 			generationContext := collectSynonymContext(index.Tree)
 			cache := cacheState.Entries
-			synonymsMin, synonymsMax := flags.SynonymsMin, flags.SynonymsMax
-			targets := namesNeedingSynonyms(allNames, cache, cacheState.Fingerprints, generationContext.Fingerprints, synonymsMin)
+			synonymsMax := flags.SynonymsMax
+			targets := namesNeedingSynonyms(allNames, cache, cacheState.Fingerprints, generationContext.Fingerprints)
 			if force {
 				targets = allNames
 			}
 			if len(targets) == 0 {
-				fmt.Println("All selected names have sufficient, current synonyms. Nothing to do.")
+				fmt.Println("All selected names have current synonyms. Nothing to do.")
 				return nil
 			}
-			fmt.Printf("Generating synonyms for %d missing, short, stale, or explicitly selected names...\n", len(targets))
+			fmt.Printf("Generating synonyms for %d missing, stale, or explicitly selected names...\n", len(targets))
 			ctx, stop := signalAwareContext()
 			defer stop()
 			batchSize := cfg.Watch.MaxBatchSize
@@ -134,7 +134,7 @@ Examples:
 				batchSize = flags.BatchSize
 			}
 
-			generated, err := GenerateSynonymsForNamesWithContext(ctx, targets, llmKey, batchSize, llmModel, llmEndpoint, llmTemp, llmMaxTokens, synonymsMin, synonymsMax, cfg.LLM.ParallelRequests, generationContext.Symbols, generationContext.Imports)
+			generated, err := GenerateSynonymsForNamesWithContext(ctx, targets, llmKey, batchSize, llmModel, llmEndpoint, llmTemp, llmMaxTokens, synonymsMax, cfg.LLM.ParallelRequests, generationContext.Symbols, generationContext.Imports)
 			generationErr := err
 
 			// Update cache with new synonyms
@@ -169,9 +169,8 @@ Examples:
 	cmd.Flags().StringVar(&flags.APIKey, "api-key", "", "LLM API key (falls back to config api_key_env, LLM_API_KEY, OPENROUTER_API_KEY)")
 	cmd.Flags().StringVar(&flags.Endpoint, "llm-endpoint", "", "LLM API endpoint URL")
 	cmd.Flags().IntVar(&flags.BatchSize, "batch-size", 8, "Names per LLM request")
-	cmd.Flags().IntVar(&flags.SynonymsPerName, "synonyms", defaultSynonyms, "Synonyms per name (fallback for min/max)")
-	cmd.Flags().IntVar(&flags.SynonymsMin, "synonyms-min", 0, "Min synonyms per name (0 = use synonyms value)")
-	cmd.Flags().IntVar(&flags.SynonymsMax, "synonyms-max", 0, "Max synonyms per name (0 = use synonyms value)")
+	cmd.Flags().IntVar(&flags.SynonymsPerName, "synonyms", defaultSynonyms, "Synonyms per name")
+	cmd.Flags().IntVar(&flags.SynonymsMax, "synonyms-max", 0, "Max search phrases per name (0 = default 12)")
 	cmd.Flags().StringVar(&flags.SynonymCache, "synonym-cache", ".ctxt/ctx_cache.json", "Path to persistent synonym cache JSON")
 	cmd.Flags().StringVar(&flags.SymbolExtractor, "symbol-extractor", "auto", "Symbol extraction engine: auto, treesitter, regex")
 	cmd.Flags().BoolVarP(&flags.Verbose, "verbose", "v", false, "Enable verbose logging")

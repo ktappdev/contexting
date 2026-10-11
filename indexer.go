@@ -15,7 +15,6 @@ type BuildOptions struct {
 	Model               string
 	BatchSize           int
 	SynonymsPerName     int
-	SynonymsMin         int
 	SynonymsMax         int
 	SynonymCache        SynonymResponse
 	SynonymFingerprints map[string]string
@@ -51,14 +50,8 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 	if opts.SynonymsPerName <= 0 {
 		opts.SynonymsPerName = defaultSynonyms
 	}
-	if opts.SynonymsMin <= 0 {
-		opts.SynonymsMin = opts.SynonymsPerName
-	}
 	if opts.SynonymsMax <= 0 {
 		opts.SynonymsMax = defaultSynonymsMax
-	}
-	if opts.SynonymsMin > opts.SynonymsMax {
-		opts.SynonymsMin = opts.SynonymsMax
 	}
 	if opts.IgnoredPaths == nil {
 		opts.IgnoredPaths = BuildIgnoreMap(nil)
@@ -114,7 +107,7 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 
 	// Step 2: Capture the symbols/imports used for generation and freshness.
 	generationContext := collectSynonymContext(tree)
-	missing := namesNeedingSynonyms(names, combined, state.Fingerprints, generationContext.Fingerprints, opts.SynonymsMin)
+	missing := namesNeedingSynonyms(names, combined, state.Fingerprints, generationContext.Fingerprints)
 
 	if len(names) > 0 {
 		LogInfof("  %d names to process (%d current, %d need generation)", len(names), len(names)-len(missing), len(missing))
@@ -158,7 +151,7 @@ func BuildIndex(opts BuildOptions) (*BuildResult, error) {
 		if batchSize <= 0 {
 			batchSize = opts.BatchSize
 		}
-		generated, err := GenerateSynonymsForNamesWithContext(opts.Ctx, missing, opts.APIKey, batchSize, opts.Model, opts.Endpoint, opts.Temperature, opts.MaxTokens, opts.SynonymsMin, opts.SynonymsMax, opts.ParallelRequests, generationContext.Symbols, generationContext.Imports)
+		generated, err := GenerateSynonymsForNamesWithContext(opts.Ctx, missing, opts.APIKey, batchSize, opts.Model, opts.Endpoint, opts.Temperature, opts.MaxTokens, opts.SynonymsMax, opts.ParallelRequests, generationContext.Symbols, generationContext.Imports)
 		if err != nil {
 			synonymErr = err
 		}

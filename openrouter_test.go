@@ -40,7 +40,7 @@ func TestGenerateSynonymsBatchValidation(t *testing.T) {
 	}
 
 	// Test with symbols map (nil should work) - use empty names to avoid HTTP call
-	resp2, err := GenerateSynonymsBatchWithContext(context.Background(), []string{}, "sk-test", defaultModel, "", 0, 0, 4, 4, nil, nil)
+	resp2, err := GenerateSynonymsBatchWithContext(context.Background(), []string{}, "sk-test", defaultModel, "", 0, 0, 4, nil, nil)
 	if err != nil {
 		t.Fatalf("expected no error for empty names with nil symbols, got %v", err)
 	}
@@ -50,7 +50,7 @@ func TestGenerateSynonymsBatchValidation(t *testing.T) {
 }
 
 func TestGenerateSynonymsForNamesHandlesEmptyList(t *testing.T) {
-	result, err := GenerateSynonymsForNames([]string{}, "sk-test", 8, defaultModel, "", 0, 0, 4, 4)
+	result, err := GenerateSynonymsForNames([]string{}, "sk-test", 8, defaultModel, "", 0, 0, 4)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -62,7 +62,7 @@ func TestGenerateSynonymsForNamesHandlesEmptyList(t *testing.T) {
 	}
 
 	// Test with symbols map
-	result2, err := GenerateSynonymsForNamesWithContext(context.Background(), []string{}, "sk-test", 8, defaultModel, "", 0, 0, 4, 4, 1, nil, nil)
+	result2, err := GenerateSynonymsForNamesWithContext(context.Background(), []string{}, "sk-test", 8, defaultModel, "", 0, 0, 4, 1, nil, nil)
 	if err != nil {
 		t.Fatalf("expected no error with nil symbols, got %v", err)
 	}

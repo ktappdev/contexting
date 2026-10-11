@@ -154,7 +154,7 @@ func TestWatchSearchRemainsAvailableDuringLLMRequest(t *testing.T) {
 func TestLLMFailuresAndCancellation(t *testing.T) {
 	for _, endpoint := range []string{"http://example.com/v1", "ftp://example.com/v1", "https://user:secret@example.com/v1"} {
 		t.Run("reject endpoint "+endpoint, func(t *testing.T) {
-			if _, err := GenerateSynonymsBatchWithContext(context.Background(), []string{"one"}, "", "test", endpoint, 0, 0, 1, 5, nil, nil); err == nil {
+			if _, err := GenerateSynonymsBatchWithContext(context.Background(), []string{"one"}, "", "test", endpoint, 0, 0, 5, nil, nil); err == nil {
 				t.Fatal("accepted unsafe endpoint")
 			}
 		})
@@ -169,7 +169,7 @@ func TestLLMFailuresAndCancellation(t *testing.T) {
 			_ = json.NewEncoder(w).Encode(OpenRouterResponse{Choices: []Choice{{Message: Message{Content: `{"billing":["invoicing"]}`}}}})
 		}))
 		defer server.Close()
-		got, err := GenerateSynonymsBatchWithContext(context.Background(), []string{"billing"}, "", "test", server.URL, 0, 0, 1, 5, nil, nil)
+		got, err := GenerateSynonymsBatchWithContext(context.Background(), []string{"billing"}, "", "test", server.URL, 0, 0, 5, nil, nil)
 		if err != nil || len(got["billing"]) == 0 || calls.Load() != 2 {
 			t.Fatalf("result=%v calls=%d err=%v", got, calls.Load(), err)
 		}
@@ -178,7 +178,7 @@ func TestLLMFailuresAndCancellation(t *testing.T) {
 		t.Run(payload, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte(payload)) }))
 			defer server.Close()
-			if _, err := GenerateSynonymsBatchWithContext(context.Background(), []string{"billing"}, "", "test", server.URL, 0, 0, 1, 5, nil, nil); err == nil {
+			if _, err := GenerateSynonymsBatchWithContext(context.Background(), []string{"billing"}, "", "test", server.URL, 0, 0, 5, nil, nil); err == nil {
 				t.Fatal("accepted malformed/empty response")
 			}
 		})
@@ -189,7 +189,7 @@ func TestLLMFailuresAndCancellation(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(503); cancel() }))
 		defer server.Close()
 		start := time.Now()
-		_, err := GenerateSynonymsForNamesWithContext(ctx, []string{"one", "two"}, "", 1, "test", server.URL, 0, 0, 1, 5, 1, nil, nil)
+		_, err := GenerateSynonymsForNamesWithContext(ctx, []string{"one", "two"}, "", 1, "test", server.URL, 0, 0, 5, 1, nil, nil)
 		if !errors.Is(err, context.Canceled) || time.Since(start) > time.Second {
 			t.Fatalf("cancellation: %v", err)
 		}
@@ -204,7 +204,7 @@ func TestLLMFailuresAndCancellation(t *testing.T) {
 		defer server.Close()
 		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 		defer cancel()
-		_, err := GenerateSynonymsBatchWithContext(ctx, []string{"one"}, "", "test", server.URL, 0, 0, 1, 5, nil, nil)
+		_, err := GenerateSynonymsBatchWithContext(ctx, []string{"one"}, "", "test", server.URL, 0, 0, 5, nil, nil)
 		if !errors.Is(err, context.DeadlineExceeded) {
 			t.Fatalf("deadline: %v", err)
 		}
@@ -219,7 +219,7 @@ func TestLLMFailuresAndCancellation(t *testing.T) {
 			_ = json.NewEncoder(w).Encode(OpenRouterResponse{Choices: []Choice{{Message: Message{Content: `{"one":["alpha"],"two":["beta"]}`}}}})
 		}))
 		defer server.Close()
-		got, err := GenerateSynonymsForNamesWithContext(context.Background(), []string{"one", "two"}, "", 1, "test", server.URL, 0, 0, 1, 5, 1, nil, nil)
+		got, err := GenerateSynonymsForNamesWithContext(context.Background(), []string{"one", "two"}, "", 1, "test", server.URL, 0, 0, 5, 1, nil, nil)
 		if err == nil || len(got) != 1 || calls.Load() != 2 {
 			t.Fatalf("partial result=%v err=%v calls=%d", got, err, calls.Load())
 		}

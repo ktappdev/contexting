@@ -321,7 +321,6 @@ Setup: Add to your AI client's MCP config:
 				Model:           llmModel,
 				BatchSize:       flags.BatchSize,
 				SynonymsPerName: flags.SynonymsPerName,
-				SynonymsMin:     flags.SynonymsMin,
 				SynonymsMax:     flags.SynonymsMax,
 				APIKey:          llmKey,
 				UseLLM:          llmOnWatch && llmKey != "",
@@ -562,8 +561,7 @@ Setup: Add to your AI client's MCP config:
 	cmd.Flags().IntVar(&flags.BatchSize, "batch-size", 0, "Names per LLM request (0 = automatic, up to 60)")
 	cmd.Flags().IntVar(&maxBatchSize, "max-batch-size", 0, "Maximum names per LLM request (0 = send all at once, default)")
 	cmd.Flags().IntVar(&flags.SynonymsPerName, "synonyms", defaultSynonyms, "Desired synonyms per name")
-	cmd.Flags().IntVar(&flags.SynonymsMin, "synonyms-min", 0, "Min synonyms per name (0 = use synonyms value)")
-	cmd.Flags().IntVar(&flags.SynonymsMax, "synonyms-max", 0, "Max synonyms per name (0 = use synonyms value)")
+	cmd.Flags().IntVar(&flags.SynonymsMax, "synonyms-max", 0, "Max search phrases per name (0 = default 12)")
 	cmd.Flags().StringVar(&flags.SynonymCache, "synonym-cache", ".ctxt/ctx_cache.json", "Path to persistent synonym cache JSON")
 	cmd.Flags().StringSliceVar(&flags.ExtraIgnores, "ignore", nil, "Additional ignore entries (name or relative path)")
 	cmd.Flags().StringVar(&flags.SymbolExtractor, "symbol-extractor", "auto", "Symbol extraction engine: auto, treesitter, regex")

@@ -2,7 +2,6 @@
 output = ".ctxt/ctx_index.json"
 synonym_cache = ".ctxt/ctx_cache.json"
 batch_size = 8              # names per batch; 0 enables smart batching
-synonyms_min = 5            # min synonyms per name
 synonyms_max = 12           # max synonyms per name
 ignore = [".git", ".venv", "site-packages", "__pycache__", "node_modules", "vendor", "dist", "migrations", "pb_migrations", "alembic", "flyway"]
 # Extra dot files to keep (merged with built-in defaults like .prettierrc, .editorconfig, etc.)
